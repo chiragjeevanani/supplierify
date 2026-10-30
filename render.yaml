@@ -1,25 +1,21 @@
 # Render Blueprint for the backend API (the storefront is deployed separately on Vercel).
-# Uploaded images live on the persistent disk below, so they survive restarts and redeploys.
-# A disk requires a paid instance type (starter or higher).
+# DEMO SETUP (free plan): the free plan has no persistent disk, so admin-uploaded images are wiped on every
+# restart/redeploy and the service sleeps after ~15 min idle. For production, switch to `plan: starter`, add
+#   disk: { name: uploads, mountPath: /var/data, sizeGB: 5 }
+# and set UPLOADS_DIR=/var/data/uploads so uploaded images survive.
 services:
   - type: web
     name: dryfruit-wholesale-api
     runtime: node
     region: singapore
-    plan: starter
+    plan: free
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/v1/health
-    disk:
-      name: uploads
-      mountPath: /var/data
-      sizeGB: 5
     envVars:
       - key: NODE_ENV
         value: production
-      - key: UPLOADS_DIR
-        value: /var/data/uploads
       - key: JWT_SECRET
         generateValue: true
       # Secrets and per-environment values are entered in the Render dashboard (never committed)
