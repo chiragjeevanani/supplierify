@@ -1,0 +1,598 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAdmin } from './AdminContext';
+import { useAuth } from './AuthContext';
+import { cartApi, settingsApi } from '../utils/api';
+import { resolveProductImage } from '../utils/productImage';
+import { useStoreRules, getMinQty } from '../hooks/useStoreRules';
+
+const CartContext = createContext();
+
+const getOrCreateGuestId = () => {
+  try {
+    let gid = localStorage.getItem('wholesale_guest_id');
+    if (!gid) {
+      gid = 'guest_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now().toString(36);
+      localStorage.setItem('wholesale_guest_id', gid);
+    }
+    return gid;
+  } catch {
+    return 'guest_' + Date.now();
+  }
+};
+
+export function CartProvider({ children }) {
+  const { coupons, settings, products } = useAdmin();
+  const { token, isAuthenticated } = useAuth();
+  const [liveSettings, setLiveSettings] = useState(null);
+  const [guestId] = useState(getOrCreateGuestId);
+  const rules = useStoreRules();
+
+  useEffect(() => {
+    let isMounted = true;
+    settingsApi.getPublicSettings()
+      .then(res => {
+        if (isMounted && res?.data?.settings) {
+          setLiveSettings(res.data.settings);
+        }
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
+  // 1. Clean cart initialization - starts EMPTY without any hardcoded dummy items
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('wholesale_cart');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  });
+
+  // 2. Coupon state - starts clean without dummy coupon
+  const [appliedCoupon, setAppliedCoupon] = useState(() => {
+    try {
+      const saved = localStorage.getItem('wholesale_coupon');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  });
+
+  const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [cartToast, setCartToast] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Sync state with localStorage cache
+  useEffect(() => {
+    try {
+      localStorage.setItem('wholesale_cart', JSON.stringify(cartItems));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [cartItems]);
+
+  useEffect(() => {
+    try {
+      if (appliedCoupon) {
+        localStorage.setItem('wholesale_coupon', JSON.stringify(appliedCoupon));
+      } else {
+        localStorage.removeItem('wholesale_coupon');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [appliedCoupon]);
+
+  // Fetch or sync authoritative cart from backend MongoDB on mount / login
+  const refreshCartFromBackend = useCallback(async () => {
+    setIsSyncing(true);
+    try {
+      const res = await cartApi.getCart(guestId);
+      if (res && res.data && res.data.cart) {
+        const serverCart = res.data.cart;
+        if (Array.isArray(serverCart.items) && serverCart.items.length > 0) {
+          setCartItems(serverCart.items);
+          if (serverCart.appliedCoupon) {
+            setAppliedCoupon(serverCart.appliedCoupon);
+          }
+        } else {
+          // If server cart is empty but local has items, sync them up to backend
+          const localSaved = localStorage.getItem('wholesale_cart');
+          if (localSaved) {
+            const parsed = JSON.parse(localSaved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              if (isAuthenticated) {
+                const syncRes = await cartApi.syncCart(parsed, guestId);
+                if (syncRes?.data?.cart?.items) {
+                  setCartItems(syncRes.data.cart.items);
+                  return;
+                }
+              }
+              setCartItems(parsed);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[CartContext] Could not fetch cart from backend, using local state:', err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [guestId, isAuthenticated]);
+
+  useEffect(() => {
+    refreshCartFromBackend();
+  }, [refreshCartFromBackend]);
+
+  // After login, merge guest / local cart into the authenticated user cart
+  useEffect(() => {
+    if (!token || !isAuthenticated) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        let localItems = cartItems;
+        if (!localItems?.length) {
+          const saved = localStorage.getItem('wholesale_cart');
+          localItems = saved ? JSON.parse(saved) : [];
+        }
+        if (Array.isArray(localItems) && localItems.length > 0) {
+          await cartApi.syncCart(localItems, guestId);
+        } else {
+          await cartApi.getCart(guestId);
+        }
+        if (!cancelled) await refreshCartFromBackend();
+      } catch (err) {
+        console.warn('[CartContext] Login cart merge note:', err.message);
+      }
+    })();
+
+    return () => { cancelled = true; };
+    // Only re-run when auth token appears / changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, isAuthenticated, guestId]);
+
+  const hideCartToast = () => {
+    setCartToast(null);
+  };
+
+  // ---- Stock limits (a product can only be added up to its available stock) ----
+  const [stockNotice, setStockNotice] = useState(null);
+  const stockNoticeTimer = React.useRef(null);
+
+  const showStockNotice = (message) => {
+    setStockNotice({ message, id: Date.now() });
+    if (stockNoticeTimer.current) clearTimeout(stockNoticeTimer.current);
+    stockNoticeTimer.current = setTimeout(() => setStockNotice(null), 4000);
+  };
+  const hideStockNotice = () => setStockNotice(null);
+
+  /** Available stock for a product, or null when unknown (the server still enforces it). */
+  const getStockLimit = (productId) => {
+    const key = String(productId || '').toLowerCase();
+    const p = (products || []).find(
+      (x) => String(x._id || x.id || '').toLowerCase() === key || String(x.slug || '').toLowerCase() === key
+    );
+    if (!p || typeof p.stockCount !== 'number') return null;
+    return p.inStock === false ? 0 : Math.max(0, p.stockCount);
+  };
+
+  const findCatalogProduct = (productId) => {
+    const key = String(productId || '').toLowerCase();
+    return (products || []).find(
+      (x) => String(x._id || x.id || '').toLowerCase() === key || String(x.slug || '').toLowerCase() === key
+    );
+  };
+
+  const getCartQtyForProduct = (productId) =>
+    cartItems
+      .filter((it) => String(it.productId || it.id || it._id) === String(productId))
+      .reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+
+  /** Units of this product that can still be added (Infinity when stock is unknown). */
+  const getRemainingStock = (productId) => {
+    const limit = getStockLimit(productId);
+    return limit === null ? Infinity : Math.max(0, limit - getCartQtyForProduct(productId));
+  };
+
+  /** If the server rejected a change because of stock, tell the user and re-sync the real cart. */
+  const handleStockRejection = (err) => {
+    if (/stock|available|minimum/i.test(err?.message || '')) {
+      showStockNotice(err.message);
+      refreshCartFromBackend();
+      return true;
+    }
+    return false;
+  };
+
+  /**
+   * Add to Cart from any section (Homepage bestsellers, Shop, Details, Wishlist)
+   * Standardizes product ID, weight, image and price snapshot
+   */
+  const addToCart = async (product, weight = '1 kg', qty = 1, openDrawer = false) => {
+    if (!product) return;
+
+    const prodId = (product._id || product.id || product.slug)?.toString();
+    const cleanWeight = weight || product.weight || '1 kg';
+    let cleanQty = Math.max(1, Number(qty) || 1);
+
+    // Wholesale minimum: the cart line for this product must reach the minimum kg
+    const minQty = getMinQty(product, rules);
+    const alreadyInCart = getCartQtyForProduct(prodId);
+    if (alreadyInCart + cleanQty < minQty) {
+      cleanQty = minQty - alreadyInCart;
+      showStockNotice(`Minimum order for ${product.name || 'this product'} is ${minQty} kg. Quantity set to ${minQty} kg.`);
+    }
+
+    // Stock guard: never add more than what is available
+    const stockLimit = getStockLimit(prodId);
+    if (stockLimit !== null) {
+      const remaining = Math.max(0, stockLimit - getCartQtyForProduct(prodId));
+      if (stockLimit <= 0) {
+        showStockNotice(`${product.name || 'This product'} is out of stock.`);
+        return false;
+      }
+      if (remaining <= 0) {
+        showStockNotice(`You already have all ${stockLimit} kg available in your cart.`);
+        return false;
+      }
+      if (cleanQty > remaining) {
+        showStockNotice(`Only ${stockLimit} kg available. Added ${remaining} kg.`);
+        cleanQty = remaining;
+      }
+    }
+
+    let itemPrice = Number(product.price || 0);
+    let itemOldPrice = Number(product.oldPrice || 0);
+
+    if (product.weightOptions && Array.isArray(product.weightOptions)) {
+      const match = product.weightOptions.find(w => w.weight === cleanWeight);
+      if (match) {
+        itemPrice = Number(match.price || itemPrice);
+        itemOldPrice = Number(match.oldPrice || itemOldPrice);
+      }
+    }
+
+    const resolvedImg = resolveProductImage(product);
+
+    // 1. Optimistic UI update
+    setCartItems(prev => {
+      const existingIndex = prev.findIndex(item => {
+        const itId = (item.productId || item.id || item._id)?.toString();
+        return itId === prodId && item.weight === cleanWeight;
+      });
+
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          qty: updated[existingIndex].qty + cleanQty
+        };
+        return updated;
+      } else {
+        return [
+          ...prev,
+          {
+            id: prodId,
+            productId: prodId,
+            name: product.name,
+            weight: cleanWeight,
+            price: itemPrice,
+            oldPrice: itemOldPrice,
+            qty: cleanQty,
+            image: resolvedImg
+          }
+        ];
+      }
+    });
+
+    setCartToast({
+      product,
+      weight: cleanWeight,
+      qty: cleanQty,
+      price: itemPrice
+    });
+
+    if (openDrawer) {
+      setIsDrawerOpen(true);
+    }
+
+    // 2. Persist permanently to MongoDB Backend
+    try {
+      const res = await cartApi.addItem(
+        { productId: prodId, weight: cleanWeight, qty: cleanQty },
+        guestId
+      );
+      if (res && res.data && res.data.cart) {
+        if (Array.isArray(res.data.cart.items)) setCartItems(res.data.cart.items);
+        if (res.data.cart.appliedCoupon !== undefined) setAppliedCoupon(res.data.cart.appliedCoupon);
+      }
+    } catch (err) {
+      console.warn('[CartContext] Backend cart add sync note:', err.message);
+      if (handleStockRejection(err)) return false;
+    }
+    return true;
+  };
+
+  /**
+   * Remove item from cart
+   */
+  const removeFromCart = async (id, weight) => {
+    const targetId = id?.toString();
+
+    // 1. Optimistic update
+    setCartItems(prev => prev.filter(item => {
+      const itId = (item.productId || item.id || item._id)?.toString();
+      return !(itId === targetId && item.weight === weight);
+    }));
+
+    // 2. Persist to backend
+    try {
+      const res = await cartApi.removeItem({ productId: targetId, weight }, guestId);
+      if (res && res.data && res.data.cart) {
+        if (Array.isArray(res.data.cart.items)) setCartItems(res.data.cart.items);
+        if (res.data.cart.appliedCoupon !== undefined) setAppliedCoupon(res.data.cart.appliedCoupon);
+      }
+    } catch (err) {
+      console.warn('[CartContext] Backend cart remove sync note:', err.message);
+    }
+  };
+
+  /**
+   * Update item quantity (step up/down)
+   */
+  const updateQty = async (id, weight, delta) => {
+    const targetId = id?.toString();
+
+    // Wholesale minimum: quantity may not drop below the minimum (use remove to take the item out)
+    if (delta < 0) {
+      const line = cartItems.find(
+        (it) => (it.productId || it.id || it._id)?.toString() === targetId && it.weight === weight
+      );
+      if (line) {
+        const minQty = getMinQty(findCatalogProduct(targetId) || line, rules);
+        if ((Number(line.qty) || 0) + delta < minQty) {
+          showStockNotice(`Minimum order is ${minQty} kg. Remove the item to take it out of your cart.`);
+          return;
+        }
+      }
+    }
+
+    // Stock guard: increases may not go past available stock
+    if (delta > 0) {
+      const remaining = getRemainingStock(targetId);
+      if (remaining < delta) {
+        const limit = getStockLimit(targetId);
+        showStockNotice(limit !== null && limit <= 0 ? 'This product is out of stock.' : `Only ${limit} kg available in stock.`);
+        return;
+      }
+    }
+
+    // 1. Optimistic update
+    setCartItems(prev => {
+      return prev.map(item => {
+        const itId = (item.productId || item.id || item._id)?.toString();
+        if (itId === targetId && item.weight === weight) {
+          const newQty = item.qty + delta;
+          return newQty > 0 ? { ...item, qty: newQty } : null;
+        }
+        return item;
+      }).filter(Boolean);
+    });
+
+    // 2. Persist to backend
+    try {
+      const res = await cartApi.updateItemQty({ productId: targetId, weight, delta }, guestId);
+      if (res && res.data && res.data.cart) {
+        if (Array.isArray(res.data.cart.items)) setCartItems(res.data.cart.items);
+        if (res.data.cart.appliedCoupon !== undefined) setAppliedCoupon(res.data.cart.appliedCoupon);
+      }
+    } catch (err) {
+      console.warn('[CartContext] Backend cart updateQty sync note:', err.message);
+      handleStockRejection(err);
+    }
+  };
+
+  /**
+   * Set an exact quantity (kg) for a cart line, e.g. from the quantity input on the cart page
+   */
+  const setItemQty = async (id, weight, qty) => {
+    const targetId = id?.toString();
+    const next = Math.floor(Number(qty));
+    if (!Number.isFinite(next)) return;
+
+    const line = cartItems.find(
+      (it) => (it.productId || it.id || it._id)?.toString() === targetId && it.weight === weight
+    );
+    if (!line) return;
+
+    // Never below the minimum: anything lower snaps up to it
+    const minQty = getMinQty(findCatalogProduct(targetId) || line, rules);
+    const finalQty = Math.max(next, minQty);
+    const limit = getStockLimit(targetId);
+    if (limit !== null && finalQty > limit) {
+      showStockNotice(`Only ${limit} kg available in stock.`);
+      return;
+    }
+
+    setCartItems((prev) =>
+      prev.map((item) => {
+        const itId = (item.productId || item.id || item._id)?.toString();
+        return itId === targetId && item.weight === weight ? { ...item, qty: finalQty } : item;
+      })
+    );
+
+    try {
+      const res = await cartApi.updateItemQty({ productId: targetId, weight, qty: finalQty }, guestId);
+      if (res && res.data && res.data.cart) {
+        if (Array.isArray(res.data.cart.items)) setCartItems(res.data.cart.items);
+        if (res.data.cart.appliedCoupon !== undefined) setAppliedCoupon(res.data.cart.appliedCoupon);
+      }
+    } catch (err) {
+      console.warn('[CartContext] Backend cart setQty sync note:', err.message);
+      handleStockRejection(err);
+    }
+  };
+
+  /**
+   * Clear entire cart (Called after successful checkout/order placement or user reset)
+   */
+  const clearCart = async () => {
+    setCartItems([]);
+    setAppliedCoupon(null);
+    try {
+      localStorage.removeItem('wholesale_cart');
+      localStorage.removeItem('wholesale_coupon');
+      await cartApi.clearCart(guestId);
+    } catch (err) {
+      console.warn('[CartContext] Backend clearCart sync note:', err.message);
+    }
+  };
+
+  // Backend-Driven Authoritative Coupon Application
+  const applyCoupon = async (codeStr) => {
+    const cleanCode = (codeStr || '').trim().toUpperCase();
+    if (!cleanCode) {
+      const msg = 'Please enter a coupon code';
+      setCouponError(msg);
+      setCouponSuccess('');
+      return { success: false, message: msg };
+    }
+
+    if (cartItems.length === 0) {
+      const msg = 'Cart is empty. Add items before applying a coupon.';
+      setCouponError(msg);
+      setCouponSuccess('');
+      return { success: false, message: msg };
+    }
+
+    try {
+      const res = await cartApi.applyCoupon(cleanCode, guestId);
+      if (res && res.data && res.data.cart) {
+        const cart = res.data.cart;
+        setAppliedCoupon(cart.appliedCoupon);
+        if (Array.isArray(cart.items) && cart.items.length > 0) {
+          setCartItems(cart.items);
+        }
+        const successMsg = res.message || `Coupon ${cart.appliedCoupon?.code || cleanCode} applied successfully!`;
+        setCouponSuccess(successMsg);
+        setCouponError('');
+        return { success: true, message: successMsg };
+      }
+      return { success: false, message: res?.message || 'Failed to apply coupon' };
+    } catch (err) {
+      const errMsg = err.message || 'Invalid or expired coupon code';
+      setCouponError(errMsg);
+      setCouponSuccess('');
+      return { success: false, message: errMsg };
+    }
+  };
+
+  const removeCoupon = async () => {
+    try {
+      const res = await cartApi.removeCoupon(guestId);
+      if (res && res.data && res.data.cart) {
+        setAppliedCoupon(res.data.cart.appliedCoupon || null);
+        if (Array.isArray(res.data.cart.items)) {
+          setCartItems(res.data.cart.items);
+        }
+      } else {
+        setAppliedCoupon(null);
+      }
+    } catch (e) {
+      console.warn('Remove coupon API note:', e.message);
+      setAppliedCoupon(null);
+    }
+    setCouponError('');
+    setCouponSuccess('');
+  };
+
+  // Calculations with dynamic store settings
+  // itemCount = total kg in the cart, lineCount = number of different products (used for the cart badge)
+  const itemCount = cartItems.reduce((acc, item) => acc + (Number(item.qty) || 0), 0);
+  const lineCount = cartItems.length;
+  const subtotal = cartItems.reduce((acc, item) => acc + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
+
+  // Always recalculate from the coupon rule on the CURRENT subtotal (same formula as the server),
+  // so changing quantities never leaves a stale discount that differs from what is charged.
+  let discountAmount = 0;
+  if (appliedCoupon && appliedCoupon.code) {
+    const minOrder = Number(appliedCoupon.minOrderValue) || 0;
+    const isPercent = appliedCoupon.discountType === 'PERCENTAGE' || (!appliedCoupon.discountType && appliedCoupon.discountPercent);
+    const isFixed = appliedCoupon.discountType === 'FIXED' || (!appliedCoupon.discountType && appliedCoupon.flatDiscount);
+
+    if (minOrder > 0 && subtotal < minOrder) {
+      discountAmount = 0;
+    } else if (isPercent) {
+      const pct = Number(appliedCoupon.discountValue || appliedCoupon.discountPercent || 0);
+      discountAmount = Math.round((subtotal * pct) / 100);
+      if (appliedCoupon.maxDiscount > 0) {
+        discountAmount = Math.min(discountAmount, appliedCoupon.maxDiscount);
+      }
+    } else if (isFixed) {
+      discountAmount = Math.min(Number(appliedCoupon.discountValue || appliedCoupon.flatDiscount || 0), subtotal);
+    } else if (typeof appliedCoupon.discountAmount === 'number') {
+      // Legacy shape without rule fields — fall back to the server-supplied amount
+      discountAmount = appliedCoupon.discountAmount;
+    }
+    discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
+  }
+
+  const effectiveSettings = liveSettings || settings;
+  const freeShippingMin = effectiveSettings?.freeDeliveryThreshold ?? 499;
+  const gstRate = (effectiveSettings?.gstRate ?? 5) / 100;
+
+  // Shipping is calculated live from Shiprocket at checkout (pincode + payment method)
+  const deliveryFee = null;
+  const taxableAmount = Math.max(0, subtotal - discountAmount);
+  const tax = Math.round(taxableAmount * gstRate);
+  const total = Math.max(0, taxableAmount + tax);
+
+  return (
+    <CartContext.Provider value={{
+      cartItems,
+      itemCount,
+      lineCount,
+      minOrderQtyKg: rules.minOrderQtyKg,
+      whatsappNumber: rules.whatsappNumber,
+      storeName: rules.storeName,
+      subtotal,
+      discountAmount,
+      deliveryFee,
+      tax,
+      total,
+      appliedCoupon,
+      couponError,
+      couponSuccess,
+      isDrawerOpen,
+      setIsDrawerOpen,
+      cartToast,
+      hideCartToast,
+      addToCart,
+      stockNotice,
+      hideStockNotice,
+      getStockLimit,
+      getRemainingStock,
+      removeFromCart,
+      updateQty,
+      setItemQty,
+      clearCart,
+      applyCoupon,
+      removeCoupon,
+      freeShippingMin,
+      shippingSettings: effectiveSettings,
+      isSyncing,
+      refreshCartFromBackend
+    }}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export const useCart = () => useContext(CartContext);

@@ -1,0 +1,260 @@
+@import "tailwindcss" source(none);
+@source "./";
+@source "../index.html";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Poppins", system-ui, -apple-system, sans-serif;
+
+  --color-forest-950: var(--brand-primary-dark);
+  --color-forest-900: var(--brand-primary);
+  --color-forest-850: var(--brand-primary-light);
+  --color-forest-800: var(--brand-primary-light);
+  --color-forest-700: var(--brand-primary-lighter);
+  --color-forest-600: var(--brand-primary-lighter);
+
+  --color-gold-300: var(--brand-accent-lighter);
+  --color-gold-400: var(--brand-accent-light);
+  --color-gold-500: var(--brand-accent);
+  --color-gold-600: var(--brand-accent-dark);
+  --color-gold-700: var(--brand-accent-darker);
+
+  --color-ivory-50: var(--brand-surface);
+  --color-ivory-100: var(--brand-bg);
+  --color-ivory-200: var(--brand-border-strong);
+  --color-ivory-300: var(--brand-border-strong);
+
+  --color-dark-900: var(--brand-text);
+  --color-dark-800: #273028;
+  --color-muted-500: #6B716B;
+  --color-muted-400: #8E958E;
+}
+
+
+/* ---- Theme variables ----
+   The four base colours are changed from Admin > Settings > Branding (applied by utils/theme.js).
+   Every other shade is derived from them so the whole site re-colours consistently. */
+:root {
+  --brand-primary: #0E2A1B;
+  --brand-accent: #D4AF37;
+  --brand-bg: #F7F3E9;
+  --brand-text: #182019;
+
+  --brand-primary-dark: color-mix(in srgb, var(--brand-primary) 72%, black);
+  --brand-primary-hover: color-mix(in srgb, var(--brand-primary) 93%, white);
+  --brand-primary-light: color-mix(in srgb, var(--brand-primary) 94%, white);
+  --brand-primary-lighter: color-mix(in srgb, var(--brand-primary) 84%, white);
+
+  --brand-accent-light: color-mix(in srgb, var(--brand-accent) 78%, white);
+  --brand-accent-lighter: color-mix(in srgb, var(--brand-accent) 42%, white);
+  --brand-accent-dark: color-mix(in srgb, var(--brand-accent) 82%, black);
+  --brand-accent-darker: color-mix(in srgb, var(--brand-accent) 52%, black);
+
+  --brand-surface: color-mix(in srgb, var(--brand-bg) 62%, white);
+  --brand-border: color-mix(in srgb, var(--brand-bg) 92%, black);
+  --brand-border-strong: color-mix(in srgb, var(--brand-bg) 86%, black);
+}
+
+@layer base {
+  * {
+    border-color: color-mix(in srgb, var(--brand-accent) 15%, transparent);
+  }
+  
+  body {
+    font-family: var(--font-sans);
+    color: var(--brand-text);
+    background-color: var(--brand-bg);
+  }
+
+  h1, h2, h3, h4, .font-editorial {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Ensure currency prices render with tabular numbers and sans-serif */
+.price, [data-price], .font-price {
+  font-family: var(--font-sans) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom smooth scrolling and luxury aesthetics */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--brand-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brand-primary-lighter);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-accent);
+}
+
+/* Glass & Glow effects */
+.glass-dark {
+  background: rgba(14, 42, 27, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+}
+
+.glass-ivory {
+  background: rgba(247, 243, 233, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, var(--brand-accent-lighter) 0%, var(--brand-accent) 50%, var(--brand-accent-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-gradient-btn {
+  background: linear-gradient(135deg, var(--brand-accent-light) 0%, var(--brand-accent) 100%);
+  color: var(--brand-primary);
+  transition: all 0.3s ease;
+}
+.gold-gradient-btn:hover {
+  background: linear-gradient(135deg, var(--brand-accent-lighter) 0%, var(--brand-accent-light) 100%);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+  transform: translateY(-1px);
+}
+
+.dark-gradient-btn {
+  background: linear-gradient(135deg, var(--brand-primary-light) 0%, var(--brand-primary) 100%);
+  color: var(--brand-bg);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  transition: all 0.3s ease;
+}
+.dark-gradient-btn:hover {
+  background: linear-gradient(135deg, var(--brand-primary-lighter) 0%, var(--brand-primary-light) 100%);
+  border-color: var(--brand-accent);
+  color: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(14, 42, 27, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Subtle floating animations */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulseGold {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: floatGentle 4s ease-in-out infinite;
+}
+
+.animate-pulse-gold {
+  animation: pulseGold 3s ease-in-out infinite;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shrinkWidth {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes flowDash {
+  0% {
+    stroke-dashoffset: 20;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes arrowBounce {
+  0%, 100% {
+    transform: translateX(0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+}
+
+.animate-flow-dash {
+  animation: flowDash 1.2s linear infinite;
+}
+
+.animate-arrow-bounce {
+  animation: arrowBounce 1.5s ease-in-out infinite;
+}
+
+/* Mobile-only rules (<= 767px) */
+@media (max-width: 767px) {
+  footer {
+    display: none !important;
+  }
+}
+
+/* Prevent pinch / double-tap zoom on touch devices (bug #55) */
+html, body {
+  touch-action: pan-x pan-y;
+}

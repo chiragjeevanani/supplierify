@@ -1,0 +1,391 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { 
+  CheckCircle2, Phone, MapPin, 
+  ChevronRight, MessageSquare, MessageCircle, FileText, Wifi
+} from 'lucide-react';
+
+const ORDER_POLL_INTERVAL_MS = 15_000; // Re-fetch order status every 15 seconds
+
+import CancellationNotice from '../components/CancellationNotice';
+import RateReviewButton from '../components/RateReviewButton';
+import InvoicePreviewModal from '../components/InvoicePreviewModal';
+
+import { useAuth, formatOrder, getRealRider } from '../../../context/AuthContext';
+import { orderApi } from '../../../utils/api';
+
+export default function OrderTrackingPage() {
+  const { orderId } = useParams();
+  const { orders, cancelOrder } = useAuth();
+  const [liveOrder, setLiveOrder] = useState(null);
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [isInvoicePreviewOpen, setIsInvoicePreviewOpen] = useState(false);
+  const pollRef = useRef(null);
+
+  // Fetch once on mount, then poll every 15s for status updates
+  const fetchOrder = async (id, { silent = false } = {}) => {
+    if (!silent) setIsLoading(true);
+    try {
+      const res = await orderApi.getOrderById(id);
+      if (res?.data?.order) {
+        setLiveOrder(formatOrder(res.data.order));
+        setIsLiveConnected(true);
+        setLoadError('');
+      } else if (!silent) {
+        setLoadError('Order not found.');
+      }
+    } catch (err) {
+      console.warn('[OrderTrackingPage] Backend order fetch note:', err.message);
+      setIsLiveConnected(false);
+      if (!silent) {
+        setLoadError(err.message || 'Could not load this order.');
+      }
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!orderId) {
+      setIsLoading(false);
+      setLoadError('Missing order id.');
+      return;
+    }
+
+    setLiveOrder(null);
+    setLoadError('');
+    fetchOrder(orderId);
+
+    pollRef.current = setInterval(() => fetchOrder(orderId, { silent: true }), ORDER_POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [orderId]);
+
+  // Only real order from API or the user's own order list — never demo data
+  const order =
+    liveOrder ||
+    orders.find((o) => o.id === orderId || o.orderNumber === orderId) ||
+    null;
+
+  // Delivery partner info is real data only: shown while out for delivery, never placeholders
+  const isOutForDelivery = order?.status === 'Out for Delivery';
+  const rider = getRealRider(order?.rider);
+
+  // Contact links for the real rider (no in-app chat exists — SMS / WhatsApp open the customer's own apps)
+  const riderDigits = rider?.phone ? [...String(rider.phone)].filter((ch) => ch >= '0' && ch <= '9').join('') : '';
+  const riderWhatsApp = riderDigits.length === 10 ? '91' + riderDigits : riderDigits;
+  const riderMessage = 'Hi' + (rider?.name ? ' ' + rider.name : '') + ', this is regarding my Dry Fruit Wholesale order #' + (order?.id || '') + '.';
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  if (isLoading && !order) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[color:var(--brand-bg)]">
+        <main className="flex-1 flex items-center justify-center p-8 text-sm text-stone-500">
+          Loading order…
+        </main>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[color:var(--brand-bg)]">
+        <main className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
+          <p className="text-sm font-semibold text-[color:var(--brand-primary)]">
+            {loadError || 'Order not found'}
+          </p>
+          <Link
+            to="/account?tab=orders"
+            className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-accent)] hover:underline"
+          >
+            Back to My Orders
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col justify-between bg-[color:var(--brand-bg)] text-[color:var(--brand-text)] selection:bg-[color:var(--brand-accent)] selection:text-[color:var(--brand-primary)] font-sans">
+      {/* Header must be a direct child of the page wrapper so its sticky positioning spans the whole page */}
+
+      <main className="flex-1 py-3 sm:py-6 md:py-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full pb-28 md:pb-12">
+        
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-[10.5px] sm:text-xs text-stone-500 mb-3 sm:mb-6">
+          <Link to="/" className="hover:text-[color:var(--brand-primary)] transition-colors">Home</Link>
+          <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <Link to="/account?tab=orders" className="hover:text-[color:var(--brand-primary)] transition-colors">My Orders</Link>
+          <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <span className="text-[color:var(--brand-primary)] font-bold">Track Order #{order.id}</span>
+        </nav>
+
+        {/* Tracking Card Container */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 lg:p-10 border border-[color:var(--brand-border)] shadow-xs space-y-5 sm:space-y-8">
+          
+          <CancellationNotice order={order} />
+
+          {/* Header Info */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-stone-200 pb-3.5 sm:pb-6">
+            <div>
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <h1 className="font-serif text-lg sm:text-2xl lg:text-3xl font-bold text-[color:var(--brand-primary)]">
+                  Order #{order.id}
+                </h1>
+                <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                  order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800'
+                  : order.status === 'Cancelled' ? 'bg-rose-100 text-rose-800'
+                  : order.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800'
+                  : order.status === 'Accepted' ? 'bg-teal-100 text-teal-800'
+                  : order.status === 'Packed' ? 'bg-cyan-100 text-cyan-800'
+                  : order.status === 'Ready for Dispatch' ? 'bg-purple-100 text-purple-800'
+                  : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {order.status}
+                </span>
+                {/* Live polling indicator */}
+                {isLiveConnected && (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    <Wifi className="w-2.5 h-2.5 animate-pulse" />
+                    Live
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] sm:text-xs text-stone-500 mt-0.5 sm:mt-1">
+                Placed on {order.placedAt || order.date}
+                {order.expectedDelivery ? ` • ${order.expectedDelivery.label}: ${order.expectedDelivery.value}` : ''}
+              </p>
+              {['Order Received', 'Accepted', 'Packed', 'Confirmed'].includes(order.status) && (
+                <button
+                  onClick={async () => {
+                    const reason = window.prompt("Enter reason for cancelling your order:", "Changed my mind");
+                    if (reason === null) return;
+                    try {
+                      await cancelOrder(order.id, reason);
+                      alert("Your order has been cancelled successfully.");
+                      if (orderId) {
+                        orderApi.getOrderById(orderId).then(res => {
+                          if (res?.data?.order) setLiveOrder(formatOrder(res.data.order));
+                        });
+                      }
+                    } catch (err) {
+                      alert(`Could not cancel order: ${err.message || 'Error'}`);
+                    }
+                  }}
+                  className="inline-block mt-1.5 text-xs font-semibold text-rose-600 hover:text-rose-800 underline transition-colors"
+                >
+                  Cancel this order
+                </button>
+              )}
+            </div>
+
+            <div className="text-left sm:text-right pt-1 sm:pt-0 border-t sm:border-t-0 border-stone-100 flex flex-col sm:items-end gap-1.5">
+              <div>
+                <span className="text-[10.5px] sm:text-xs text-stone-500 block">Total Paid Amount</span>
+                <p className="font-sans text-base sm:text-xl font-bold text-[color:var(--brand-primary)]">₹{order.total}</p>
+              </div>
+              <button
+                onClick={() => setIsInvoicePreviewOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-300 text-stone-700 hover:text-[color:var(--brand-primary)] hover:bg-stone-50 text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+                title="Preview and download official tax invoice"
+              >
+                <FileText className="w-3.5 h-3.5 text-[color:var(--brand-accent)]" />
+                <span>Invoice Preview</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Stepper Timeline (Horizontal on Desktop, Vertical on Mobile) */}
+          <div className="py-2 sm:py-4">
+            <div className="relative">
+              {/* Timeline Track bar */}
+              <div className="hidden md:block absolute top-1/2 left-6 right-6 h-1 bg-stone-200 -translate-y-1/2 z-0" />
+
+              <div className={`grid grid-cols-1 ${(order.timeline || []).length > 6 ? 'md:grid-cols-7' : 'md:grid-cols-6'} gap-3 md:gap-2 relative z-10`}>
+                {(order.timeline || []).map((step, idx) => {
+                  const isDone = step.done;
+                  const isCurrent = step.current;
+
+                  return (
+                    <div key={idx} className="flex md:flex-col items-center gap-3 md:gap-2 text-left md:text-center">
+                      <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm sm:shadow-md shrink-0 transition-all ${
+                        isCurrent 
+                          ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] ring-2 sm:ring-4 ring-[color:var(--brand-accent)]/30 animate-pulse'
+                          : isDone 
+                          ? 'bg-emerald-600 text-white' 
+                          : 'bg-stone-100 text-stone-400 border border-stone-300'
+                      }`}>
+                        {isDone ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : idx + 1}
+                      </div>
+
+                      <div>
+                        <h4 className={`text-xs sm:text-sm font-bold ${isCurrent ? 'text-[color:var(--brand-primary)]' : isDone ? 'text-stone-800' : 'text-stone-400'}`}>
+                          {step.status || step.name}
+                        </h4>
+                        <p className="text-[9.5px] sm:text-[10px] text-stone-400 mt-0.5">{step.time || (isDone ? '' : 'Pending')}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Partner Details */}
+          <div className="pt-3 sm:pt-4 border-t border-stone-200">
+            <div className="max-w-xl bg-[color:var(--brand-surface)] rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-[color:var(--brand-border)] flex flex-col justify-between space-y-3.5 sm:space-y-6">
+              <div>
+                <span className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-primary-lighter)]">
+                  ASSIGNED COURIER / RIDER
+                </span>
+                <h3 className="font-serif text-base sm:text-lg font-bold text-[color:var(--brand-primary)] mt-0.5 sm:mt-1 mb-2.5 sm:mb-4">
+                  Delivery Partner
+                </h3>
+
+                {/* Rider details — real data only, shown while the order is out for delivery */}
+                {isOutForDelivery && rider && (
+                  <div className="flex items-center gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-stone-200 shadow-2xs mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)] font-serif font-bold text-sm sm:text-lg flex items-center justify-center border border-[color:var(--brand-accent)]/40 shrink-0">
+                      {(rider.name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-serif text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] truncate">{rider.name || 'Delivery partner'}</h4>
+                      {rider.phone && (
+                        <p className="text-[11px] sm:text-xs text-stone-500">{rider.phone}</p>
+                      )}
+                      {Number.isFinite(Number(rider.rating)) && Number(rider.rating) > 0 && (
+                        <p className="text-[11px] sm:text-xs text-stone-500">★ {Number(rider.rating).toFixed(1)}</p>
+                      )}
+                      {rider.vehicle && (
+                        <p className="text-[10.5px] sm:text-[11px] text-stone-400 mt-0.5">Vehicle: <strong className="text-stone-700">{rider.vehicle}</strong></p>
+                      )}
+                      {rider.eta && (
+                        <p className="text-[10.5px] sm:text-[11px] text-stone-400 mt-0.5">ETA: <strong className="text-stone-700">{rider.eta}</strong></p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {isOutForDelivery && !rider && (
+                  <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-stone-200 shadow-2xs mb-3 text-xs text-stone-600">
+                    Your order is out for delivery. Rider details will appear here as soon as they are assigned.
+                  </div>
+                )}
+
+                {/* Delivery Address Target */}
+                <div className="space-y-0.5 text-xs text-stone-600 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-stone-200">
+                  <p className="font-bold text-[color:var(--brand-primary)] flex items-center gap-1.5 mb-0.5">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <span>Delivering to: {order.address?.type || 'Home'}</span>
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-stone-600">{[order.address?.street, order.address?.city].filter(Boolean).join(', ')}{order.address?.pincode ? ` - ${order.address.pincode}` : ''}</p>
+                </div>
+
+                {/* Shipment tracking (from backend / Shiprocket — no direct Shiprocket calls) */}
+                {(order.awbNumber || order.courierName || order.shiprocket?.awbCode) && (
+                  <div className="space-y-1 text-xs text-stone-600 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-stone-200 mt-3">
+                    <p className="font-bold text-[color:var(--brand-primary)] text-[10px] uppercase tracking-wider mb-1">Shipment Tracking</p>
+                    <p>Status: <strong className="text-stone-900">{order.status}</strong>
+                      {order.shiprocket?.status ? ` · ${order.shiprocket.status}` : ''}
+                    </p>
+                    {(order.courierName || order.shiprocket?.courierName) && (
+                      <p>Courier: <strong className="text-stone-900">{order.shiprocket?.courierName || order.courierName}</strong></p>
+                    )}
+                    {(order.awbNumber || order.shiprocket?.awbCode) && (
+                      <p>AWB: <strong className="text-stone-900 font-mono">{order.shiprocket?.awbCode || order.awbNumber}</strong></p>
+                    )}
+                    {(order.shiprocket?.trackingUrl || order.awbNumber || order.shiprocket?.awbCode) && (
+                      <a
+                        href={order.shiprocket?.trackingUrl || `https://shiprocket.co/tracking/${order.shiprocket?.awbCode || order.awbNumber}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex text-[color:var(--brand-primary)] font-bold underline mt-1"
+                      >
+                        Track package
+                      </a>
+                    )}
+                    {order.shiprocket?.isRto && (
+                      <p className="text-amber-800 font-semibold mt-1">Return to origin (RTO) update received</p>
+                    )}
+                    {order.expectedDelivery && (
+                      <p className="text-stone-500 mt-1">
+                        {order.expectedDelivery.label}: {order.expectedDelivery.value}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Contact Actions — real rider only */}
+              {isOutForDelivery && rider?.phone && (
+                <div className="grid grid-cols-3 gap-2 pt-1 sm:pt-2">
+                  <a
+                    href={`tel:${rider.phone}`}
+                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl bg-[color:var(--brand-primary)] text-white text-[10.5px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-[color:var(--brand-primary-light)] transition-colors shadow-2xs min-h-[38px] sm:min-h-[44px]"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-[color:var(--brand-accent)]" />
+                    <span>Call</span>
+                  </a>
+                  <a
+                    href={`sms:${rider.phone}?body=${encodeURIComponent(riderMessage)}`}
+                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border border-stone-300 bg-white text-stone-800 text-[10.5px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-stone-50 transition-colors min-h-[38px] sm:min-h-[44px]"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-[color:var(--brand-primary)]" />
+                    <span>Message</span>
+                  </a>
+                  <a
+                    href={`https://wa.me/${riderWhatsApp}?text=${encodeURIComponent(riderMessage)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 text-[10.5px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition-colors min-h-[38px] sm:min-h-[44px]"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* Bottom Items in this Order */}
+          <div className="pt-4 sm:pt-6 border-t border-stone-200">
+            <h3 className="font-serif text-sm sm:text-base font-bold text-[color:var(--brand-primary)] mb-3 sm:mb-4">
+              Items in this Package ({order.items?.length || 2})
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4">
+              {(order.items || []).map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)]">
+                  <img src={item.image} alt={item.name} className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl object-cover bg-white p-0.5 sm:p-1 border border-stone-200 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-serif text-xs font-bold text-[color:var(--brand-primary)] truncate">{item.name}</h4>
+                    <p className="text-[10px] sm:text-[11px] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                    <p className="text-[11px] sm:text-xs font-bold text-[color:var(--brand-primary)] mt-0.5">₹{item.price * item.qty}</p>
+                    <RateReviewButton order={order} item={item} className="mt-1.5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      {/* Invoice Preview & Download Modal */}
+      <InvoicePreviewModal
+        isOpen={isInvoicePreviewOpen}
+        onClose={() => setIsInvoicePreviewOpen(false)}
+        order={order}
+      />
+
+    </div>
+  );
+}

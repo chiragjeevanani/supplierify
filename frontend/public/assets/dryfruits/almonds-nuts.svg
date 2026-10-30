@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600" role="img" aria-label="Almonds &amp; Nuts">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6E9D2"/><stop offset="1" stop-color="#EBD3AC"/></linearGradient></defs>
+<rect width="600" height="600" fill="url(#g)"/>
+<ellipse cx="300" cy="300" rx="250" ry="150" fill="rgba(255,255,255,.35)"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(478.1 320.4) rotate(333) scale(1.65)" fill="#B07A45" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(187.0 333.8) rotate(73) scale(1.97)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(346.3 270.7) rotate(125) scale(2.24)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(202.7 319.7) rotate(232) scale(1.59)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(89.1 306.0) rotate(275) scale(1.84)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(127.6 198.6) rotate(250) scale(2.13)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(333.9 154.7) rotate(248) scale(1.83)" fill="#B07A45" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(519.1 303.2) rotate(295) scale(1.98)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(195.8 375.9) rotate(113) scale(1.54)" fill="#8A5A2B" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(475.0 297.3) rotate(135) scale(1.71)" fill="#8A5A2B" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(203.9 239.0) rotate(15) scale(2.03)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(294.5 200.8) rotate(96) scale(1.91)" fill="#B07A45" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(315.0 409.7) rotate(3) scale(1.79)" fill="#8A5A2B" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(323.0 332.1) rotate(99) scale(2.44)" fill="#B07A45" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<path d="M0,-34 C 24,-26 26,22 0,36 C -26,22 -24,-26 0,-34 Z" transform="translate(370.4 237.6) rotate(2) scale(1.75)" fill="#C99A66" stroke="rgba(0,0,0,.18)" stroke-width="1.2"/>
+<rect x="0" y="440" width="600" height="160" fill="rgba(255,255,255,.72)"/>
+<text x="300" y="470" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-weight="700" fill="#0E2A1B">Almonds &amp; Nuts</text>
+<text x="300" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" letter-spacing="2" fill="#8a6a2f">ALMONDS, WALNUTS, PISTACHIOS</text>
+</svg>

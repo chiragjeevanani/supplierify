@@ -1,0 +1,420 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import usePagination from '../../../hooks/usePagination';
+import AdminPagination from '../components/AdminPagination';
+import { Plus, Search, Edit2, Trash2, Flame, CheckCircle2, AlertCircle, Eye, RefreshCw, Image as ImageIcon } from 'lucide-react';
+
+import AdminSidebar from '../components/AdminSidebar';
+import AdminHeader from '../components/AdminHeader';
+import AddProductModal from '../components/AddProductModal';
+import ViewProductModal from '../components/ViewProductModal';
+import { useAdmin } from '../../../context/AdminContext';
+import { CATEGORIES } from '../../../data/categories';
+import { resolveProductImage } from '../../../utils/productImage';
+
+export default function AdminProducts() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { 
+    products, 
+    productsLoading, 
+    productsError, 
+    categories, 
+    refreshCategories, 
+    addProduct, 
+    updateProduct, 
+    deleteProduct, 
+    toggleProductStatus, 
+    refreshProducts 
+  } = useAdmin();
+
+  useEffect(() => {
+    if (refreshCategories) {
+      refreshCategories();
+    }
+  }, []);
+
+  const [activeStatusFilter, setActiveStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [viewingProduct, setViewingProduct] = useState(null);
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
+
+  const showFeedback = (type, message) => {
+    setFeedback({ type, message });
+    setTimeout(() => {
+      setFeedback({ type: '', message: '' });
+    }, 4500);
+  };
+
+  // Compute counts
+  const activeCount = (products || []).filter(p => p.inStock !== false).length;
+  const inactiveCount = (products || []).length - activeCount;
+
+  // Filtered Products
+  const filteredProducts = useMemo(() => {
+    return (products || []).filter(p => {
+      if (activeStatusFilter === 'active' && p.inStock === false) return false;
+      if (activeStatusFilter === 'inactive' && p.inStock !== false) return false;
+      if (selectedCategory !== 'all' && p.category !== selectedCategory) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return (p.name || '').toLowerCase().includes(q) || (p.flavor && p.flavor.toLowerCase().includes(q));
+      }
+      return true;
+    });
+  }, [products, activeStatusFilter, selectedCategory, searchQuery]);
+
+  // Pagination — back to page 1 whenever the search or filters change
+  const pagination = usePagination(filteredProducts, {
+    initialPageSize: 10,
+    resetKey: `${activeStatusFilter}|${selectedCategory}|${searchQuery}`
+  });
+
+  const handleEdit = (prod) => {
+    setEditingProduct(prod);
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveProduct = async (data) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct._id || editingProduct.id, data);
+        showFeedback('success', `"${data.name || editingProduct.name}" updated successfully! Changes are live on the store.`);
+      } else {
+        await addProduct(data);
+        showFeedback('success', `"${data.name}" added to catalog! ${data.isBestseller ? 'Automatically featured in Bestsellers.' : 'Live on user app.'}`);
+      }
+      setIsAddModalOpen(false);
+      setEditingProduct(null);
+    } catch (err) {
+      showFeedback('error', err.message || 'Failed to save product.');
+    }
+  };
+
+  const handleToggle = async (p) => {
+    const nextStatus = p.inStock === false;
+    try {
+      await toggleProductStatus(p._id || p.id);
+      showFeedback('success', `"${p.name}" is now ${nextStatus ? 'In Stock (Active)' : 'Out of Stock (Inactive)'}.`);
+    } catch (err) {
+      showFeedback('error', 'Failed to toggle product status.');
+    }
+  };
+
+  const handleDelete = async (p) => {
+    if (confirm(`Are you sure you want to delete "${p.name}"? This will remove it from the store catalog.`)) {
+      try {
+        await deleteProduct(p._id || p.id);
+        showFeedback('success', `"${p.name}" was removed from the catalog.`);
+      } catch (err) {
+        showFeedback('error', 'Failed to delete product.');
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[color:var(--brand-surface)] flex font-sans selection:bg-[color:var(--brand-accent)] selection:text-[color:var(--brand-primary)]">
+      <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+        <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Products Catalog" />
+
+        <main className="p-4 sm:p-6 lg:p-8 space-y-4 w-full font-sans max-w-7xl mx-auto">
+          
+          {/* Toast Feedback Alert */}
+          {feedback.message && (
+            <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 animate-fadeIn ${
+              feedback.type === 'success'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                : 'bg-rose-50 border-rose-300 text-rose-900'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                {feedback.type === 'success' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                )}
+                <span className="text-xs sm:text-sm font-semibold">{feedback.message}</span>
+              </div>
+              <button 
+                onClick={() => setFeedback({ type: '', message: '' })} 
+                className="text-xs font-bold uppercase tracking-wider opacity-60 hover:opacity-100"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Top Action Bar & Filter Tabs */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            
+            {/* Status Tabs: All, Active, Inactive */}
+            <div className="flex items-center gap-1.5 p-1 bg-white rounded-lg border border-[color:var(--brand-border)] shadow-2xs">
+              {[
+                { id: 'all', label: 'All Products', count: products.length },
+                { id: 'active', label: 'Active', count: activeCount },
+                { id: 'inactive', label: 'Inactive', count: inactiveCount },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveStatusFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-[13px] font-semibold transition-all ${
+                    activeStatusFilter === tab.id
+                      ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] shadow-xs'
+                      : 'text-stone-600 hover:text-[color:var(--brand-primary)]'
+                  }`}
+                >
+                  {tab.label} <span className="opacity-75 text-xs font-normal">({tab.count})</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  if (refreshProducts) {
+                    await refreshProducts();
+                    showFeedback('success', 'Catalog refreshed from live database.');
+                  }
+                }}
+                className="px-3.5 py-2 rounded-md bg-white border border-stone-200 text-stone-700 hover:bg-[color:var(--brand-surface)] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                title="Refresh product list"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-stone-500" />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+
+              {/* Add Product Button */}
+              <button
+                onClick={() => {
+                  setEditingProduct(null);
+                  setIsAddModalOpen(true);
+                }}
+                className="px-4 py-2 rounded-md gold-gradient-btn text-[color:var(--brand-primary)] font-bold text-xs sm:text-[13px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:scale-102 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-[color:var(--brand-primary)]" />
+                <span>Add Product</span>
+              </button>
+            </div>
+
+          </div>
+
+          {/* Search & Category Filter Bar */}
+          <div className="bg-white rounded-lg p-3 border border-[color:var(--brand-border)] shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 bg-[color:var(--brand-surface)] px-3.5 py-2 rounded-md border border-stone-200 text-xs sm:text-sm w-full sm:w-80">
+              <Search className="w-4 h-4 text-stone-400 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search by product name or flavor..."
+                className="bg-transparent focus:outline-none text-stone-800 text-xs sm:text-sm w-full placeholder:text-stone-400 font-medium"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <span className="text-xs sm:text-[13px] text-stone-600 font-medium">Category:</span>
+              <select
+                value={selectedCategory}
+                onChange={e => setSelectedCategory(e.target.value)}
+                className="px-3 py-1.5 rounded-md border border-stone-300 text-xs sm:text-[13px] font-semibold bg-stone-50 text-stone-800 focus:outline-none cursor-pointer"
+              >
+                <option value="all">All Categories</option>
+                {(categories && categories.length > 0 ? categories : CATEGORIES).map(c => {
+                  const catVal = c.slug || c.id || c._id;
+                  return (
+                    <option key={c.id || c.slug || c._id} value={catVal}>{c.name}</option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+
+          {/* Products Table Card */}
+          <div className="bg-white rounded-lg border border-[color:var(--brand-border)] shadow-2xs overflow-hidden w-full">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[12.5px] font-bold">
+                  <tr>
+                    <th className="py-3.5 px-5 w-[8%]">Image</th>
+                    <th className="py-3.5 px-5 w-[28%]">Product Name</th>
+                    <th className="py-3.5 px-5 w-[18%]">Category</th>
+                    <th className="py-3.5 px-5 w-[14%]">Price</th>
+                    <th className="py-3.5 px-5 w-[14%]">Stock</th>
+                    <th className="py-3.5 px-5 w-[11%]">Status</th>
+                    <th className="py-3.5 px-5 w-[7%] text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 font-medium text-xs sm:text-sm">
+                  {productsLoading && (!products || products.length === 0) ? (
+                    <tr>
+                      <td colSpan="7" className="py-16 px-5 text-center text-stone-500">
+                        <div className="flex flex-col items-center justify-center gap-2.5">
+                          <RefreshCw className="w-7 h-7 text-[color:var(--brand-primary)] animate-spin" />
+                          <span className="font-semibold text-xs sm:text-sm text-stone-700">Loading products from live database...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : productsError && (!products || products.length === 0) ? (
+                    <tr>
+                      <td colSpan="7" className="py-14 px-5 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
+                          <AlertCircle className="w-8 h-8 text-rose-500 shrink-0" />
+                          <span className="font-bold text-sm text-rose-900">Database Connection Error</span>
+                          <span className="text-xs text-stone-600 font-normal">{productsError}</span>
+                          <button
+                            onClick={async () => {
+                              if (refreshProducts) {
+                                try {
+                                  await refreshProducts();
+                                  showFeedback('success', 'Catalog refreshed from live database.');
+                                } catch (e) {
+                                  showFeedback('error', e.message || 'Database connection failed.');
+                                }
+                              }
+                            }}
+                            className="mt-2.5 px-4 py-2 rounded-md bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] font-bold text-xs uppercase tracking-wider hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Retry Database Connection</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="py-16 px-5 text-center text-stone-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <AlertCircle className="w-8 h-8 text-stone-300" />
+                          <span className="font-semibold text-sm text-stone-700">No products found</span>
+                          <span className="text-xs text-stone-400 max-w-sm">
+                            {searchQuery || selectedCategory !== 'all' || activeStatusFilter !== 'all'
+                              ? 'No products match your active search or category filters.'
+                              : 'No products in database catalog. Click "Add Product" above to create your first item.'}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    pagination.pageItems.map((p) => {
+                      const isActive = p.inStock !== false;
+                      const displayImage = resolveProductImage(p);
+                      return (
+                        <tr key={p.id || p._id} className="hover:bg-stone-50/80 transition-colors">
+                          <td className="py-3.5 px-5">
+                            <img
+                              src={displayImage}
+                              alt=""
+                              className="w-11 h-11 rounded-md object-cover border border-stone-200 bg-[color:var(--brand-surface)] p-0.5"
+                            />
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-sans font-semibold text-sm sm:text-[15px] text-[color:var(--brand-primary)]">{p.name}</span>
+                              {p.isBestseller && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded">
+                                  <Flame className="w-2.5 h-2.5 text-[color:var(--brand-accent-dark)]" />
+                                  Bestseller
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                              <span className="text-xs text-stone-400 font-normal">{p.flavor || p.subtitle || 'Natural Seasoning'} • {p.weight || '150g'}</span>
+                              {p.gallery && p.gallery.length > 1 && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                  <ImageIcon className="w-2.5 h-2.5 text-emerald-600" />
+                                  {p.gallery.length} photos
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-5 capitalize text-stone-700 font-medium text-xs sm:text-[13.5px]">
+                            {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <span className="font-bold text-sm sm:text-base text-stone-900">₹{p.price}</span>
+                            {p.oldPrice && (
+                              <span className="text-xs text-stone-400 line-through ml-1.5">₹{p.oldPrice}</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <span className={`font-semibold text-xs sm:text-sm ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-700'}`}>
+                              {p.stockCount ?? 150} units
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-5">
+                            <button
+                              onClick={() => handleToggle(p)}
+                              className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                isActive
+                                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                  : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
+                              }`}
+                            >
+                              {isActive ? 'Active' : 'Inactive'}
+                            </button>
+                          </td>
+                          <td className="py-3.5 px-5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setViewingProduct(p)}
+                                className="p-1.5 text-stone-500 hover:text-[color:var(--brand-primary)] hover:bg-stone-100 rounded-md transition-colors cursor-pointer"
+                                title="View product details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEdit(p)}
+                                className="p-1.5 text-stone-600 hover:text-[color:var(--brand-primary)] hover:bg-stone-100 rounded-md transition-colors cursor-pointer"
+                                title="Edit product"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(p)}
+                                className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                                title="Delete product"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination + count info */}
+            <AdminPagination pagination={pagination} label="items" />
+          </div>
+
+        </main>
+      </div>
+
+      {/* Add / Edit Product Modal */}
+      <AddProductModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingProduct(null);
+        }}
+        onSave={handleSaveProduct}
+        initialData={editingProduct}
+        categories={categories}
+      />
+
+      <ViewProductModal
+        isOpen={Boolean(viewingProduct)}
+        onClose={() => setViewingProduct(null)}
+        product={viewingProduct}
+        categories={categories}
+      />
+    </div>
+  );
+}

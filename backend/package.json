@@ -1,0 +1,44 @@
+{
+  "name": "wholesale-backend",
+  "version": "1.0.0",
+  "description": "Clean, scalable, and production-ready MVC backend for Dry Fruit Wholesale",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "build:frontend": "node scripts/sync-frontend.js",
+    "test:db": "node scripts/test-db.js",
+    "test:admin-forgot-password": "node scripts/test_admin_forgot_password.js",
+    "test:smtp": "node scripts/test-smtp.js",
+    "test:smtp:send": "node scripts/test-smtp.js --send"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "mongodb",
+    "mongoose",
+    "mvc",
+    "jwt",
+    "auth"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "1.20.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "firebase-admin": "^14.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.1.1",
+    "pdfkit": "^0.20.2",
+    "razorpay": "^2.9.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

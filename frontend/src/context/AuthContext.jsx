@@ -1,0 +1,931 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { userAuthApi, addressApi, orderApi, cartApi, isJwtExpired, apiRequest } from '../utils/api';
+import confetti from 'canvas-confetti';
+import { getConfettiColors } from '../utils/theme';
+import pushNotificationService from '../services/pushNotificationService';
+import { buildTimeline, getExpectedDelivery, formatDateTime } from '../utils/orderDisplay';
+
+const readStoredUserSession = () => {
+  try {
+    const token = localStorage.getItem('wholesale_user_token') || null;
+    if (!token || isJwtExpired(token)) {
+      localStorage.removeItem('wholesale_user_token');
+      localStorage.removeItem('wholesale_user');
+      return { token: null, user: null };
+    }
+
+    const saved = localStorage.getItem('wholesale_user');
+    if (!saved || saved === 'null') return { token, user: null };
+
+    const parsed = JSON.parse(saved);
+    if (parsed.avatar && (parsed.avatar.includes('images.unsplash.com/photo-1534528741775') || parsed.avatar.includes('images.unsplash.com/photo-1507003211169'))) {
+      parsed.avatar = '';
+      localStorage.setItem('wholesale_user', JSON.stringify(parsed));
+    }
+    return { token, user: parsed };
+  } catch (e) {
+    console.error(e);
+    return { token: null, user: null };
+  }
+};
+
+const AuthContext = createContext();
+
+const INITIAL_CUSTOMERS = [
+  {
+    id: "cust-1",
+    name: "Vini Sharma",
+    email: "vini.sharma@gmail.com",
+    phone: "+91 9876543210",
+    avatar: "",
+    rewardsPoints: 2450,
+    tier: "Gold Wellness Member",
+    memberSince: "Jan 2024",
+    totalOrders: 6,
+    totalSpent: 4890,
+    city: "Mumbai",
+    state: "Maharashtra",
+    status: "Active"
+  },
+  {
+    id: "cust-2",
+    name: "Rahul Verma",
+    email: "rahul.v@outlook.com",
+    phone: "+91 9822334455",
+    avatar: "",
+    rewardsPoints: 1200,
+    tier: "Silver Member",
+    memberSince: "Mar 2024",
+    totalOrders: 3,
+    totalSpent: 2650,
+    city: "Mumbai",
+    state: "Maharashtra",
+    status: "Active"
+  }
+];
+
+export const formatAddress = (a) => ({
+  id: a._id || a.id,
+  _id: a._id || a.id,
+  type: a.addressType ? (a.addressType.charAt(0).toUpperCase() + a.addressType.slice(1)) : (a.type || 'Home'),
+  addressType: (a.addressType || a.type || 'home').toLowerCase(),
+  isDefault: Boolean(a.isDefault),
+  street: a.addressLine1
+    ? a.addressLine1 + (a.addressLine2 ? `, ${a.addressLine2}` : '') + (a.landmark ? `, Near ${a.landmark}` : '')
+    : (a.street || ''),
+  addressLine1: a.addressLine1 || a.street || '',
+  addressLine2: a.addressLine2 || '',
+  landmark: a.landmark || '',
+  city: a.city || '',
+  state: a.state || 'Maharashtra',
+  pincode: a.postalCode || a.pincode || '',
+  postalCode: a.postalCode || a.pincode || '',
+  phone: a.phoneNumber || a.phone || '',
+  phoneNumber: a.phoneNumber || a.phone || '',
+  name: a.fullName || a.name || ''
+});
+
+// Orders created before real rider data existed stored this placeholder — treat it as "not assigned"
+const isPlaceholderRider = (r) =>
+  String(r?.name || '').trim() === 'Rohan Kumar' && String(r?.phone || '').replace(/\s/g, '') === '+919811122334';
+
+// Placeholder values that older orders stored as rider defaults — never show these as real data
+const PLACEHOLDER_RIDER_PHONE = '+919811122334';
+const PLACEHOLDER_RIDER_VALUES = {
+  vehicle: 'MP09-AB-1234',
+  eta: '25 mins',
+  distance: '2.5 km away'
+};
+
+export const getRealRider = (r) => {
+  if (!r || typeof r !== 'object') return null;
+  const name = String(r.name || '').trim();
+  const phone = String(r.phone || '').trim();
+  if ((!name && !phone) || isPlaceholderRider(r)) return null;
+  const clean = { ...r, name, phone };
+  if (phone.replace(/\s/g, '') === PLACEHOLDER_RIDER_PHONE) clean.phone = '';
+  if (!clean.name && !clean.phone) return null;
+  Object.entries(PLACEHOLDER_RIDER_VALUES).forEach(([key, fake]) => {
+    if (String(clean[key] || '').trim() === fake) clean[key] = '';
+  });
+  // The old default rating (4.9) and Mumbai coordinates were placeholders too
+  if (Number(clean.rating) === 4.9) clean.rating = null;
+  if (Number(clean.lat) === 22.7196 && Number(clean.lng) === 75.8577) {
+    clean.lat = null;
+    clean.lng = null;
+  }
+  return clean;
+};
+
+export const formatOrder = (o) => {
+  const mapStatusToDisplay = (s) => {
+    if (!s) return 'Order Received';
+    const u = String(s).toUpperCase().replace(/\s+/g, '_');
+    if (u === 'CONFIRMED' || u === 'ORDER_RECEIVED' || u === 'PENDING') return 'Order Received';
+    if (u === 'ACCEPTED') return 'Accepted';
+    // PROCESSING is legacy/internal — treat as Accepted, never as Packed
+    if (u === 'PROCESSING') return 'Accepted';
+    if (u === 'PACKED') return 'Packed';
+    if (u === 'SHIPPED' || u === 'READY_FOR_DISPATCH') return 'Ready for Dispatch';
+    if (u === 'OUT_FOR_DELIVERY') return 'Out for Delivery';
+    if (u === 'DELIVERED') return 'Delivered';
+    if (u === 'CANCELLED' || u === 'CANCELED') return 'Cancelled';
+    return s;
+  };
+
+  return {
+    id: o.orderNumber || o.id || o._id,
+    _id: o._id,
+    orderNumber: o.orderNumber || o.id,
+    customer: o.shippingAddress?.fullName || o.user?.name || o.customer || "Customer",
+    // Real contact details only — no invented fallbacks
+    email: o.user?.email || o.email || '',
+    phone: o.shippingAddress?.phoneNumber || o.user?.phone || o.phone || '',
+    createdAt: o.createdAt || null,
+    // Full placed date + time in the viewer's local timezone (same string everywhere)
+    placedAt: formatDateTime(o.createdAt),
+    date: o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (o.date || 'Today'),
+    time: o.createdAt ? new Date(o.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : (o.time || 'Just now'),
+    items: o.items || [],
+    subtotal: o.pricing?.subtotal ?? o.subtotal ?? 0,
+    discount: o.pricing?.discount ?? o.discount ?? 0,
+    couponApplied: o.pricing?.couponCode || o.couponApplied || 'None',
+    deliveryFee: o.pricing?.deliveryFee ?? o.deliveryFee ?? 0,
+    tax: o.pricing?.tax ?? o.tax ?? 0,
+    total: o.pricing?.total ?? o.total ?? 0,
+    paymentMethod: o.payment?.method || o.paymentMethod || 'COD',
+    paymentStatus: o.payment?.status || 'PENDING',
+    transactionId: o.payment?.transactionId || '',
+    deliveryType: o.delivery?.type || o.deliveryType || "Standard Express Courier",
+    status: mapStatusToDisplay(o.status),
+    rawStatus: o.status,
+    courierName: o.courierName || o.delivery?.type || '',
+    awbNumber: o.awbNumber || '',
+    deliveryNotes: o.deliveryNotes || '',
+    dispatchedAt: o.dispatchedAt || null,
+    shiprocket: o.shiprocket || null,
+    estimatedDelivery: o.delivery?.estimatedDelivery || null,
+    cancelReason: o.cancelReason || '',
+    cancelledBy: o.cancelledBy || null,
+    cancelledAt: o.cancelledAt || null,
+    // One consistent timeline / delivery estimate for user + admin (see utils/orderDisplay.js)
+    timeline: buildTimeline({
+      status: mapStatusToDisplay(o.status),
+      rawTimeline: o.timeline,
+      createdAt: o.createdAt
+    }),
+    expectedDelivery: getExpectedDelivery({
+      status: mapStatusToDisplay(o.status),
+      rawTimeline: o.timeline,
+      estimatedDelivery: o.delivery?.estimatedDelivery,
+      createdAt: o.createdAt,
+      updatedAt: o.updatedAt
+    }),
+    // Real delivery partner only (null until admin assigns one)
+    rider: getRealRider(o.rider),
+    address: o.shippingAddress ? {
+      type: o.shippingAddress.addressType ? (o.shippingAddress.addressType.charAt(0).toUpperCase() + o.shippingAddress.addressType.slice(1)) : 'Home',
+      street: o.shippingAddress.addressLine1 + (o.shippingAddress.addressLine2 ? `, ${o.shippingAddress.addressLine2}` : '') + (o.shippingAddress.landmark ? `, Near ${o.shippingAddress.landmark}` : ''),
+      city: o.shippingAddress.city,
+      state: o.shippingAddress.state,
+      pincode: o.shippingAddress.postalCode,
+      phone: o.shippingAddress.phoneNumber,
+      name: o.shippingAddress.fullName
+    } : o.address
+  };
+};
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => readStoredUserSession().user);
+  const [token, setToken] = useState(() => readStoredUserSession().token);
+
+  // Always start empty — orders are loaded from the API for the current JWT only
+  // (never hydrate another account's orders from localStorage)
+  const [orders, setOrders] = useState([]);
+
+  const [customers, setCustomers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('wholesale_registered_customers');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.map(c => ({
+            ...c,
+            totalOrders: typeof c?.totalOrders === 'number' ? c.totalOrders : (Number(c?.totalOrders) || 0),
+            totalSpent: typeof c?.totalSpent === 'number' ? c.totalSpent : (Number(c?.totalSpent) || 0),
+            rewardsPoints: typeof c?.rewardsPoints === 'number' ? c.rewardsPoints : (Number(c?.rewardsPoints) || 0),
+            tier: c?.tier || "Gold Wellness Member",
+            memberSince: c?.memberSince || "Member",
+            city: c?.city || "Mumbai",
+            state: c?.state || "Maharashtra",
+            status: c?.status || "Active",
+            name: c?.name || "Customer",
+            email: c?.email || "",
+            phone: c?.phone || "",
+            avatar: c?.avatar || ""
+          }));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return INITIAL_CUSTOMERS;
+  });
+
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+
+  useEffect(() => {
+    try {
+      if (user) {
+        localStorage.setItem('wholesale_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('wholesale_user');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    try {
+      if (token) {
+        localStorage.setItem('wholesale_user_token', token);
+      } else {
+        localStorage.removeItem('wholesale_user_token');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('wholesale_orders', JSON.stringify(orders));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [orders]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('wholesale_registered_customers', JSON.stringify(customers));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [customers]);
+
+  const clearUserScopedState = () => {
+    setAddresses([]);
+    setSelectedAddressId(null);
+    setOrders([]);
+    try {
+      localStorage.setItem('wholesale_orders', '[]');
+    } catch {
+      // ignore
+    }
+  };
+
+  // Clear React auth state when API detects an expired/invalid user JWT
+  useEffect(() => {
+    const onExpired = () => {
+      setToken(null);
+      setUser(null);
+      clearUserScopedState();
+    };
+    window.addEventListener('wholesale:auth-expired', onExpired);
+    return () => window.removeEventListener('wholesale:auth-expired', onExpired);
+  }, []);
+
+  // Synchronize addresses and orders with backend whenever user is authenticated
+  useEffect(() => {
+    if (!token || isJwtExpired(token)) {
+      // Never keep another account's addresses/orders in memory when logged out
+      clearUserScopedState();
+      if (token && isJwtExpired(token)) {
+        setToken(null);
+        setUser(null);
+        try {
+          localStorage.removeItem('wholesale_user_token');
+          localStorage.removeItem('wholesale_user');
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+
+    // Reset immediately so a previous account never flashes for the new login
+    setAddresses([]);
+    setSelectedAddressId(null);
+    setOrders([]);
+
+    let cancelled = false;
+
+    addressApi.getAddresses()
+      .then(res => {
+        if (cancelled) return;
+        const list = Array.isArray(res?.data?.addresses) ? res.data.addresses : [];
+        const formatted = list.map(formatAddress);
+        setAddresses(formatted);
+        if (formatted.length > 0) {
+          const def = formatted.find(a => a.isDefault);
+          setSelectedAddressId(def ? def.id : formatted[0].id);
+        } else {
+          setSelectedAddressId(null);
+        }
+      })
+      .catch(err => {
+        if (cancelled) return;
+        if (err?.status === 401) {
+          setToken(null);
+          setUser(null);
+          clearUserScopedState();
+        } else {
+          // Keep empty list — do not leave previous user's addresses on screen
+          setAddresses([]);
+          setSelectedAddressId(null);
+          console.warn('[AuthContext] Backend addresses load note:', err.message);
+        }
+      });
+
+    orderApi.getUserOrders()
+      .then(res => {
+        if (cancelled) return;
+        const list = Array.isArray(res?.data?.orders) ? res.data.orders : [];
+        setOrders(list.map(formatOrder));
+      })
+      .catch(err => {
+        if (cancelled) return;
+        if (err?.status === 401) {
+          setToken(null);
+          setUser(null);
+          clearUserScopedState();
+        } else {
+          setOrders([]);
+          console.warn('[AuthContext] Backend orders load note:', err.message);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  /**
+   * Request OTP from backend API
+   */
+  const requestOtp = async (phoneNumber) => {
+    try {
+      const response = await userAuthApi.sendOtp(phoneNumber);
+      return {
+        success: true,
+        data: response.data,
+        message: response.message
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message || 'Failed to send OTP'
+      };
+    }
+  };
+
+  /**
+   * Verify OTP and Login / Register User
+   */
+  const verifyOtpAndLogin = async (phoneNumber, otp) => {
+    try {
+      const response = await userAuthApi.verifyOtp(phoneNumber, otp);
+      if (response && response.data) {
+        const { token: receivedToken, user: receivedUser } = response.data;
+
+        // Persist JWT synchronously BEFORE React effects (cart sync, address fetch)
+        // so apiRequest never falls back to an admin token and wipes this session.
+        try {
+          if (receivedToken) {
+            localStorage.setItem('wholesale_user_token', receivedToken);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        setToken(receivedToken);
+        
+        // Enrich user with UI fields if needed
+        const formattedUser = {
+          id: receivedUser._id || receivedUser.id || `cust-${Date.now()}`,
+          name: receivedUser.name || `User ${receivedUser.phone?.slice(-4) || ''}`,
+          email: receivedUser.email || '',
+          phone: receivedUser.phone ? `+91 ${receivedUser.phone}` : phoneNumber,
+          avatar: receivedUser.avatar || "",
+          rewardsPoints: Number(receivedUser.rewardsPoints) || 500,
+          tier: receivedUser.tier || "Gold Wellness Member",
+          memberSince: receivedUser.memberSince || "Member",
+          totalOrders: Number(receivedUser.totalOrders) || 0,
+          totalSpent: Number(receivedUser.totalSpent) || 0,
+          city: receivedUser.city || "Mumbai",
+          state: receivedUser.state || "Maharashtra",
+          role: receivedUser.role || 'USER',
+          status: receivedUser.status || 'ACTIVE'
+        };
+
+        try {
+          localStorage.setItem('wholesale_user', JSON.stringify(formattedUser));
+        } catch (e) {
+          console.error(e);
+        }
+
+        setUser(formattedUser);
+        // Drop any leftover addresses/orders from a previous session immediately
+        setAddresses([]);
+        setSelectedAddressId(null);
+        setOrders([]);
+        try {
+          localStorage.setItem('wholesale_orders', '[]');
+        } catch (e) {
+          console.error(e);
+        }
+        setCustomers(prev => {
+          const exists = prev.some(c => c.phone === formattedUser.phone);
+          return exists ? prev : [formattedUser, ...prev];
+        });
+
+        return { success: true, user: formattedUser };
+      }
+      return { success: false, message: 'Invalid response from server' };
+    } catch (err) {
+      // Never create a fake logged-in session without a JWT
+      return {
+        success: false,
+        message: err.message || 'Verification failed. Please check your connection and try again.'
+      };
+    }
+  };
+
+  const loginWithPhone = (phoneNumber) => {
+    const digitsOnly = (phoneNumber || '').replace(/\D/g, '').slice(-10);
+    if (digitsOnly.length < 10) {
+      return { success: false, message: 'Please enter a valid 10-digit mobile number.' };
+    }
+
+    const existing = customers.find(c => {
+      const cDigits = (c.phone || '').replace(/\D/g, '').slice(-10);
+      return cDigits === digitsOnly;
+    });
+
+    if (existing) {
+      setUser(existing);
+      return { success: true, user: existing };
+    }
+
+    const newCustomer = {
+      id: `cust-${Date.now()}`,
+      name: `Member ${digitsOnly.slice(-4)}`,
+      email: `user.${digitsOnly}@example.com`,
+      phone: `+91 ${digitsOnly}`,
+      avatar: "",
+      rewardsPoints: 500,
+      tier: "Gold Wellness Member",
+      memberSince: "Just now",
+      totalOrders: 0,
+      totalSpent: 0,
+      city: "Mumbai",
+      state: "Maharashtra",
+      status: "Active"
+    };
+
+    setCustomers(prev => [newCustomer, ...prev]);
+    setUser(newCustomer);
+    return { success: true, user: newCustomer };
+  };
+
+  const loginWithDemo = (customerId) => {
+    const target = customers.find(c => c.id === customerId) || INITIAL_CUSTOMERS.find(c => c.id === customerId);
+    if (target) {
+      setUser(target);
+      return { success: true, user: target };
+    }
+    return { success: false, message: 'Demo customer not found.' };
+  };
+
+  const logout = () => {
+    // Unregister FCM device token from backend per Push Notification SOP
+    pushNotificationService.unregisterFCMToken().catch(() => {});
+
+    setUser(null);
+    setToken(null);
+    clearUserScopedState();
+    try {
+      localStorage.removeItem('wholesale_user');
+      localStorage.removeItem('wholesale_user_token');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  /** Permanently delete the signed-in customer's account (server erases personal data, then we sign out). */
+  const deleteAccount = async () => {
+    await apiRequest('/users/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ confirm: 'DELETE' })
+    });
+    try {
+      localStorage.removeItem('wholesale_cart');
+      localStorage.removeItem('wholesale_coupon');
+    } catch (e) {
+      console.error(e);
+    }
+    logout();
+  };
+
+  const addAddress = async (addr) => {
+    if (token) {
+      try {
+        const payload = {
+          fullName: addr.name || addr.fullName || user?.name || 'Customer',
+          phoneNumber: addr.phone || addr.phoneNumber || user?.phone || '9999999999',
+          addressLine1: addr.addressLine1 || addr.street || '',
+          addressLine2: addr.addressLine2 || '',
+          landmark: addr.landmark || '',
+          city: addr.city || '',
+          state: addr.state || 'Maharashtra',
+          postalCode: addr.postalCode || addr.pincode || '',
+          addressType: (addr.addressType || addr.type || 'home').toLowerCase(),
+          isDefault: Boolean(addr.isDefault || addresses.length === 0)
+        };
+        const res = await addressApi.addAddress(payload);
+        if (res?.data?.address) {
+          const newFormatted = formatAddress(res.data.address);
+          setAddresses(prev => {
+            if (newFormatted.isDefault) {
+              return [newFormatted, ...prev.map(a => ({ ...a, isDefault: false }))];
+            }
+            return [...prev, newFormatted];
+          });
+          setSelectedAddressId(newFormatted.id);
+          return newFormatted.id;
+        }
+      } catch (err) {
+        console.error('[AuthContext] Backend addAddress failed:', err);
+        throw err;
+      }
+    }
+    const newAddr = {
+      ...addr,
+      id: `addr-${Date.now()}`,
+      isDefault: addresses.length === 0
+    };
+    setAddresses(prev => [...prev, newAddr]);
+    if (addresses.length === 0) {
+      setSelectedAddressId(newAddr.id);
+    }
+    return newAddr.id;
+  };
+
+  const updateAddress = async (id, updatedData) => {
+    if (token && !String(id).startsWith('addr-')) {
+      try {
+        const payload = {
+          fullName: updatedData.name || updatedData.fullName,
+          phoneNumber: updatedData.phone || updatedData.phoneNumber,
+          addressLine1: updatedData.addressLine1 || updatedData.street,
+          addressLine2: updatedData.addressLine2,
+          landmark: updatedData.landmark,
+          city: updatedData.city,
+          state: updatedData.state,
+          postalCode: updatedData.postalCode || updatedData.pincode,
+          addressType: updatedData.addressType || (updatedData.type ? updatedData.type.toLowerCase() : undefined)
+        };
+        const res = await addressApi.updateAddress(id, payload);
+        if (res?.data?.address) {
+          const formatted = formatAddress(res.data.address);
+          setAddresses(prev => prev.map(a => a.id === id ? formatted : a));
+          return formatted;
+        }
+      } catch (err) {
+        console.error('[AuthContext] Backend updateAddress failed:', err);
+        throw err;
+      }
+    }
+    setAddresses(prev => prev.map(a => a.id === id ? { ...a, ...updatedData } : a));
+  };
+
+  const deleteAddress = async (id) => {
+    if (token && !String(id).startsWith('addr-')) {
+      try {
+        await addressApi.deleteAddress(id);
+      } catch (err) {
+        console.error('[AuthContext] Backend deleteAddress failed:', err);
+        throw err;
+      }
+    }
+    setAddresses(prev => {
+      const filtered = prev.filter(a => a.id !== id);
+      if (selectedAddressId === id && filtered.length > 0) {
+        setSelectedAddressId(filtered[0].id);
+      }
+      return filtered;
+    });
+  };
+
+  const setPrimaryAddress = async (id) => {
+    setSelectedAddressId(id);
+    if (token && !String(id).startsWith('addr-')) {
+      try {
+        await addressApi.setDefaultAddress(id);
+      } catch (err) {
+        console.warn('[AuthContext] Backend setDefaultAddress note:', err.message);
+      }
+    }
+    setAddresses(prev => prev.map(a => ({
+      ...a,
+      isDefault: a.id === id
+    })));
+  };
+
+  const placeOrder = async (orderPayload) => {
+    if (!token || isJwtExpired(token)) {
+      setToken(null);
+      setUser(null);
+      try {
+        localStorage.removeItem('wholesale_user_token');
+        localStorage.removeItem('wholesale_user');
+      } catch {
+        // ignore
+      }
+      throw new Error('Your session has expired. Please log in again to place your order.');
+    }
+
+    // Authenticated — place real order via backend API
+    if (token) {
+      const targetAddress = orderPayload.address || addresses.find(a => a.id === selectedAddressId) || addresses[0];
+      let addressId = targetAddress?._id;
+      if (!addressId && targetAddress?.id && /^[0-9a-fA-F]{24}$/.test(String(targetAddress.id))) {
+        addressId = targetAddress.id;
+      }
+
+      // Auto-persist mock/local address to backend DB if it does not have a real MongoDB ID
+      if (!addressId && targetAddress) {
+        try {
+          const addrPayload = {
+            fullName: targetAddress.name || targetAddress.fullName || user?.name || 'Customer',
+            phoneNumber: targetAddress.phone || targetAddress.phoneNumber || user?.phone || '9876543210',
+            addressLine1: targetAddress.street || targetAddress.addressLine1 || 'Main Street',
+            addressLine2: targetAddress.addressLine2 || '',
+            landmark: targetAddress.landmark || '',
+            city: targetAddress.city || 'Mumbai',
+            state: targetAddress.state || 'Maharashtra',
+            postalCode: targetAddress.pincode || targetAddress.postalCode || '452001',
+            addressType: (targetAddress.type || 'home').toLowerCase()
+          };
+          const newAddrRes = await addressApi.addAddress(addrPayload);
+          if (newAddrRes?.data?.address?._id) {
+            addressId = newAddrRes.data.address._id;
+            const formattedAddr = formatAddress(newAddrRes.data.address);
+            setAddresses(prev => [formattedAddr, ...prev.filter(a => a.id !== targetAddress.id)]);
+            setSelectedAddressId(formattedAddr.id);
+          }
+        } catch (addrErr) {
+          console.warn('[AuthContext] Auto-sync address error:', addrErr.message);
+        }
+      }
+
+      let normalizedPayment = 'COD';
+      const rawPayment = String(orderPayload.paymentMethod || '');
+      const rawUpper = rawPayment.toUpperCase();
+      // Check COD / cash-on-delivery BEFORE UPI so "Cash / UPI on Delivery" stays COD
+      if (rawUpper.includes('COD') || rawUpper.includes('CASH') || rawUpper.includes('ON DELIVERY') || rawUpper.includes('DOORSTEP')) {
+        normalizedPayment = 'COD';
+      } else if (rawUpper.includes('UPI') || rawUpper.includes('GPAY') || rawUpper.includes('PHONEPE')) {
+        normalizedPayment = 'UPI';
+      } else if (rawUpper.includes('CARD') || rawUpper.includes('CREDIT') || rawUpper.includes('DEBIT')) {
+        normalizedPayment = 'CARD';
+      } else if (rawUpper.includes('NET') || rawUpper.includes('BANK')) {
+        normalizedPayment = 'NETBANKING';
+      }
+
+      // Ensure guest/local cart items are on the authenticated user cart before placing
+      let guestId = null;
+      let localCartItems = [];
+      try {
+        guestId = localStorage.getItem('wholesale_guest_id');
+        const savedCart = localStorage.getItem('wholesale_cart');
+        localCartItems = savedCart ? JSON.parse(savedCart) : [];
+        if (Array.isArray(localCartItems) && localCartItems.length > 0) {
+          await cartApi.syncCart(localCartItems, guestId);
+        }
+      } catch (syncErr) {
+        console.warn('[AuthContext] Pre-order cart sync note:', syncErr.message);
+      }
+
+      const payload = {
+        addressId,
+        paymentMethod: normalizedPayment,
+        paymentDetails: {
+          transactionId: orderPayload.paymentDetails?.transactionId || '',
+          upiApp: orderPayload.selectedUpiApp || ''
+        },
+        couponCode: orderPayload.couponApplied || undefined,
+        idempotencyKey: `ord_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        guestId: guestId || undefined,
+        items: Array.isArray(localCartItems) && localCartItems.length > 0
+          ? localCartItems
+          : (orderPayload.items || undefined)
+      };
+
+      const res = await orderApi.placeOrder(payload);
+      if (res && res.data && res.data.order) {
+        const formatted = formatOrder(res.data.order);
+        setOrders(prev => [formatted, ...prev.filter((o) => o.id !== formatted.id)]);
+
+        // Trigger confetti
+        try {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: getConfettiColors()
+          });
+        } catch {
+          // ignore
+        }
+
+        return formatted.id;
+      }
+
+      throw new Error(res?.message || 'Order could not be placed. Please try again.');
+    }
+
+    throw new Error('Please log in to place your order.');
+  };
+
+  const updateOrderStatus = (orderId, newStatus, extraData = {}) => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    setOrders(prev => prev.map(order => {
+      if (order.id !== orderId) return order;
+
+      const standardStatuses = ["Order Received", "Packed", "Ready for Dispatch", "Out for Delivery", "Delivered"];
+      const statusIdx = standardStatuses.indexOf(newStatus);
+
+      const updatedTimeline = order.timeline ? order.timeline.map(step => {
+        const stepIdx = standardStatuses.indexOf(step.status);
+        if (stepIdx <= statusIdx && stepIdx !== -1) {
+          return {
+            ...step,
+            done: true,
+            current: stepIdx === statusIdx,
+            time: step.done ? step.time : `${timeStr}, ${dateStr}`
+          };
+        } else {
+          return {
+            ...step,
+            done: false,
+            current: false
+          };
+        }
+      }) : [];
+
+      return {
+        ...order,
+        status: newStatus,
+        timeline: updatedTimeline.length > 0 ? updatedTimeline : order.timeline,
+        courierName: extraData.courierName || order.courierName,
+        awbNumber: extraData.awbNumber || order.awbNumber,
+        rider: extraData.rider ? { ...order.rider, ...extraData.rider } : order.rider,
+        deliveryNotes: extraData.deliveryNotes || order.deliveryNotes
+      };
+    }));
+  };
+
+  const cancelOrder = async (orderId, reason = "Customer requested cancellation") => {
+    // 1. Optimistic UI update
+    setOrders(prev => prev.map(o => (o.id === orderId || o._id === orderId) ? { ...o, status: "Cancelled", cancelReason: reason } : o));
+
+    // 2. Real API call if authenticated
+    if (token) {
+      try {
+        const res = await orderApi.cancelOrder(orderId, reason);
+        if (res?.data?.order) {
+          const formatted = formatOrder(res.data.order);
+          setOrders(prev => prev.map(o => (o.id === orderId || o._id === orderId) ? formatted : o));
+          return formatted;
+        }
+      } catch (err) {
+        console.warn('[AuthContext] Backend cancelOrder note:', err.message);
+        throw err;
+      }
+    }
+  };
+
+  const updateProfile = async (data) => {
+    const prevSnapshot = user;
+
+    // Optimistic local merge for snappy UI
+    const optimisticPhone =
+      data.phone !== undefined
+        ? (() => {
+            const digits = String(data.phone || '').replace(/\D/g, '').slice(-10);
+            return digits ? `+91 ${digits}` : (prevSnapshot?.phone || '');
+          })()
+        : undefined;
+
+    const optimistic = {
+      ...(prevSnapshot || {}),
+      ...data,
+      ...(optimisticPhone !== undefined ? { phone: optimisticPhone } : {})
+    };
+    setUser(optimistic);
+    try {
+      localStorage.setItem('wholesale_user', JSON.stringify(optimistic));
+    } catch (e) {}
+
+    if (!token) {
+      return { success: true, user: optimistic };
+    }
+
+    try {
+      const payload = { ...data };
+      if (payload.phone !== undefined) {
+        payload.phone = String(payload.phone || '').replace(/\D/g, '').slice(-10);
+      }
+      if (payload.email !== undefined) {
+        payload.email = String(payload.email || '').trim().toLowerCase();
+      }
+
+      const res = await userAuthApi.updateProfile(payload);
+      if (res?.data?.user) {
+        const serverUser = res.data.user;
+        const formatted = {
+          ...(prevSnapshot || {}),
+          ...serverUser,
+          id: serverUser._id || serverUser.id || prevSnapshot?.id,
+          name: serverUser.name ?? optimistic.name ?? '',
+          email: serverUser.email || '',
+          phone: serverUser.phone
+            ? `+91 ${String(serverUser.phone).replace(/\D/g, '').slice(-10)}`
+            : optimistic.phone || '',
+          avatar: serverUser.avatar ?? optimistic.avatar ?? '',
+          role: serverUser.role || prevSnapshot?.role || 'USER',
+          status: serverUser.status || prevSnapshot?.status || 'ACTIVE'
+        };
+        setUser(formatted);
+        try {
+          localStorage.setItem('wholesale_user', JSON.stringify(formatted));
+        } catch (e) {}
+        return { success: true, user: formatted };
+      }
+      throw new Error(res?.message || 'Profile update did not return saved data.');
+    } catch (err) {
+      console.warn('[AuthContext] Backend updateProfile failed:', err.message);
+      // Roll back optimistic UI so failed edits do not look saved
+      if (prevSnapshot) {
+        setUser(prevSnapshot);
+        try {
+          localStorage.setItem('wholesale_user', JSON.stringify(prevSnapshot));
+        } catch (e) {}
+      }
+      throw err;
+    }
+  };
+
+  const updateCustomer = (id, data) => {
+    setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      token,
+      isAuthenticated: Boolean(token && user),
+      orders,
+      customers,
+      addresses,
+      selectedAddressId,
+      setSelectedAddressId,
+      requestOtp,
+      verifyOtpAndLogin,
+      loginWithPhone,
+      loginWithDemo,
+      logout,
+      addAddress,
+      updateAddress,
+      deleteAddress,
+      setPrimaryAddress,
+      placeOrder,
+      deleteAccount,
+      updateOrderStatus,
+      cancelOrder,
+      updateProfile,
+      updateCustomer
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => useContext(AuthContext);
+export default AuthContext;

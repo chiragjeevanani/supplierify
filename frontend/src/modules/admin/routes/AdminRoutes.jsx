@@ -1,0 +1,65 @@
+import React from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useAdmin } from '../../../context/AdminContext';
+import AdminDashboard from '../pages/AdminDashboard';
+import AdminProducts from '../pages/AdminProducts';
+import AdminBestsellers from '../pages/AdminBestsellers';
+import AdminCategories from '../pages/AdminCategories';
+import AdminBanners from '../pages/AdminBanners';
+import AdminInventory from '../pages/AdminInventory';
+import AdminOrders from '../pages/AdminOrders';
+import AdminCustomers from '../pages/AdminCustomers';
+import AdminCoupons from '../pages/AdminCoupons';
+import AdminReviews from '../pages/AdminReviews';
+// Campaigns / Promotions page is disabled for now (not connected to the user app yet).
+// To restore: uncomment this import, the route below, and the sidebar entry in AdminSidebar.jsx.
+// import AdminPromotions from '../pages/AdminPromotions';
+import AdminAnalytics from '../pages/AdminAnalytics';
+import AdminNotifications from '../pages/AdminNotifications';
+import AdminSettings from '../pages/AdminSettings';
+import AdminProfile from '../pages/AdminProfile';
+import AdminLogin from '../pages/AdminLogin';
+import AdminForgotPassword from '../pages/AdminForgotPassword';
+import AdminResetPassword from '../pages/AdminResetPassword';
+
+function ProtectedAdminRoute({ children }) {
+  const { isAdminAuthenticated } = useAdmin();
+  const location = useLocation();
+
+  if (!isAdminAuthenticated) {
+    return <Navigate to="/admin/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
+
+export default function AdminRoutes() {
+  return (
+    <Routes>
+      {/* Public Admin auth routes */}
+      <Route path="/login" element={<AdminLogin />} />
+      <Route path="/forgot-password" element={<AdminForgotPassword />} />
+      <Route path="/reset-password" element={<AdminResetPassword />} />
+
+      {/* Protected Admin Subpages */}
+      <Route path="/" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+      <Route path="/products" element={<ProtectedAdminRoute><AdminProducts /></ProtectedAdminRoute>} />
+      <Route path="/bestsellers" element={<ProtectedAdminRoute><AdminBestsellers /></ProtectedAdminRoute>} />
+      <Route path="/categories" element={<ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>} />
+      <Route path="/banners" element={<ProtectedAdminRoute><AdminBanners /></ProtectedAdminRoute>} />
+      <Route path="/inventory" element={<ProtectedAdminRoute><AdminInventory /></ProtectedAdminRoute>} />
+      <Route path="/orders" element={<ProtectedAdminRoute><AdminOrders /></ProtectedAdminRoute>} />
+      <Route path="/customers" element={<ProtectedAdminRoute><AdminCustomers /></ProtectedAdminRoute>} />
+      <Route path="/coupons" element={<ProtectedAdminRoute><AdminCoupons /></ProtectedAdminRoute>} />
+      <Route path="/reviews" element={<ProtectedAdminRoute><AdminReviews /></ProtectedAdminRoute>} />
+      {/* <Route path="/promotions" element={<ProtectedAdminRoute><AdminPromotions /></ProtectedAdminRoute>} /> */}
+      <Route path="/notifications" element={<ProtectedAdminRoute><AdminNotifications /></ProtectedAdminRoute>} />
+      <Route path="/analytics" element={<ProtectedAdminRoute><AdminAnalytics /></ProtectedAdminRoute>} />
+      <Route path="/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+      <Route path="/profile" element={<ProtectedAdminRoute><AdminProfile /></ProtectedAdminRoute>} />
+      
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/admin" replace />} />
+    </Routes>
+  );
+}

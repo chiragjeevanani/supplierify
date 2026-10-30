@@ -1,0 +1,44 @@
+# Render Blueprint for the backend API (the storefront is deployed separately on Vercel).
+# Uploaded images live on the persistent disk below, so they survive restarts and redeploys.
+# A disk requires a paid instance type (starter or higher).
+services:
+  - type: web
+    name: dryfruit-wholesale-api
+    runtime: node
+    region: singapore
+    plan: starter
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    disk:
+      name: uploads
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+      - key: JWT_SECRET
+        generateValue: true
+      # Secrets and per-environment values are entered in the Render dashboard (never committed)
+      - key: MONGO_URI
+        sync: false
+      - key: ADMIN_DEFAULT_PASSWORD
+        sync: false
+      - key: ADMIN_LOGIN_EMAIL
+        sync: false
+      # The Vercel storefront origin, e.g. https://your-store.vercel.app (comma-separate several)
+      - key: CLIENT_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: SMS_API_KEY
+        sync: false

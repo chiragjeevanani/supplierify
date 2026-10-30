@@ -1,0 +1,979 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Check, UploadCloud, Image as ImageIcon, Trash2, Plus, RefreshCw, Star, Loader2, Cloud, Sparkles, Layers } from 'lucide-react';
+
+import { CATEGORIES } from '../../../data/categories';
+import { useAdmin } from '../../../context/AdminContext';
+import { uploadApi } from '../../../utils/api';
+import { resolveProductImage } from '../../../utils/productImage';
+import { compressImageFile } from '../../../utils/compressImage';
+
+const EMPTY_PRODUCT = {
+  name: '',
+  tagline: '',
+  category: 'almonds-nuts',
+  isBestseller: true,
+  price: 500,
+  oldPrice: 550,
+  discountPercent: 9,
+  stockCount: 500,
+  minOrderQty: 0,
+  badge: 'BESTSELLER',
+  image: '',
+  gallery: [],
+  description: '',
+  details: '',
+  productDetails: '',
+  variants: [
+    { id: 'v1', name: 'Per kg', weight: '1 kg', price: 500, oldPrice: 550, stock: 500 }
+  ]
+};
+
+export default function AddProductModal({ isOpen, onClose, onSave, initialData = null, categories: propCategories = null }) {
+  const [activeTab, setActiveTab] = useState('basic');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadStatusMsg, setUploadStatusMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
+  const { categories: adminCategories, refreshCategories } = useAdmin();
+
+  const allCategories = (propCategories && propCategories.length > 0)
+    ? propCategories
+    : (adminCategories && adminCategories.length > 0)
+      ? adminCategories
+      : CATEGORIES;
+
+  const [formData, setFormData] = useState(EMPTY_PRODUCT);
+  const editingId = initialData?._id || initialData?.id || null;
+
+  useEffect(() => {
+    if (isOpen) {
+      if (refreshCategories) {
+        refreshCategories();
+      }
+      if (initialData) {
+        const rawGallery = Array.isArray(initialData.gallery) && initialData.gallery.length > 0
+          ? initialData.gallery.filter((img) => typeof img === 'string' && img.trim())
+          : (initialData.image ? [initialData.image] : []);
+        const mainImg = (typeof initialData.image === 'string' && initialData.image) || rawGallery[0] || '';
+        const resolvedGallery = rawGallery.includes(mainImg)
+          ? rawGallery
+          : (mainImg ? [mainImg, ...rawGallery] : rawGallery);
+
+        const mappedVariants = Array.isArray(initialData.variants) && initialData.variants.length > 0
+          ? initialData.variants.map((v, idx) => ({
+              id: v.id || `v_${idx + 1}`,
+              name: v.name || `Pack ${idx + 1}`,
+              weight: v.weight || '1 kg',
+              price: Number(v.price ?? initialData.price ?? 249),
+              oldPrice: Number(v.oldPrice ?? initialData.oldPrice ?? 299),
+              stock: Number(v.stock ?? initialData.stockCount ?? 150)
+            }))
+          : Array.isArray(initialData.weightOptions) && initialData.weightOptions.length > 0
+            ? initialData.weightOptions.map((w, idx) => ({
+                id: `v_${idx + 1}`,
+                name: w.isDefault ? 'Standard Pack' : `Pack ${idx + 1}`,
+                weight: w.weight || '1 kg',
+                price: Number(w.price ?? initialData.price ?? 249),
+                oldPrice: Number(w.oldPrice ?? initialData.oldPrice ?? 299),
+                stock: Number(initialData.stockCount ?? 150)
+              }))
+            : [
+                {
+                  id: 'v1',
+                  name: 'Standard Pack',
+                  weight: initialData.weight || '1 kg',
+                  price: initialData.price || 249,
+                  oldPrice: initialData.oldPrice || 299,
+                  stock: initialData.stockCount || 150
+                }
+              ];
+
+        setFormData({
+          name: initialData.name || '',
+          tagline: initialData.tagline || initialData.subtitle || '',
+          category: initialData.category || 'almonds-nuts',
+          isBestseller: initialData.isBestseller !== undefined ? Boolean(initialData.isBestseller) : true,
+          price: initialData.price !== undefined ? initialData.price : 500,
+          oldPrice: initialData.oldPrice !== undefined ? initialData.oldPrice : 0,
+          minOrderQty: initialData.minOrderQty || 0,
+          discountPercent: initialData.discountPercent || 0,
+          stockCount: initialData.stockCount !== undefined ? initialData.stockCount : 500,
+          badge: initialData.badge || '',
+          image: mainImg,
+          gallery: resolvedGallery,
+          description: initialData.description || '',
+          details: initialData.details || initialData.productDetails || '',
+          productDetails: initialData.productDetails || initialData.details || '',
+          flavor: initialData.flavor || '',
+          weight: initialData.weight || '1 kg',
+          variants: mappedVariants
+        });
+      } else {
+        const defaultCat = (allCategories && allCategories.length > 0)
+          ? (allCategories[0].slug || allCategories[0].id || 'almonds-nuts')
+          : 'almonds-nuts';
+        setFormData({
+          ...EMPTY_PRODUCT,
+          category: defaultCat
+        });
+      }
+      setActiveTab('basic');
+      setIsUploadingImage(false);
+      setIsSubmitting(false);
+      setUploadStatusMsg('');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+    // Re-init only when modal opens or the edited product identity changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, editingId]);
+
+  if (!isOpen) return null;
+
+
+  // Multi-image upload (up to 4 gallery photos, saved on the server)
+  const handleGalleryFilesUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const currentGallery = Array.isArray(formData.gallery) ? formData.gallery : [];
+    const maxImages = 4;
+    const remainingSlots = maxImages - currentGallery.length;
+
+    if (remainingSlots <= 0) {
+      alert('You can select up to 4 gallery photos. Please remove an existing photo first.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const filesToProcess = files.slice(0, remainingSlots);
+
+    // Instant blob previews (no heavy base64 encode before upload)
+    const previewUrls = filesToProcess.map((file) => URL.createObjectURL(file));
+
+    setFormData((prev) => {
+      const existing = Array.isArray(prev.gallery) ? prev.gallery : [];
+      const updated = [...existing, ...previewUrls].slice(0, maxImages);
+      return {
+        ...prev,
+        gallery: updated,
+        image: prev.image || updated[0] || ''
+      };
+    });
+
+    setIsUploadingImage(true);
+    setUploadStatusMsg(`Optimizing & uploading ${filesToProcess.length} photo(s)...`);
+
+    try {
+      // Compress on-device first (biggest speed win), then upload in parallel
+      const compressedFiles = await Promise.all(
+        filesToProcess.map((file) => compressImageFile(file))
+      );
+
+      setUploadStatusMsg(`Uploading ${compressedFiles.length} photo(s)...`);
+
+      const results = await Promise.allSettled(
+        compressedFiles.map((file) => uploadApi.uploadImage(file, 'wholesale_products'))
+      );
+
+      const uploadedByPreview = new Map();
+      let failedCount = 0;
+      results.forEach((res, i) => {
+        if (res.status === 'fulfilled' && res.value?.data?.url) {
+          uploadedByPreview.set(previewUrls[i], res.value.data.url);
+        } else {
+          failedCount += 1;
+        }
+      });
+
+      setFormData((prev) => {
+        const curGallery = Array.isArray(prev.gallery) ? [...prev.gallery] : [];
+        const finalGallery = curGallery
+          .map((img) => {
+            if (uploadedByPreview.has(img)) return uploadedByPreview.get(img);
+            // Drop unresolved local previews (blob: / data:)
+            if (typeof img === 'string' && (img.startsWith('blob:') || img.startsWith('data:'))) {
+              return null;
+            }
+            return img;
+          })
+          .filter((img) => typeof img === 'string' && img.trim());
+
+        return {
+          ...prev,
+          gallery: finalGallery,
+          image: finalGallery[0] || ''
+        };
+      });
+
+      // Free blob memory
+      previewUrls.forEach((url) => {
+        try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+      });
+
+      if (uploadedByPreview.size > 0) {
+        setUploadStatusMsg(
+          failedCount > 0
+            ? `Uploaded ${uploadedByPreview.size} photo(s). ${failedCount} failed — retry those slots.`
+            : `Uploaded ${uploadedByPreview.size} photo(s)!`
+        );
+      } else {
+        setUploadStatusMsg('Upload failed. Please try again with a smaller image.');
+      }
+    } catch (err) {
+      console.warn('Image upload error:', err.message);
+      previewUrls.forEach((url) => {
+        try { URL.revokeObjectURL(url); } catch (_) { /* ignore */ }
+      });
+      setFormData((prev) => {
+        const kept = (Array.isArray(prev.gallery) ? prev.gallery : []).filter(
+          (img) => typeof img === 'string' && !img.startsWith('blob:') && !img.startsWith('data:')
+        );
+        return {
+          ...prev,
+          gallery: kept,
+          image: kept[0] || ''
+        };
+      });
+      setUploadStatusMsg(err.message || 'Upload failed. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setTimeout(() => setUploadStatusMsg(''), 4000);
+    }
+  };
+
+  // Remove single image from gallery
+  const handleRemoveGalleryImage = (idxToRemove) => {
+    setFormData((prev) => {
+      const cur = Array.isArray(prev.gallery) ? prev.gallery : [];
+      const removed = cur[idxToRemove];
+      if (typeof removed === 'string' && removed.startsWith('blob:')) {
+        try { URL.revokeObjectURL(removed); } catch (_) { /* ignore */ }
+      }
+      const updated = cur.filter((_, idx) => idx !== idxToRemove);
+      return {
+        ...prev,
+        gallery: updated,
+        image: updated[0] || ''
+      };
+    });
+  };
+
+  // Set selected gallery image as Primary Cover Photo
+  const handleSetPrimaryImage = (targetIdx) => {
+    setFormData(prev => {
+      const cur = Array.isArray(prev.gallery) ? [...prev.gallery] : [];
+      if (targetIdx < 0 || targetIdx >= cur.length) return prev;
+      const [selected] = cur.splice(targetIdx, 1);
+      const updated = [selected, ...cur];
+      return {
+        ...prev,
+        gallery: updated,
+        image: selected
+      };
+    });
+  };
+
+  // Variant operations
+  const handleAddVariant = () => {
+    const newId = `v_${Date.now()}`;
+    const newVariant = {
+      id: newId,
+      name: 'New Size / Pack',
+      weight: '300g',
+      price: Math.round(Number(formData.price || 249) * 1.8),
+      oldPrice: Math.round(Number(formData.oldPrice || 299) * 1.8),
+      stock: 100
+    };
+    setFormData(prev => ({
+      ...prev,
+      variants: [...(prev.variants || []), newVariant]
+    }));
+  };
+
+  const handleUpdateVariant = (id, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: (prev.variants || []).map(v => v.id === id ? { ...v, [field]: value } : v)
+    }));
+  };
+
+  const handleRemoveVariant = (id) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: (prev.variants || []).filter(v => v.id !== id)
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.name.trim()) {
+      alert('Please enter a product name.');
+      return;
+    }
+    const priceNum = Number(formData.price);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      alert('Please enter a valid selling price greater than 0.');
+      return;
+    }
+    // Original price must be >= selling price (blank / 0 = no strike-through price)
+    const originalNum = Number(formData.oldPrice);
+    if (formData.oldPrice !== '' && formData.oldPrice !== undefined && originalNum > 0 && originalNum < priceNum) {
+      alert('Original price must be greater than or equal to the selling price.');
+      return;
+    }
+    const badVariant = (formData.variants || []).find(
+      (v) => Number(v.oldPrice) > 0 && Number(v.price || priceNum) > 0 && Number(v.oldPrice) < Number(v.price || priceNum)
+    );
+    if (badVariant) {
+      alert(`Pack "${badVariant.name || badVariant.weight || 'variant'}": original price must be greater than or equal to its selling price.`);
+      return;
+    }
+    if (isUploadingImage) {
+      alert('Please wait for photo upload to finish before saving.');
+      return;
+    }
+
+    const rawGallery = (Array.isArray(formData.gallery) ? formData.gallery : [])
+      .filter((img) => typeof img === 'string' && img.trim());
+    const pendingLocal = rawGallery.filter(
+      (img) => img.startsWith('data:') || img.startsWith('blob:')
+    );
+    if (pendingLocal.length > 0) {
+      alert('Some photos are still uploading. Wait for upload to finish, or remove them before saving.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const primaryImg = (typeof formData.image === 'string' && formData.image && !formData.image.startsWith('data:'))
+        ? formData.image
+        : (rawGallery[0] || resolveProductImage());
+      const finalGallery = rawGallery.length > 0
+        ? (rawGallery.includes(primaryImg) ? rawGallery : [primaryImg, ...rawGallery])
+        : [primaryImg];
+
+      // Send only editable fields — never re-post Mongo _id/timestamps/__v
+      const payload = {
+        name: formData.name.trim(),
+        tagline: formData.tagline || '',
+        category: formData.category || 'almonds-nuts',
+        flavor: formData.flavor || '',
+        price: priceNum,
+        oldPrice: Number(formData.oldPrice || Math.round(priceNum * 1.2)),
+        stockCount: Number(formData.stockCount || 0),
+        minOrderQty: Math.max(0, Number(formData.minOrderQty) || 0),
+        isBestseller: Boolean(formData.isBestseller),
+        badge: formData.badge || (formData.isBestseller ? 'BESTSELLER' : ''),
+        image: primaryImg,
+        gallery: finalGallery,
+        description: formData.description || '',
+        details: formData.productDetails || formData.details || '',
+        productDetails: formData.productDetails || formData.details || '',
+        // Wholesale: always one sellable unit, "1 kg", priced per kg
+        weight: '1 kg',
+        variants: [
+          {
+            id: 'v1',
+            name: 'Per kg',
+            weight: '1 kg',
+            price: priceNum,
+            oldPrice: Number(formData.oldPrice || 0),
+            stock: Number(formData.stockCount || 0)
+          }
+        ]
+      };
+      await onSave(payload);
+      onClose();
+    } catch (err) {
+      alert(err.message || 'Failed to save product. Please check connection.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div 
+      data-lenis-prevent
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs font-sans overflow-y-auto"
+    >
+      <div 
+        data-lenis-prevent
+        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden my-auto flex flex-col h-[88vh] max-h-[88vh] animate-in fade-in zoom-in-95 duration-200 border border-[color:var(--brand-accent)]/30"
+      >
+        
+        {/* Header */}
+        <div className="p-4 sm:p-5 bg-[color:var(--brand-primary)] text-white flex items-center justify-between border-b border-[color:var(--brand-accent)]/30 shrink-0">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)] flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> STORE CATALOG
+            </span>
+            <h3 className="font-sans text-base sm:text-xl font-bold mt-0.5">{initialData ? 'Edit Product' : 'Add New Product'}</h3>
+          </div>
+          <button 
+            type="button" 
+            disabled={isSubmitting} 
+            onClick={onClose} 
+            className="p-1.5 rounded-lg text-stone-400 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Form Tabs */}
+        <div className="flex border-b border-stone-200 px-4 sm:px-6 bg-[color:var(--brand-surface)] gap-4 sm:gap-6 shrink-0">
+          {[
+            { id: 'basic', label: 'Product Details & Pricing (per kg)' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`py-3 text-xs sm:text-[13.5px] font-bold tracking-wide border-b-2 transition-all ${
+                activeTab === tab.id
+                  ? 'border-[color:var(--brand-primary)] text-[color:var(--brand-primary)]'
+                  : 'border-transparent text-stone-500 hover:text-stone-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Scrollable Container */}
+        <div 
+          data-lenis-prevent
+          className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 overscroll-contain"
+        >
+          <form id="productForm" onSubmit={handleSubmit} className="space-y-4 font-sans">
+            {activeTab === 'basic' && (
+              <div className="space-y-4">
+                
+                {/* Title */}
+                <div>
+                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">
+                    Product Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g. Artisanal Truffle & Herb Dry Fruit"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]"
+                  />
+                </div>
+
+                {/* Category Selection */}
+                <div>
+                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">Category *</label>
+                  <select
+                    value={formData.category}
+                    onChange={e => {
+                      setFormData(prev => ({
+                        ...prev,
+                        category: e.target.value
+                      }));
+                    }}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white cursor-pointer"
+                  >
+                    {allCategories.map(c => {
+                      const catVal = c.slug || c.id || c._id;
+                      return (
+                        <option key={c.id || c.slug || c._id} value={catVal}>{c.name}</option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Pricing & Stock Row */}
+                <div className="p-3.5 bg-[color:var(--brand-surface)] rounded-xl border border-stone-200 space-y-3">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">
+                    Pricing & Inventory Details
+                  </span>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                        Selling Price (₹ per kg) *
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={formData.price}
+                        onChange={e => setFormData({ ...formData, price: e.target.value })}
+                        placeholder="500"
+                        className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                        Original Price (₹ per kg)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.oldPrice}
+                        onChange={e => setFormData({ ...formData, oldPrice: e.target.value })}
+                        placeholder="550"
+                        className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white focus:outline-none ${
+                          Number(formData.oldPrice) > 0 && Number(formData.price) > 0 && Number(formData.oldPrice) < Number(formData.price)
+                            ? 'border-rose-400 focus:border-rose-500'
+                            : 'border-stone-300 focus:border-[color:var(--brand-primary)]'
+                        }`}
+                      />
+                      {Number(formData.oldPrice) > 0 && Number(formData.price) > 0 && Number(formData.oldPrice) < Number(formData.price) && (
+                        <p className="mt-1 text-[10.5px] text-rose-600">
+                          Original price must be greater than or equal to the selling price.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                        Stock (kg)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.stockCount}
+                        onChange={e => setFormData({ ...formData, stockCount: e.target.value })}
+                        placeholder="500"
+                        className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                        Min. Order (kg)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.minOrderQty ?? 0}
+                        onChange={e => setFormData({ ...formData, minOrderQty: e.target.value })}
+                        placeholder="0 = store default"
+                        className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
+                      />
+                      <p className="mt-1 text-[10.5px] text-stone-500">0 uses the store-wide minimum from Settings.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Homepage Best Sellers Inclusion Option */}
+                <div className={`p-4 rounded-xl border transition-all ${
+                  formData.isBestseller 
+                    ? 'bg-[color:var(--brand-primary)]/5 border-[color:var(--brand-primary)] shadow-2xs' 
+                    : 'bg-stone-50 border-stone-200'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-primary)] flex items-center gap-1.5">
+                      <Star className={`w-3.5 h-3.5 ${formData.isBestseller ? 'text-[color:var(--brand-accent)] fill-[color:var(--brand-accent)]' : 'text-stone-400'}`} />
+                      Bestseller Status
+                    </span>
+                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                      formData.isBestseller 
+                        ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)]' 
+                        : 'bg-stone-200 text-stone-600'
+                    }`}>
+                      {formData.isBestseller ? 'Included in Bestsellers' : 'Regular Product'}
+                    </span>
+                  </div>
+                  
+                  <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all bg-white ${
+                    formData.isBestseller ? 'border-[color:var(--brand-primary)]/40 ring-1 ring-[color:var(--brand-primary)]/20' : 'border-stone-200 hover:border-stone-300'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={formData.isBestseller}
+                      onChange={e => setFormData({ 
+                        ...formData, 
+                        isBestseller: e.target.checked,
+                        badge: e.target.checked && !formData.badge ? 'BESTSELLER' : formData.badge
+                      })}
+                      className="w-4 h-4 mt-0.5 rounded text-[color:var(--brand-primary)] focus:ring-[color:var(--brand-primary)] accent-[color:var(--brand-primary)] cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <p className="text-xs sm:text-[13.5px] font-bold text-stone-900 flex items-center gap-1.5">
+                        <span>Include this product in Bestseller section</span>
+                      </p>
+                      <p className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">
+                        When enabled, this product automatically displays on the User App homepage in the <strong>"Our Bestsellers"</strong> carousel.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Product Photos & Gallery (3-4 Images Selection Option) */}
+                <div className="p-3.5 sm:p-4 bg-[color:var(--brand-surface)] rounded-xl border border-stone-200 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <label className="block text-xs sm:text-[13px] font-bold text-stone-900">
+                          Product Photos & Gallery
+                        </label>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          (formData.gallery?.length || 0) >= 3
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : (formData.gallery?.length || 0) > 0
+                            ? 'bg-amber-100 text-amber-800 border-amber-300'
+                            : 'bg-stone-100 text-stone-600 border-stone-300'
+                        }`}>
+                          {(formData.gallery?.length || 0)} of 4 photos selected
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 mt-0.5 font-normal">
+                        Select <strong>3 to 4 images</strong> to showcase packaging front, Dry Fruits texture, and nutrition details in the user app gallery slider.
+                      </p>
+                    </div>
+
+                  </div>
+
+                  {/* Multi-file Hidden Input */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleGalleryFilesUpload}
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                  />
+
+                  {/* Gallery Grid (3-4 Slots) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {(formData.gallery || []).map((imgUrl, idx) => {
+                      const isPrimary = idx === 0;
+                      const isLocalPreview = typeof imgUrl === 'string' && (imgUrl.startsWith('blob:') || imgUrl.startsWith('data:'));
+                      return (
+                        <div 
+                          key={`${idx}-${typeof imgUrl === 'string' ? imgUrl.slice(0, 48) : idx}`}
+                          className={`relative aspect-square rounded-xl overflow-hidden border-2 bg-white shadow-2xs group transition-all ${
+                            isPrimary ? 'border-[color:var(--brand-primary)] ring-2 ring-[color:var(--brand-accent)]/40' : 'border-stone-200 hover:border-stone-400'
+                          }`}
+                        >
+                          <img
+                            src={isLocalPreview ? imgUrl : resolveProductImage(imgUrl)}
+                            alt={`Gallery ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+
+                          {/* Top-left badge */}
+                          <div className="absolute top-1.5 left-1.5 pointer-events-none z-10">
+                            {isPrimary ? (
+                              <span className="bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-[9.5px] font-bold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+                                <Star className="w-2.5 h-2.5 fill-[color:var(--brand-accent)]" /> Cover
+                              </span>
+                            ) : (
+                              <span className="bg-black/60 backdrop-blur-xs text-white text-[9.5px] font-semibold px-1.5 py-0.5 rounded shadow-xs">
+                                #{idx + 1}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Always-visible delete icon (top-right) */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveGalleryImage(idx);
+                            }}
+                            className="absolute top-1.5 right-1.5 z-20 p-1.5 rounded-full bg-rose-600 text-white hover:bg-rose-700 shadow-md transition-colors cursor-pointer"
+                            title="Delete photo"
+                            aria-label="Delete photo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Cloud / uploading hint */}
+                          {typeof imgUrl === 'string' && imgUrl.startsWith('/uploads/') && (
+                            <span className="absolute bottom-1.5 left-1.5 z-10 bg-[color:var(--brand-primary)]/80 text-[color:var(--brand-accent)] text-[8px] font-bold px-1 py-0.5 rounded flex items-center gap-0.5 shadow-xs pointer-events-none">
+                              <Cloud className="w-2 h-2" /> Saved
+                            </span>
+                          )}
+                          {isLocalPreview && isUploadingImage && (
+                            <span className="absolute inset-0 z-10 bg-black/35 flex flex-col items-center justify-center gap-1 pointer-events-none">
+                              <Loader2 className="w-5 h-5 text-[color:var(--brand-accent)] animate-spin" />
+                              <span className="text-[10px] font-bold text-white">Uploading...</span>
+                            </span>
+                          )}
+
+                          {/* Hover: Set as Cover */}
+                          {!isPrimary && (
+                            <div className="absolute inset-x-0 bottom-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSetPrimaryImage(idx);
+                                }}
+                                className="w-full py-1 rounded bg-white text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-accent)] text-[10px] font-bold uppercase tracking-wider transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1"
+                              >
+                                <Star className="w-2.5 h-2.5" />
+                                <span>Set as Cover</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Add More Photos Slot (Visible if fewer than 4 photos) */}
+                    {(formData.gallery?.length || 0) < 4 && (
+                      <button
+                        type="button"
+                        disabled={isUploadingImage}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-square rounded-xl border-2 border-dashed border-stone-300 hover:border-[color:var(--brand-primary)] bg-white/80 hover:bg-white transition-all flex flex-col items-center justify-center text-center p-3 gap-1.5 group cursor-pointer disabled:opacity-50"
+                      >
+                        {isUploadingImage ? (
+                          <>
+                            <Loader2 className="w-5 h-5 text-[color:var(--brand-accent)] animate-spin" />
+                            <span className="text-[10px] font-bold text-stone-600">Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)] group-hover:bg-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] flex items-center justify-center transition-colors">
+                              <Plus className="w-4 h-4" />
+                            </div>
+                            <span className="text-[11px] font-bold text-stone-800">
+                              Add Photo
+                            </span>
+                            <span className="text-[9.5px] text-stone-400 font-medium">
+                              Slot {(formData.gallery?.length || 0) + 1} of 4
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Empty state / multi-upload banner if no photos added yet */}
+                  {(!formData.gallery || formData.gallery.length === 0) && (
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-stone-300 hover:border-[color:var(--brand-primary)] rounded-xl p-5 bg-white text-center cursor-pointer transition-all space-y-2"
+                    >
+                      <UploadCloud className="w-8 h-8 text-[color:var(--brand-accent)] mx-auto" />
+                      <div>
+                        <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">
+                          Click to select 3–4 gallery photos at once
+                        </p>
+                        <p className="text-[11px] text-stone-500 font-normal mt-0.5">
+                          Hold <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[10px]">Ctrl</kbd> or <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[10px]">Shift</kbd> in file explorer to select multiple files. PNG, JPG, WEBP formats.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-xs font-bold uppercase tracking-wider shadow-xs hover:bg-[color:var(--brand-primary-light)] pointer-events-none"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Choose 3–4 Photos</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload status message */}
+                  {uploadStatusMsg && (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                      <Check className="w-3.5 h-3.5 shrink-0" />
+                      <span>{uploadStatusMsg}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Short Tagline */}
+                <div>
+                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">Short Tagline / Flavor Note</label>
+                  <input
+                    type="text"
+                    value={formData.tagline}
+                    onChange={e => setFormData({ ...formData, tagline: e.target.value })}
+                    placeholder="e.g. Infused with sun-dried Italian garden herbs"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">
+                    Product Description
+                  </label>
+                  <p className="text-[11px] text-stone-500 mb-1.5 font-normal">
+                    Displays under the Description tab on the product details page.
+                  </p>
+                  <textarea
+                    rows={3}
+                    value={formData.description || ''}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe the roast quality, ingredients, and flavor profile..."
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  />
+                </div>
+
+                {/* Product Details & Specifications */}
+                <div>
+                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">
+                    Product Details & Specifications
+                  </label>
+                  <p className="text-[11px] text-stone-500 mb-1.5 font-normal">
+                    Displays under the Product Details tab on the storefront. Add key specifications, ingredients, storage, origin, or shelf life (one bullet per line).
+                  </p>
+                  <textarea
+                    rows={4}
+                    value={formData.productDetails || formData.details || ''}
+                    onChange={e => setFormData({
+                      ...formData,
+                      productDetails: e.target.value,
+                      details: e.target.value
+                    })}
+                    placeholder="• Grade: Premium 6-suta hand-graded jumbo dry fruits&#10;• Roast: Slow-roasted in virgin cold-pressed olive mist&#10;• Ingredients: 94% dry fruits, 4% Olive Mist, 2% Himalayan Salt&#10;• Shelf Life: 9 Months from packaging date&#10;• Storage: Store in a cool, airtight container"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] font-mono text-stone-800"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Product Variants Tab */}
+            {activeTab === 'variants' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-sans text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">Pack Sizes & Variants</h4>
+                    <p className="text-xs text-stone-500">Pack size options for this product.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddVariant}
+                    className="px-3 py-1.5 rounded-md bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-xs font-bold flex items-center gap-1 hover:bg-[color:var(--brand-primary-light)] transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Size</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(formData.variants || []).map((v, idx) => (
+                    <div 
+                      key={v.id || idx}
+                      className="p-3.5 bg-[color:var(--brand-surface)] rounded-xl border border-stone-200 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[color:var(--brand-primary)]">Variant #{idx + 1}</span>
+                        {(formData.variants?.length || 0) > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariant(v.id)}
+                            className="text-stone-400 hover:text-rose-600 transition-colors p-1"
+                            title="Remove variant"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Variant Name</label>
+                          <input
+                            type="text"
+                            value={v.name}
+                            onChange={e => handleUpdateVariant(v.id, 'name', e.target.value)}
+                            placeholder="e.g. Family Pack"
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Weight / Size</label>
+                          <input
+                            type="text"
+                            value={v.weight}
+                            onChange={e => handleUpdateVariant(v.id, 'weight', e.target.value)}
+                            placeholder="e.g. 300g"
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Selling Price (₹)</label>
+                          <input
+                            type="number"
+                            value={v.price}
+                            onChange={e => handleUpdateVariant(v.id, 'price', Number(e.target.value))}
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Original Price (₹)</label>
+                          <input
+                            type="number"
+                            value={v.oldPrice}
+                            onChange={e => handleUpdateVariant(v.id, 'oldPrice', Number(e.target.value))}
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Stock</label>
+                          <input
+                            type="number"
+                            value={v.stock}
+                            onChange={e => handleUpdateVariant(v.id, 'stock', Number(e.target.value))}
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Footer buttons (Fixed at bottom) */}
+        <div className="p-4 border-t border-stone-200 bg-[color:var(--brand-surface)] flex justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-lg border border-stone-300 text-xs sm:text-sm font-semibold uppercase tracking-wider text-stone-700 hover:bg-stone-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="productForm"
+            disabled={isSubmitting || isUploadingImage}
+            className="px-6 py-2.5 rounded-lg bg-[color:var(--brand-primary)] text-white hover:bg-[color:var(--brand-primary-light)] text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md hover:scale-102 transition-all disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 text-[color:var(--brand-accent)] animate-spin" />
+                <span>Saving Product...</span>
+              </>
+            ) : isUploadingImage ? (
+              <>
+                <Loader2 className="w-4 h-4 text-[color:var(--brand-accent)] animate-spin" />
+                <span>Waiting for Upload...</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 text-[color:var(--brand-accent)]" />
+                <span>Save Product</span>
+              </>
+            )}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
