@@ -4,13 +4,15 @@
  */
 
 const UPLOAD_PATH = /^\/uploads\/[a-z0-9_-]{1,40}\/[A-Za-z0-9._-]+$/;
+// Images bundled with the storefront build (e.g. /assets/banners/banner-1.jpg)
+const BUNDLED_PATH = /^\/assets\/[a-z0-9_-]{1,40}(\/[a-z0-9_-]{1,40})?\/[A-Za-z0-9._-]+\.(jpe?g|png|webp|avif)$/i;
 const HTTP_URL = /^https?:\/\/[^\s"'<>]+$/i;
 
-/** Uploaded image path ("/uploads/...") or an http(s) image URL. Returns the trimmed value or null. */
+/** Uploaded image path ("/uploads/..."), bundled "/assets/..." image or http(s) URL. Returns the trimmed value or null. */
 export const cleanImageUrl = (value) => {
   const v = String(value ?? '').trim();
   if (!v) return null;
-  return UPLOAD_PATH.test(v) || HTTP_URL.test(v) ? v : null;
+  return UPLOAD_PATH.test(v) || BUNDLED_PATH.test(v) || HTTP_URL.test(v) ? v : null;
 };
 
 /** In-site path ("/shop") or an http(s) URL. Returns the trimmed value or null. */

@@ -33,8 +33,8 @@ const make = ({
   badgeType: badge ? 'bestseller' : 'popular',
   isBestseller,
   isFeatured,
-  image: `/assets/dryfruits/${slug}.svg`,
-  gallery: [`/assets/dryfruits/${slug}.svg`],
+  image: `/assets/dryfruits/${slug}.jpg`,
+  gallery: [`/assets/dryfruits/${slug}.jpg`],
   description,
   details: description,
   productDetails: description,
@@ -51,7 +51,7 @@ export const DRYFRUIT_CATEGORIES_SEED = [
   { name: 'Seeds & Mixes', slug: 'seeds-mixes', subtext: 'Seeds and mixed dry fruits', description: 'Chia, pumpkin and sunflower seeds plus ready mixes.', badge: '' }
 ].map((c, i) => ({
   ...c,
-  image: `/assets/dryfruits/${c.slug}.svg`,
+  image: `/assets/dryfruits/${c.slug}.jpg`,
   popular: true,
   status: 'Active',
   sortOrder: i + 1,

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BadgeCheck, Boxes, MessageCircle, ShieldCheck, Truck } from 'lucide-react';
 
 import { BRAND } from '../../../config/brand';
+import { PHOTO_CREDITS } from '../../../data/photoCredits';
 import { useStoreRules } from '../../../hooks/useStoreRules';
 import { buildGeneralEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
 
@@ -51,6 +52,18 @@ export default function AboutPage() {
           <li>We pack and dispatch your order and share the tracking details.</li>
         </ol>
       </section>
+
+      <details className="text-xs text-stone-500">
+        <summary className="cursor-pointer font-semibold">Photo credits</summary>
+        <ul className="mt-2 space-y-1">
+          {PHOTO_CREDITS.map((c) => (
+            <li key={c.source}>
+              <a href={c.source} target="_blank" rel="noopener noreferrer" className="underline">{c.title}</a>
+              {' '}by {c.author}, {c.license} (Wikimedia Commons)
+            </li>
+          ))}
+        </ul>
+      </details>
 
       <div className="flex flex-wrap gap-3">
         <Link to="/shop" className="rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] font-bold px-5 py-3 hover:bg-[color:var(--brand-primary-hover)]">
