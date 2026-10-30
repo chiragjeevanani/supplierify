@@ -85,7 +85,13 @@ const SETTINGS_UPDATE_KEYS = [
   'currency',
   'storeAddress',
   'timezone',
-  'helpSupport'
+  'helpSupport',
+  // Wholesale rules + branding (must be listed here or the admin Save silently drops them)
+  'minOrderQtyKg',
+  'whatsappNumber',
+  'logoUrl',
+  'faviconUrl',
+  'theme'
 ];
 
 function sanitizeSettingsPayload(raw = {}) {
@@ -585,8 +591,8 @@ export function AdminProvider({ children }) {
         : (productData.image ? [productData.image] : [resolveProductImage()]),
       weight: productData.weight || '150g',
       inStock: productData.inStock !== false,
-      rating: Number(productData.rating || 4.8),
-      reviewsCount: Number(productData.reviewsCount || 100),
+      rating: Number(productData.rating || 5),
+      reviewsCount: Number(productData.reviewsCount || 0),
       weightOptions: productData.weightOptions || [
         { weight: "150g", price: priceNum, oldPrice: oldPriceNum, isDefault: true },
         { weight: "300g", price: Math.round(priceNum * 1.8), oldPrice: Math.round(oldPriceNum * 1.8) }

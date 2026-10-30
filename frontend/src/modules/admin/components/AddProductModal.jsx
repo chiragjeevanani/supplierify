@@ -377,6 +377,9 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         productDetails: formData.productDetails || formData.details || '',
         // Wholesale: always one sellable unit, "1 kg", priced per kg
         weight: '1 kg',
+        weightOptions: [
+          { weight: '1 kg', price: priceNum, oldPrice: Number(formData.oldPrice || 0), isDefault: true }
+        ],
         variants: [
           {
             id: 'v1',
