@@ -181,7 +181,7 @@ export default function ShopPage() {
       ) : (
         <>
           <p className="text-xs text-stone-500 mb-3">{results.length} product{results.length === 1 ? '' : 's'}</p>
-          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {results.slice(0, visible).map((p, i) => (
               <ProductCard key={p._id || p.id || p.slug} product={p} priority={i < 4} />
             ))}

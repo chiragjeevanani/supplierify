@@ -145,7 +145,7 @@ export default function HomePage() {
       {featured.length > 0 && (
         <section aria-label="Top featured products">
           <SectionHeader title="Top Featured Products" to="/shop" />
-          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {featured.map((p, i) => (
               <ProductCard key={p._id || p.id || p.slug} product={p} priority={i < 2} />
             ))}
@@ -157,7 +157,7 @@ export default function HomePage() {
       {popular.length > 0 && (
         <section aria-label="Most popular products">
           <SectionHeader title="Most Popular Products" to="/shop" />
-          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {popular.map((p) => (
               <ProductCard key={p._id || p.id || p.slug} product={p} />
             ))}

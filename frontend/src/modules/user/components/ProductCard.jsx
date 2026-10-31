@@ -47,7 +47,7 @@ export default function ProductCard({ product, priority = false }) {
 
   return (
     <div className="group bg-white rounded-xl border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden text-left">
-      <div className="relative w-full aspect-square overflow-hidden bg-[color:var(--brand-surface)]">
+      <div className="relative w-full aspect-[4/3] sm:aspect-square overflow-hidden bg-[color:var(--brand-surface)]">
         <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
           {product.badge ? (
             <span className="text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider bg-[color:var(--brand-accent-dark)] text-white shadow-sm">
@@ -80,7 +80,7 @@ export default function ProductCard({ product, priority = false }) {
 
       <div className="p-3 sm:p-4 flex flex-col flex-1">
         <Link to={`/product/${productId}`} className="block">
-          <h3 className="font-serif text-[15px] sm:text-base font-bold text-[color:var(--brand-primary)] line-clamp-1 leading-snug">
+          <h3 className="font-serif text-base font-bold text-[color:var(--brand-primary)] line-clamp-2 leading-snug sm:min-h-[2.75rem]">
             {product.name}
           </h3>
         </Link>
@@ -101,16 +101,18 @@ export default function ProductCard({ product, priority = false }) {
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between mt-3">
-              <KgStepper size="sm" value={qty} min={minQty} max={maxQty === Infinity ? 100000 : maxQty} onChange={setQty} />
-              <span className="text-xs text-stone-500">kg</span>
-              <span className="text-sm font-extrabold text-[color:var(--brand-primary)]">{inr(price * (Number(qty) || 0))}</span>
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <KgStepper size="sm" value={qty} min={minQty} max={maxQty === Infinity ? 100000 : maxQty} onChange={setQty} />
+                <span className="text-xs text-stone-500">kg</span>
+              </div>
+              <span className="ml-auto text-base font-extrabold text-[color:var(--brand-primary)] whitespace-nowrap">{inr(price * (Number(qty) || 0))}</span>
             </div>
 
             <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={handleAddToCart}
-                className={`flex-1 h-10 rounded-lg text-xs font-bold tracking-wide uppercase flex items-center justify-center gap-1.5 transition-colors ${
+                className={`flex-1 min-w-0 h-11 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap flex items-center justify-center gap-1.5 transition-colors ${
                   isAdded ? 'bg-emerald-700 text-white' : 'bg-[color:var(--brand-primary)] text-white hover:bg-[color:var(--brand-primary-hover)]'
                 }`}
               >
@@ -121,7 +123,7 @@ export default function ProductCard({ product, priority = false }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="w-10 h-10 rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white flex items-center justify-center shrink-0"
+                className="w-11 h-11 rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white flex items-center justify-center shrink-0"
                 title="Enquire on WhatsApp"
                 aria-label="Enquire on WhatsApp"
               >
