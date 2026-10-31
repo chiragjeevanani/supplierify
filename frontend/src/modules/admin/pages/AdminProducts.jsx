@@ -238,13 +238,13 @@ export default function AdminProducts() {
               <table className="w-full text-left">
                 <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[12.5px] font-bold">
                   <tr>
-                    <th className="py-3.5 px-5 w-[8%]">Image</th>
-                    <th className="py-3.5 px-5 w-[28%]">Product Name</th>
-                    <th className="py-3.5 px-5 w-[18%]">Category</th>
-                    <th className="py-3.5 px-5 w-[14%]">Price</th>
-                    <th className="py-3.5 px-5 w-[14%]">Stock</th>
-                    <th className="py-3.5 px-5 w-[11%]">Status</th>
-                    <th className="py-3.5 px-5 w-[7%] text-right">Actions</th>
+                    <th className="py-3.5 px-2 sm:px-5 w-[8%]">Image</th>
+                    <th className="py-3.5 px-2 sm:px-5 w-[28%]">Product Name</th>
+                    <th className="hidden md:table-cell py-3.5 px-5 w-[18%]">Category</th>
+                    <th className="py-3.5 px-2 sm:px-5 w-[14%]">Price</th>
+                    <th className="hidden lg:table-cell py-3.5 px-5 w-[14%]">Stock</th>
+                    <th className="hidden sm:table-cell py-3.5 px-5 w-[11%]">Status</th>
+                    <th className="py-3.5 px-2 sm:px-5 w-[7%] text-right"><span className="sr-only sm:not-sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 font-medium text-xs sm:text-sm">
@@ -303,15 +303,15 @@ export default function AdminProducts() {
                       const displayImage = resolveProductImage(p);
                       return (
                         <tr key={p.id || p._id} className="hover:bg-stone-50/80 transition-colors">
-                          <td className="py-3.5 px-5">
+                          <td className="py-3.5 px-2 sm:px-5">
                             <img
                               src={displayImage}
                               alt=""
-                              className="w-11 h-11 rounded-md object-cover border border-stone-200 bg-[color:var(--brand-surface)] p-0.5"
+                              className="w-10 h-10 sm:w-11 sm:h-11 rounded-md object-cover border border-stone-200 bg-[color:var(--brand-surface)] p-0.5"
                             />
                           </td>
-                          <td className="py-3.5 px-5">
-                            <div className="flex items-center gap-2">
+                          <td className="py-3.5 px-2 sm:px-5 min-w-[90px]">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-sans font-semibold text-sm sm:text-[15px] text-[color:var(--brand-primary)]">{p.name}</span>
                               {p.isBestseller && (
                                 <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded">
@@ -321,7 +321,7 @@ export default function AdminProducts() {
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                              <span className="text-xs text-stone-400 font-normal">{p.flavor || p.subtitle || 'Natural Seasoning'} • {p.weight || '150g'}</span>
+                              <span className="text-xs text-stone-400 font-normal">{p.flavor || p.subtitle || 'Dry fruit'} • {p.weight || '1 kg'}</span>
                               {p.gallery && p.gallery.length > 1 && (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
                                   <ImageIcon className="w-2.5 h-2.5 text-emerald-600" />
@@ -329,22 +329,38 @@ export default function AdminProducts() {
                                 </span>
                               )}
                             </div>
+                            {/* Phones: the Category / Stock / Status columns are hidden, so show them here */}
+                            <div className="lg:hidden mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-[11px] text-stone-500">
+                              <span className="md:hidden capitalize">
+                                {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
+                              </span>
+                              <span className={`font-semibold ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-600'}`}>{p.stockCount ?? 0} kg in stock</span>
+                            </div>
+                            <button
+                              onClick={() => handleToggle(p)}
+                              className={`sm:hidden mt-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider cursor-pointer ${
+                                isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {isActive ? 'Active' : 'Inactive'}
+                            </button>
                           </td>
-                          <td className="py-3.5 px-5 capitalize text-stone-700 font-medium text-xs sm:text-[13.5px]">
+                          <td className="hidden md:table-cell py-3.5 px-5 capitalize text-stone-700 font-medium text-xs sm:text-[13.5px]">
                             {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
                           </td>
-                          <td className="py-3.5 px-5">
+                          <td className="py-3.5 px-2 sm:px-5 whitespace-nowrap">
                             <span className="font-bold text-sm sm:text-base text-stone-900">₹{p.price}</span>
                             {p.oldPrice && (
-                              <span className="text-xs text-stone-400 line-through ml-1.5">₹{p.oldPrice}</span>
+                              <span className="hidden sm:inline text-xs text-stone-400 line-through ml-1.5">₹{p.oldPrice}</span>
                             )}
+                            <span className="text-[11px] text-stone-400 font-normal"> /kg</span>
                           </td>
-                          <td className="py-3.5 px-5">
+                          <td className="hidden lg:table-cell py-3.5 px-5">
                             <span className={`font-semibold text-xs sm:text-sm ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-700'}`}>
-                              {p.stockCount ?? 150} units
+                              {p.stockCount ?? 0} kg
                             </span>
                           </td>
-                          <td className="py-3.5 px-5">
+                          <td className="hidden sm:table-cell py-3.5 px-5">
                             <button
                               onClick={() => handleToggle(p)}
                               className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
@@ -356,8 +372,8 @@ export default function AdminProducts() {
                               {isActive ? 'Active' : 'Inactive'}
                             </button>
                           </td>
-                          <td className="py-3.5 px-5 text-right">
-                            <div className="flex items-center justify-end gap-1">
+                          <td className="py-3.5 px-1 sm:px-5 text-right">
+                            <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                               <button
                                 type="button"
                                 onClick={() => setViewingProduct(p)}

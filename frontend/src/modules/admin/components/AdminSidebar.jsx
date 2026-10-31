@@ -124,8 +124,8 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
       <aside
         ref={asideRef}
         data-lenis-prevent
-        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] border-r border-[color:var(--brand-accent)]/25 flex flex-col transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] border-r border-[color:var(--brand-accent)]/25 flex flex-col transition-[transform,visibility] duration-300 ${
+          isOpen ? 'translate-x-0 visible' : '-translate-x-full invisible lg:translate-x-0 lg:visible'
         }`}
       >
         {/* Top Logo & Header — fixed height */}

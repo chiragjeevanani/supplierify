@@ -194,7 +194,7 @@ export default function UserLayout({ children }) {
             <h1 className="font-serif text-base lg:text-lg font-bold text-[color:var(--brand-primary)] leading-tight truncate">{pageTitle}</h1>
           </div>
 
-          <form onSubmit={submitSearch} className="flex-1 max-w-xl ml-auto sm:ml-4" role="search">
+          <form onSubmit={submitSearch} className="flex-1 min-w-0 max-w-xl ml-auto sm:ml-4" role="search">
             <div className="flex items-center rounded-lg border border-[color:var(--brand-border-strong)] bg-[color:var(--brand-surface)] focus-within:border-[color:var(--brand-accent)] overflow-hidden">
               <input
                 value={query}
@@ -241,7 +241,7 @@ export default function UserLayout({ children }) {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-1.5 rounded-lg bg-[color:var(--brand-primary)] text-white px-3 sm:px-4 py-2 text-sm font-bold hover:bg-[color:var(--brand-primary-hover)]"
+                className="flex items-center gap-1.5 rounded-lg bg-[color:var(--brand-primary)] text-white px-2.5 sm:px-4 py-2 text-sm font-bold whitespace-nowrap hover:bg-[color:var(--brand-primary-hover)]"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Login</span>
@@ -264,9 +264,9 @@ export default function UserLayout({ children }) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat on WhatsApp"
-          className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+          className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#25D366] text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
         >
-          <MessageCircle className="w-7 h-7" />
+          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
         </a>
       )}
     </div>

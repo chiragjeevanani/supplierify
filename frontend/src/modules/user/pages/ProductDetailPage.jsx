@@ -26,7 +26,7 @@ export default function ProductDetailPage() {
   const { addToCart, getStockLimit, getRemainingStock } = useCart();
   const rules = useStoreRules();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { products: PRODUCTS, reviews: REVIEWS, addReview } = useAdmin();
+  const { products: PRODUCTS, reviews: REVIEWS, addReview, categories: ALL_CATEGORIES } = useAdmin();
 
   // Find product by unique product ID first, with fallback to slug
   const product = useMemo(() => {
@@ -252,6 +252,10 @@ export default function ProductDetailPage() {
     navigate('/checkout');
   };
 
+  const categoryLabel =
+    (ALL_CATEGORIES || []).find((c) => c.slug === product.category)?.name ||
+    String(product.category || '').replace(/-/g, ' ');
+
   const similarProducts = PRODUCTS
     .filter(p => p.id !== product.id && (p.category === product.category || p.isBestseller))
     .slice(0, 4);
@@ -266,7 +270,7 @@ export default function ProductDetailPage() {
           <Link to="/" className="hover:text-[color:var(--brand-primary)] transition-colors">Home</Link>
           <ChevronRight className="w-3.5 h-3.5" />
           <Link to={`/shop?category=${product.category}`} className="hover:text-[color:var(--brand-primary)] capitalize transition-colors">
-            {product.category?.replace('-', ' ')}
+            {categoryLabel}
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-[color:var(--brand-primary)] font-semibold">{product.name}</span>
@@ -562,7 +566,7 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="p-3.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
                         <span className="text-stone-400 block text-[11px] font-bold uppercase tracking-wider">Category</span>
-                        <span className="font-bold text-stone-900 capitalize mt-0.5 block">{product.category?.replace(/-/g, ' ')}</span>
+                        <span className="font-bold text-stone-900 capitalize mt-0.5 block">{categoryLabel}</span>
                       </div>
                       <div className="p-3.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
                         <span className="text-stone-400 block text-[11px] font-bold uppercase tracking-wider">Dietary & Processing</span>
