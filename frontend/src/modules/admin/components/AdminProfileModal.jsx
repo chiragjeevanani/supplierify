@@ -10,7 +10,7 @@ export default function AdminProfileModal({ isOpen, onClose }) {
   const [profile, setProfile] = useState({
     name: 'Admin Manager',
     role: 'Super Administrator',
-    email: 'admin@example.com',
+    email: 'admin@supplierfy.com',
     phone: '+91 00000 00000',
     hub: 'Main Warehouse, Mumbai, MH',
     department: 'Store Operations & Catalog Logistics',

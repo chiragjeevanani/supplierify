@@ -44,11 +44,11 @@ const env = {
   DNS_SERVERS: String(process.env.DNS_SERVERS || '').trim(),
   FRONTEND_URL: resolveFrontendUrl(),
   // Recovery inbox — forgot-password emails are ALWAYS sent here
-  ADMIN_RECOVERY_EMAIL: String(process.env.ADMIN_RECOVERY_EMAIL || 'admin@example.com')
+  ADMIN_RECOVERY_EMAIL: String(process.env.ADMIN_RECOVERY_EMAIL || 'admin@supplierfy.com')
     .trim()
     .toLowerCase(),
   // Login identity for the recoverable super-admin account
-  ADMIN_LOGIN_EMAIL: String(process.env.ADMIN_LOGIN_EMAIL || 'admin@example.com')
+  ADMIN_LOGIN_EMAIL: String(process.env.ADMIN_LOGIN_EMAIL || 'admin@supplierfy.com')
     .trim()
     .toLowerCase(),
   SMTP: {

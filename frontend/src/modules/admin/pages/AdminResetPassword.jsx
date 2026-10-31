@@ -35,7 +35,7 @@ export default function AdminResetPassword() {
       .then((res) => {
         if (cancelled) return;
         setTokenValid(true);
-        setAdminEmail(res?.data?.email || 'admin@example.com');
+        setAdminEmail(res?.data?.email || 'admin@supplierfy.com');
         setError('');
       })
       .catch((err) => {

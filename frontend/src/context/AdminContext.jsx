@@ -147,7 +147,7 @@ const INITIAL_PROMOTIONS = [
 import { adminAuthApi, productApi, categoryApi, adminSettingsApi, settingsApi, adminReviewApi, reviewApi, adminCouponApi } from '../utils/api';
 
 const DEFAULT_ADMIN_CREDENTIALS = {
-  email: "admin@example.com",
+  email: "admin@supplierfy.com",
   password: "admin"
 };
 
@@ -201,7 +201,7 @@ export function AdminProvider({ children }) {
     }
     return {
       name: "Super Admin",
-      email: "admin@example.com",
+      email: "admin@supplierfy.com",
       role: "ADMIN"
     };
   });
@@ -233,21 +233,11 @@ export function AdminProvider({ children }) {
         return { success: false, message: err.message || 'Invalid email or password.' };
       }
 
-      // If backend is offline, check fallback dev credentials
-      if (
-        (trimmedEmail === 'admin@example.com' || trimmedEmail === 'admin') &&
-        (trimmedPassword === 'admin' || trimmedPassword === 'Admin@123456' || trimmedPassword === 'wholesale@2026')
-      ) {
-        setIsAdminAuthenticated(true);
-        try {
-          localStorage.setItem('wholesale_admin_auth', 'true');
-        } catch (e) {
-          console.error(e);
-        }
-        return { success: true };
-      }
-
-      return { success: false, message: err.message || "Invalid email or password." };
+      // Never fall back to built-in credentials: if the server cannot be reached, login simply fails
+      return {
+        success: false,
+        message: err.status ? (err.message || 'Invalid email or password.') : 'Could not reach the server. Please try again in a moment.'
+      };
     }
 
     return { success: false, message: "Invalid email or password." };

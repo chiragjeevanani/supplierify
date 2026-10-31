@@ -32,7 +32,7 @@ export default function AdminProfile() {
   const [profile, setProfile] = useState({
     name: adminUser?.name || 'Admin Manager',
     role: adminUser?.role === 'ADMIN' ? 'Super Administrator' : (adminUser?.role || 'Super Administrator'),
-    email: adminUser?.email || 'admin@example.com',
+    email: adminUser?.email || 'admin@supplierfy.com',
     phone: adminUser?.phone || '',
     accessLevel: 'Tier 1 Executive Clearance',
     warehouseName: DEFAULT_WAREHOUSE.warehouseName,
