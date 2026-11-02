@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, ShoppingBag, LayoutGrid, ShoppingCart, Heart, User, LifeBuoy, Shield, X, Search, Package,
-  Info, Phone, MessageCircle, Menu, LogIn
+  Info, Phone, Menu, LogIn
 } from 'lucide-react';
+import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import Logo from './Logo';
 import { BRAND } from '../../../config/brand';
@@ -151,7 +152,7 @@ export default function UserLayout({ children }) {
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm py-3 transition-colors"
         >
-          <MessageCircle className="w-5 h-5" />
+          <WhatsAppIcon className="w-5 h-5" />
           Chat on WhatsApp
         </a>
         <p className="text-[11px] text-white/50 text-center mt-2">Wholesale orders only</p>
@@ -266,7 +267,7 @@ export default function UserLayout({ children }) {
           aria-label="Chat on WhatsApp"
           className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#25D366] text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
         >
-          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
+          <WhatsAppIcon className="w-7 h-7 sm:w-8 sm:h-8" />
         </a>
       )}
     </div>

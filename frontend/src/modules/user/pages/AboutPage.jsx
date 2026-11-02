@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Boxes, MessageCircle, ShieldCheck, Truck } from 'lucide-react';
+import { BadgeCheck, Boxes, ShieldCheck, Truck } from 'lucide-react';
+import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import { BRAND } from '../../../config/brand';
 import { PHOTO_CREDITS } from '../../../data/photoCredits';
@@ -75,7 +76,7 @@ export default function AboutPage() {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857]"
         >
-          <MessageCircle className="w-5 h-5" /> Chat on WhatsApp
+          <WhatsAppIcon className="w-5 h-5" /> Chat on WhatsApp
         </a>
       </div>
     </div>

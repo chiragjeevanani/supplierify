@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, ShoppingCart, Check, MessageCircle } from 'lucide-react';
+import { Heart, ShoppingCart, Check } from 'lucide-react';
+import WhatsAppIcon from '../../../components/WhatsAppIcon';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../../context/CartContext';
 import { useWishlist } from '../../../context/WishlistContext';
@@ -127,7 +128,7 @@ export default function ProductCard({ product, priority = false }) {
                 title="Enquire on WhatsApp"
                 aria-label="Enquire on WhatsApp"
               >
-                <MessageCircle className="w-5 h-5" />
+                <WhatsAppIcon className="w-5 h-5" />
               </a>
             </div>
           </>

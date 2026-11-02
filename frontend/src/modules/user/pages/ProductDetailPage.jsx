@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Star, Heart, Plus, Minus, Check, ShoppingBag, Zap, Truck, ShieldCheck, 
-  Leaf, ChevronRight, HelpCircle, ArrowRight, MessageCircle
+  Leaf, ChevronRight, HelpCircle, ArrowRight
 } from 'lucide-react';
+import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 
 import ProductCard from '../components/ProductCard';
@@ -461,7 +462,7 @@ export default function ProductDetailPage() {
                 rel="noopener noreferrer"
                 className="mt-3 w-full py-3.5 px-6 rounded-xl bg-[#25D366] hover:bg-[#1fb857] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md"
               >
-                <MessageCircle className="w-5 h-5" />
+                <WhatsAppIcon className="w-5 h-5" />
                 <span>Enquire on WhatsApp</span>
               </a>
 
@@ -701,7 +702,7 @@ export default function ProductDetailPage() {
           aria-label="Enquire on WhatsApp"
           className="w-11 h-11 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0"
         >
-          <MessageCircle className="w-5 h-5" />
+          <WhatsAppIcon className="w-5 h-5" />
         </a>
         <div className="flex-1 grid grid-cols-2 gap-2">
           <button

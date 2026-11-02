@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MessageCircle, Boxes, CreditCard, Truck, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Boxes, CreditCard, Truck, ShieldCheck } from 'lucide-react';
+import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import ProductCard from '../components/ProductCard';
 import HeroSlider from '../components/HeroSlider';
@@ -89,7 +90,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857]"
             >
-              <MessageCircle className="w-5 h-5" /> Enquire on WhatsApp
+              <WhatsAppIcon className="w-5 h-5" /> Enquire on WhatsApp
             </a>
           </div>
         </div>
@@ -186,7 +187,7 @@ export default function HomePage() {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857] shrink-0"
         >
-          <MessageCircle className="w-5 h-5" /> Chat with us
+          <WhatsAppIcon className="w-5 h-5" /> Chat with us
         </a>
       </section>
     </div>

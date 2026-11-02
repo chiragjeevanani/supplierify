@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   CheckCircle2, Phone, MapPin, 
-  ChevronRight, MessageSquare, MessageCircle, FileText, Wifi
+  ChevronRight, MessageSquare, FileText, Wifi
 } from 'lucide-react';
+import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 const ORDER_POLL_INTERVAL_MS = 15_000; // Re-fetch order status every 15 seconds
 
@@ -345,7 +346,7 @@ export default function OrderTrackingPage() {
                     rel="noreferrer"
                     className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 text-[10.5px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition-colors min-h-[38px] sm:min-h-[44px]"
                   >
-                    <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+                    <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
                     <span>WhatsApp</span>
                   </a>
                 </div>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ShoppingBag, Plus, Minus, Trash2, Tag, ArrowRight, ShieldCheck, ArrowLeft, MessageCircle, Info
+  ShoppingBag, Plus, Minus, Trash2, Tag, ArrowRight, ShieldCheck, ArrowLeft, Info
 } from 'lucide-react';
+import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import { useCart } from '../../../context/CartContext';
 import { useAdmin } from '../../../context/AdminContext';
@@ -223,7 +224,7 @@ export default function CartPage() {
                 rel="noopener noreferrer"
                 className="w-full min-h-[48px] rounded-xl bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm flex items-center justify-center gap-2"
               >
-                <MessageCircle className="w-5 h-5" /> Enquire on WhatsApp
+                <WhatsAppIcon className="w-5 h-5" /> Enquire on WhatsApp
               </a>
               <p className="text-[11px] text-stone-500 text-center">
                 Prefer to negotiate or pay manually? Send this cart to us on WhatsApp.
@@ -251,7 +252,7 @@ export default function CartPage() {
           aria-label="Enquire on WhatsApp"
           className="w-11 h-11 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0"
         >
-          <MessageCircle className="w-5 h-5" />
+          <WhatsAppIcon className="w-5 h-5" />
         </a>
         <Link
           to="/checkout"
