@@ -94,7 +94,7 @@ export default function HelpSupportPage() {
               >
                 <Icon className="w-5 h-5 text-[color:var(--brand-accent-dark)] mb-3" />
                 <h3 className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] mb-1">{title}</h3>
-                <p className="text-[10px] sm:text-xs text-stone-500 leading-relaxed">{desc}</p>
+                <p className="text-[length:calc(10px*var(--fs))] sm:text-xs text-stone-500 leading-relaxed">{desc}</p>
               </a>
             ))}
           </div>
@@ -110,7 +110,7 @@ export default function HelpSupportPage() {
                 <a href={`tel:${help.phoneTel}`} className="text-sm font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-accent-dark)]">
                   {help.phone}
                 </a>
-                <p className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
+                <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1 flex items-center gap-1">
                   <Clock className="w-3 h-3" /> {help.phoneHours}
                 </p>
               </div>
@@ -127,7 +127,7 @@ export default function HelpSupportPage() {
                 >
                   {help.email}
                 </a>
-                <p className="text-[11px] text-stone-500 mt-1">{help.emailNote}</p>
+                <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1">{help.emailNote}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -142,7 +142,7 @@ export default function HelpSupportPage() {
                 >
                   Contact form <ChevronRight className="w-4 h-4" />
                 </Link>
-                <p className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
+                <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1 flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> {help.writeNote}
                 </p>
               </div>

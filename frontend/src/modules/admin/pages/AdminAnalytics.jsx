@@ -221,7 +221,7 @@ export default function AdminAnalytics() {
 
             <div className="flex flex-wrap items-end gap-3 p-3 bg-white rounded-2xl border border-[color:var(--brand-border)] shadow-xs self-start">
               <CalendarDays className="w-4 h-4 text-[color:var(--brand-primary)] mb-2.5" />
-              <label className="text-[11px] font-bold text-stone-600">
+              <label className="text-[length:calc(11px*var(--fs))] font-bold text-stone-600">
                 From
                 <input
                   type="date"
@@ -231,7 +231,7 @@ export default function AdminAnalytics() {
                   className="block mt-1 px-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
                 />
               </label>
-              <label className="text-[11px] font-bold text-stone-600">
+              <label className="text-[length:calc(11px*var(--fs))] font-bold text-stone-600">
                 To
                 <input
                   type="date"
@@ -281,7 +281,7 @@ export default function AdminAnalytics() {
                     <Trend pct={kpis.revenueTrendPct} />
                   </div>
                   <h2 className="font-serif text-3xl font-extrabold text-[color:var(--brand-primary)]">{inr(kpis.revenue)}</h2>
-                  <p className="text-[11px] text-stone-400">Excludes cancelled and failed-payment orders • vs previous period</p>
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-400">Excludes cancelled and failed-payment orders • vs previous period</p>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 border border-[color:var(--brand-border)] shadow-xs space-y-2">
@@ -290,7 +290,7 @@ export default function AdminAnalytics() {
                     <Trend pct={kpis.ordersTrendPct} />
                   </div>
                   <h2 className="font-serif text-3xl font-extrabold text-[color:var(--brand-primary)]">{kpis.orders.toLocaleString('en-IN')}</h2>
-                  <p className="text-[11px] text-stone-400">Orders placed in this period</p>
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-400">Orders placed in this period</p>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 border border-[color:var(--brand-border)] shadow-xs space-y-2">
@@ -305,7 +305,7 @@ export default function AdminAnalytics() {
                     </span>
                   </div>
                   <h2 className="font-serif text-3xl font-extrabold text-[color:var(--brand-primary)]">{inr(kpis.aov)}</h2>
-                  <p className="text-[11px] text-stone-400">Per order customer spend • vs previous period</p>
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-400">Per order customer spend • vs previous period</p>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 border border-[color:var(--brand-border)] shadow-xs space-y-2">
@@ -316,7 +316,7 @@ export default function AdminAnalytics() {
                     </span>
                   </div>
                   <h2 className="font-serif text-3xl font-extrabold text-[color:var(--brand-primary)]">{kpis.deliveredRate}%</h2>
-                  <p className="text-[11px] text-stone-400">Share of orders already delivered</p>
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-400">Share of orders already delivered</p>
                 </div>
               </div>
 
@@ -409,7 +409,7 @@ export default function AdminAnalytics() {
                           top: Math.max(hover.top - 12, 8)
                         }}
                       >
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[color:var(--brand-accent)]">
+                        <p className="text-[length:calc(10px*var(--fs))] font-semibold uppercase tracking-wider text-[color:var(--brand-accent)]">
                           {chart.points[hover.idx].label}
                         </p>
                         <p className="font-bold">{inr(chart.points[hover.idx].revenue)}</p>
@@ -466,7 +466,7 @@ export default function AdminAnalytics() {
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-[color:var(--brand-surface)] text-stone-600 font-bold border-b border-stone-200 uppercase tracking-wider text-[10px]">
+                    <thead className="bg-[color:var(--brand-surface)] text-stone-600 font-bold border-b border-stone-200 uppercase tracking-wider text-[length:calc(10px*var(--fs))]">
                       <tr>
                         <th className="py-3 px-4">Rank</th>
                         <th className="py-3 px-4">Product Name</th>
@@ -496,7 +496,7 @@ export default function AdminAnalytics() {
                               )}
                               <div>
                                 <div className="font-serif font-bold text-xs text-[color:var(--brand-primary)]">{p.name}</div>
-                                {p.flavor && <span className="text-[10px] text-stone-400">{p.flavor}</span>}
+                                {p.flavor && <span className="text-[length:calc(10px*var(--fs))] text-stone-400">{p.flavor}</span>}
                               </div>
                             </div>
                           </td>
@@ -505,7 +505,7 @@ export default function AdminAnalytics() {
                           <td className="py-3.5 px-4 font-bold text-[color:var(--brand-primary)]">{inr(p.revenue)}</td>
                           <td className="py-3.5 px-4">
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              className={`px-2.5 py-0.5 rounded-full text-[length:calc(10px*var(--fs))] font-bold ${
                                 p.stockCount > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                               }`}
                             >

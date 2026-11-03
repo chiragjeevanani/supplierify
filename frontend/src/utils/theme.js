@@ -70,6 +70,43 @@ export function applyCachedTheme() {
   } catch { /* ignore */ }
 }
 
+// ---- text size (percentage of the normal size; 100 = default)
+export const FONT_SCALE_MIN = 85;
+export const FONT_SCALE_MAX = 125;
+export const DEFAULT_FONT_SCALE = 100;
+export const FONT_SCALE_PRESETS = [
+  { value: 90, label: 'Small' },
+  { value: 100, label: 'Normal' },
+  { value: 110, label: 'Large' },
+  { value: 120, label: 'Extra large' }
+];
+const FONT_CACHE_KEY = 'wholesale_font_scale';
+
+/** A whole-number percentage inside the allowed range; anything else becomes the default. */
+export function normalizeFontScale(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_FONT_SCALE;
+  return Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, n));
+}
+
+/** Apply the text size to the whole page. `persist: false` is used for live previews in the admin editor. */
+export function applyFontScale(value, { persist = true } = {}) {
+  if (typeof document === 'undefined') return;
+  const pct = normalizeFontScale(value);
+  document.documentElement.style.setProperty('--fs', String(pct / 100));
+  if (persist) {
+    try { localStorage.setItem(FONT_CACHE_KEY, String(pct)); } catch { /* storage unavailable */ }
+  }
+}
+
+/** Apply the last saved text size immediately on load (prevents a flash of the default size). */
+export function applyCachedFontScale() {
+  try {
+    const raw = localStorage.getItem(FONT_CACHE_KEY);
+    if (raw) applyFontScale(raw, { persist: false });
+  } catch { /* ignore */ }
+}
+
 /** Current value of a base colour as a #hex string (for libraries that cannot read CSS variables). */
 export function getThemeHex(key, fallback) {
   const fb = fallback || DEFAULT_THEME[key];

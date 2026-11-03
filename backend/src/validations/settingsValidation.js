@@ -12,6 +12,7 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'logoUrl',
   'faviconUrl',
   'theme',
+  'fontScale',
   'standardDeliveryFee',
   'codDeliveryFee',
   'freeDeliveryThreshold',
@@ -92,6 +93,13 @@ export const validateUpdateSettings = (req, res, next) => {
           errors.push({ field: `theme.${key}`, message: 'Colours must be in #RRGGBB format' });
         }
       }
+    }
+  }
+
+  if (body.fontScale !== undefined) {
+    const scale = Number(body.fontScale);
+    if (!Number.isFinite(scale) || scale < 85 || scale > 125) {
+      errors.push({ field: 'fontScale', message: 'Text size must be between 85% and 125%' });
     }
   }
 

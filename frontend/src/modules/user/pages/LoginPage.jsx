@@ -217,7 +217,7 @@ export default function LoginPage() {
               <span>Back to Store</span>
             </Link>
 
-            <span className="text-[11px] font-bold text-[color:var(--brand-accent-dark)] bg-[color:var(--brand-bg)] px-2.5 py-1 rounded-lg border border-[color:var(--brand-accent)]/30">
+            <span className="text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-accent-dark)] bg-[color:var(--brand-bg)] px-2.5 py-1 rounded-lg border border-[color:var(--brand-accent)]/30">
               Dry Fruit Wholesale Secure Access
             </span>
           </div>
@@ -306,14 +306,14 @@ export default function LoginPage() {
                     <div className="p-3.5 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-accent)]/50 flex items-center justify-between gap-3 shadow-xs">
                       <div>
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-[10px] uppercase tracking-wider font-extrabold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)]/20 px-2 py-0.5 rounded-md">
+                          <span className="text-[length:calc(10px*var(--fs))] uppercase tracking-wider font-extrabold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)]/20 px-2 py-0.5 rounded-md">
                             Client Demo Account
                           </span>
                         </div>
                         <p className="text-xs text-stone-700 font-semibold">
                           Mobile: <span className="font-mono text-[color:var(--brand-primary)] font-bold">9876543210</span>
                         </p>
-                        <p className="text-[11px] text-stone-500">
+                        <p className="text-[length:calc(11px*var(--fs))] text-stone-500">
                           Default OTP: <span className="font-mono text-[color:var(--brand-primary)] font-bold">123456</span>
                         </p>
                       </div>
@@ -325,7 +325,7 @@ export default function LoginPage() {
                           setErrorMsg('');
                           setSuccessMsg('Demo number filled! Click "Get OTP" or enter OTP 123456');
                         }}
-                        className="px-3 py-2 text-[11px] font-bold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)] hover:bg-[color:var(--brand-accent-light)] rounded-xl uppercase tracking-wider shrink-0 transition-all shadow-xs active:scale-95 cursor-pointer"
+                        className="px-3 py-2 text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)] hover:bg-[color:var(--brand-accent-light)] rounded-xl uppercase tracking-wider shrink-0 transition-all shadow-xs active:scale-95 cursor-pointer"
                       >
                         Auto-Fill
                       </button>
@@ -344,7 +344,7 @@ export default function LoginPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-sm">🔑</span>
                         <div>
-                          <span className="text-[11px] text-stone-600 block">Default Demo OTP:</span>
+                          <span className="text-[length:calc(11px*var(--fs))] text-stone-600 block">Default Demo OTP:</span>
                           <span className="text-xs font-mono font-extrabold text-[color:var(--brand-primary)]">123456</span>
                         </div>
                       </div>
@@ -354,7 +354,7 @@ export default function LoginPage() {
                           setOtpDigits(['1', '2', '3', '4', '5', '6']);
                           setErrorMsg('');
                         }}
-                        className="px-2.5 py-1.5 text-[11px] font-bold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)] hover:bg-[color:var(--brand-accent-light)] rounded-xl uppercase tracking-wider shrink-0 transition-all shadow-xs active:scale-95 cursor-pointer"
+                        className="px-2.5 py-1.5 text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)] hover:bg-[color:var(--brand-accent-light)] rounded-xl uppercase tracking-wider shrink-0 transition-all shadow-xs active:scale-95 cursor-pointer"
                       >
                         Fill 123456
                       </button>
@@ -423,7 +423,7 @@ export default function LoginPage() {
               )}
 
               {/* Security & Assurance Badge */}
-              <div className="flex items-center justify-center gap-2 text-[11px] text-stone-500 pt-3 border-t border-stone-100">
+              <div className="flex items-center justify-center gap-2 text-[length:calc(11px*var(--fs))] text-stone-500 pt-3 border-t border-stone-100">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>256-bit Encrypted • Dry Fruit Wholesale Safe Access</span>
               </div>

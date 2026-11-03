@@ -128,11 +128,11 @@ export default function InvoicePreviewModal({ isOpen, onClose, order, isAdmin = 
                 <h3 className="font-bold text-sm sm:text-base text-[color:var(--brand-primary)] truncate">
                   Tax Invoice Preview
                 </h3>
-                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-stone-200 text-stone-800">
+                <span className="text-[length:calc(11px*var(--fs))] font-mono font-semibold px-2 py-0.5 rounded-md bg-stone-200 text-stone-800">
                   #{displayOrderNumber}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-stone-500 truncate mt-0.5">
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-500 truncate mt-0.5">
                 Dry Fruit Wholesale Official GST Invoice • Generated in Real-time
               </p>
             </div>
@@ -233,7 +233,7 @@ export default function InvoicePreviewModal({ isOpen, onClose, order, isAdmin = 
 
         {/* Footer Bar */}
         <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-stone-50 border-t border-stone-200 flex items-center justify-between text-xs text-stone-500 shrink-0">
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs">
+          <div className="flex items-center gap-1.5 text-[length:calc(11px*var(--fs))] sm:text-xs">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="hidden sm:inline">Authorized computer-generated invoice. No physical signature required.</span>
             <span className="sm:hidden">Official GST Invoice</span>

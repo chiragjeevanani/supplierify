@@ -116,7 +116,7 @@ export default function AdminInventory() {
           {/* Top KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div className="bg-white rounded-xl p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Total Units in Hub</span>
                 <Boxes className="w-4 h-4 text-[color:var(--brand-primary)]" />
               </div>
@@ -125,7 +125,7 @@ export default function AdminInventory() {
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-emerald-800 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-emerald-800 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Healthy Stock</span>
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
               </div>
@@ -134,7 +134,7 @@ export default function AdminInventory() {
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-amber-200 bg-amber-50/40 shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-amber-900 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-amber-900 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Low Stock Warning</span>
                 <AlertTriangle className="w-4 h-4 text-amber-600" />
               </div>
@@ -143,7 +143,7 @@ export default function AdminInventory() {
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-rose-200 bg-rose-50/40 shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-rose-900 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-rose-900 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Out of Stock</span>
                 <PackageX className="w-4 h-4 text-rose-600" />
               </div>
@@ -194,7 +194,7 @@ export default function AdminInventory() {
               {/* Quick Bulk Restock */}
               <button
                 onClick={handleBulkRestock}
-                className="px-4 py-2 rounded-lg bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-[13px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all shrink-0"
+                className="px-4 py-2 rounded-lg bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-[length:calc(13px*var(--fs))] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all shrink-0"
               >
                 <RefreshCw className="w-4 h-4 text-[color:var(--brand-accent)]" />
                 <span>Bulk Restock Low Items (+100)</span>
@@ -218,7 +218,7 @@ export default function AdminInventory() {
           <div className="bg-white rounded-xl border border-[color:var(--brand-border)] shadow-2xs overflow-hidden w-full">
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left">
-                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[12.5px] font-bold">
+                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold">
                   <tr>
                     <th className="py-3.5 px-4">Item SKU</th>
                     <th className="py-3.5 px-4">Category</th>
@@ -244,8 +244,8 @@ export default function AdminInventory() {
                               className="w-11 h-11 rounded-lg object-cover border border-stone-200 bg-[color:var(--brand-surface)] shrink-0"
                             />
                             <div>
-                              <div className="font-sans font-bold text-sm sm:text-[15px] text-[color:var(--brand-primary)]">{p.name}</div>
-                              <span className="text-xs sm:text-[12.5px] text-stone-500 font-medium">{p.flavor || 'Original'} • {p.weight || '250g'}</span>
+                              <div className="font-sans font-bold text-sm sm:text-[length:calc(15px*var(--fs))] text-[color:var(--brand-primary)]">{p.name}</div>
+                              <span className="text-xs sm:text-[length:calc(12.5px*var(--fs))] text-stone-500 font-medium">{p.flavor || 'Original'} • {p.weight || '250g'}</span>
                             </div>
                           </div>
                         </td>
@@ -295,7 +295,7 @@ export default function AdminInventory() {
                             <button
                               onClick={() => handleAdjustStock(p._id || p.id, -10)}
                               disabled={busyIds.has(String(p._id || p.id))}
-                              className="px-3 py-1.5 rounded-md border border-stone-200 hover:bg-stone-100 text-stone-700 text-xs sm:text-[12.5px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-3 py-1.5 rounded-md border border-stone-200 hover:bg-stone-100 text-stone-700 text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Decrease 10 units"
                             >
                               -10
@@ -303,7 +303,7 @@ export default function AdminInventory() {
                             <button
                               onClick={() => handleAdjustStock(p._id || p.id, 10)}
                               disabled={busyIds.has(String(p._id || p.id))}
-                              className="px-3 py-1.5 rounded-md border border-stone-200 hover:bg-stone-100 text-stone-700 text-xs sm:text-[12.5px] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-3 py-1.5 rounded-md border border-stone-200 hover:bg-stone-100 text-stone-700 text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Add 10 units"
                             >
                               +10
@@ -311,7 +311,7 @@ export default function AdminInventory() {
                             <button
                               onClick={() => handleAdjustStock(p._id || p.id, 50)}
                               disabled={busyIds.has(String(p._id || p.id))}
-                              className="px-3.5 py-1.5 rounded-md bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-xs sm:text-[12.5px] font-bold shadow-2xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-3.5 py-1.5 rounded-md bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold shadow-2xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Add 50 units"
                             >
                               +50

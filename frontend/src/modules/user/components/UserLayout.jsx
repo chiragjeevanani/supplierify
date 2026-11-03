@@ -124,7 +124,7 @@ export default function UserLayout({ children }) {
                   end={item.end}
                   className={({ isActive: routeActive }) => {
                     const active = isActive(item) ?? routeActive;
-                    return `group flex items-center gap-3 rounded-lg px-3 py-3 text-[14px] font-semibold transition-colors border-l-4 ${
+                    return `group flex items-center gap-3 rounded-lg px-3 py-3 text-[length:calc(14px*var(--fs))] font-semibold transition-colors border-l-4 ${
                       active
                         ? 'bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] border-[color:var(--brand-accent-lighter)]'
                         : 'text-white/85 border-transparent hover:bg-white/10 hover:text-white'
@@ -134,7 +134,7 @@ export default function UserLayout({ children }) {
                   <Icon className="w-5 h-5 shrink-0" />
                   <span className="flex-1 truncate">{item.label}</span>
                   {badge > 0 && (
-                    <span className="min-w-[22px] h-[22px] px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-extrabold flex items-center justify-center">
+                    <span className="min-w-[22px] h-[22px] px-1.5 rounded-full bg-rose-500 text-white text-[length:calc(11px*var(--fs))] font-extrabold flex items-center justify-center">
                       {badge}
                     </span>
                   )}
@@ -155,7 +155,7 @@ export default function UserLayout({ children }) {
           <WhatsAppIcon className="w-5 h-5" />
           Chat on WhatsApp
         </a>
-        <p className="text-[11px] text-white/50 text-center mt-2">Wholesale orders only</p>
+        <p className="text-[length:calc(11px*var(--fs))] text-white/50 text-center mt-2">Wholesale orders only</p>
       </div>
     </div>
   );
@@ -191,7 +191,7 @@ export default function UserLayout({ children }) {
           </button>
 
           <div className="min-w-0 hidden sm:block">
-            <p className="text-[11px] uppercase tracking-wider text-stone-500 leading-tight">{BRAND.shortName}</p>
+            <p className="text-[length:calc(11px*var(--fs))] uppercase tracking-wider text-stone-500 leading-tight">{BRAND.shortName}</p>
             <h1 className="font-serif text-base lg:text-lg font-bold text-[color:var(--brand-primary)] leading-tight truncate">{pageTitle}</h1>
           </div>
 
@@ -218,7 +218,7 @@ export default function UserLayout({ children }) {
             >
               <ShoppingCart className="w-6 h-6" />
               {lineCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[length:calc(10px*var(--fs))] font-extrabold flex items-center justify-center">
                   {lineCount}
                 </span>
               )}

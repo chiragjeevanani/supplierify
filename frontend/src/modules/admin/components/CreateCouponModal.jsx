@@ -190,7 +190,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
 
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 font-sans text-stone-800">
           <div>
-            <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Coupon Code *</label>
+            <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Coupon Code *</label>
             <input
               type="text"
               required
@@ -203,7 +203,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Discount Type</label>
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Discount Type</label>
               <select
                 value={discountType}
                 onChange={e => setDiscountType(e.target.value)}
@@ -215,7 +215,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
             </div>
 
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">
                 Discount Value {discountType === 'PERCENTAGE' ? '(%)' : '(₹)'} *
               </label>
               <input
@@ -232,7 +232,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Min. Order (₹)</label>
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Min. Order (₹)</label>
               <input
                 type="number"
                 min="0"
@@ -244,7 +244,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
             </div>
 
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">
                 Max Discount Cap (₹)
               </label>
               <input
@@ -260,7 +260,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Start Date</label>
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Start Date</label>
               <input
                 type="date"
                 value={startDate}
@@ -271,7 +271,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
             </div>
 
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">End Date</label>
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">End Date</label>
               <input
                 type="date"
                 value={endDate}
@@ -284,7 +284,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Usage Limit</label>
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Usage Limit</label>
               <input
                 type="number"
                 min="0"
@@ -296,7 +296,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
             </div>
 
             <div>
-              <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Initial Status</label>
+              <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Initial Status</label>
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value)}
@@ -309,7 +309,7 @@ export default function CreateCouponModal({ isOpen, onClose, onSave, couponToEdi
           </div>
 
           <div>
-            <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Description / Customer Note</label>
+            <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Description / Customer Note</label>
             <input
               type="text"
               value={description}

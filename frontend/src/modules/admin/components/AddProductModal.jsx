@@ -416,7 +416,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         {/* Header */}
         <div className="p-4 sm:p-5 bg-[color:var(--brand-primary)] text-white flex items-center justify-between border-b border-[color:var(--brand-accent)]/30 shrink-0">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)] flex items-center gap-1">
+            <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)] flex items-center gap-1">
               <Sparkles className="w-3 h-3" /> STORE CATALOG
             </span>
             <h3 className="font-sans text-base sm:text-xl font-bold mt-0.5">{initialData ? 'Edit Product' : 'Add New Product'}</h3>
@@ -440,7 +440,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 text-xs sm:text-[13.5px] font-bold tracking-wide border-b-2 transition-all ${
+              className={`py-3 text-xs sm:text-[length:calc(13.5px*var(--fs))] font-bold tracking-wide border-b-2 transition-all ${
                 activeTab === tab.id
                   ? 'border-[color:var(--brand-primary)] text-[color:var(--brand-primary)]'
                   : 'border-transparent text-stone-500 hover:text-stone-900'
@@ -462,7 +462,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                 
                 {/* Title */}
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">
                     Product Title *
                   </label>
                   <input
@@ -477,7 +477,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                 {/* Category Selection */}
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">Category *</label>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">Category *</label>
                   <select
                     value={formData.category}
                     onChange={e => {
@@ -505,7 +505,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div>
-                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                      <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
                         Selling Price (₹ per kg) *
                       </label>
                       <input
@@ -519,7 +519,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       />
                     </div>
                     <div>
-                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                      <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
                         Original Price (₹ per kg)
                       </label>
                       <input
@@ -535,13 +535,13 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         }`}
                       />
                       {Number(formData.oldPrice) > 0 && Number(formData.price) > 0 && Number(formData.oldPrice) < Number(formData.price) && (
-                        <p className="mt-1 text-[10.5px] text-rose-600">
+                        <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-rose-600">
                           Original price must be greater than or equal to the selling price.
                         </p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                      <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
                         Stock (kg)
                       </label>
                       <input
@@ -554,7 +554,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       />
                     </div>
                     <div>
-                      <label className="block text-[11.5px] font-bold text-stone-700 mb-1">
+                      <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
                         Min. Order (kg)
                       </label>
                       <input
@@ -565,7 +565,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         placeholder="0 = store default"
                         className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
                       />
-                      <p className="mt-1 text-[10.5px] text-stone-500">0 uses the store-wide minimum from Settings.</p>
+                      <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">0 uses the store-wide minimum from Settings.</p>
                     </div>
                   </div>
                 </div>
@@ -581,7 +581,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       <Star className={`w-3.5 h-3.5 ${formData.isBestseller ? 'text-[color:var(--brand-accent)] fill-[color:var(--brand-accent)]' : 'text-stone-400'}`} />
                       Bestseller Status
                     </span>
-                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                    <span className={`text-[length:calc(10px*var(--fs))] font-extrabold uppercase px-2 py-0.5 rounded ${
                       formData.isBestseller 
                         ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)]' 
                         : 'bg-stone-200 text-stone-600'
@@ -604,10 +604,10 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       className="w-4 h-4 mt-0.5 rounded text-[color:var(--brand-primary)] focus:ring-[color:var(--brand-primary)] accent-[color:var(--brand-primary)] cursor-pointer"
                     />
                     <div className="flex-1">
-                      <p className="text-xs sm:text-[13.5px] font-bold text-stone-900 flex items-center gap-1.5">
+                      <p className="text-xs sm:text-[length:calc(13.5px*var(--fs))] font-bold text-stone-900 flex items-center gap-1.5">
                         <span>Include this product in Bestseller section</span>
                       </p>
-                      <p className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">
+                      <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5 leading-relaxed">
                         When enabled, this product automatically displays on the User App homepage in the <strong>"Our Bestsellers"</strong> carousel.
                       </p>
                     </div>
@@ -619,10 +619,10 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                     <div>
                       <div className="flex items-center gap-2">
-                        <label className="block text-xs sm:text-[13px] font-bold text-stone-900">
+                        <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-900">
                           Product Photos & Gallery
                         </label>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        <span className={`text-[length:calc(10px*var(--fs))] font-bold px-2 py-0.5 rounded-full border ${
                           (formData.gallery?.length || 0) >= 3
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                             : (formData.gallery?.length || 0) > 0
@@ -632,7 +632,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                           {(formData.gallery?.length || 0)} of 4 photos selected
                         </span>
                       </div>
-                      <p className="text-[11px] text-stone-500 mt-0.5 font-normal">
+                      <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5 font-normal">
                         Select <strong>3 to 4 images</strong> to showcase packaging front, Dry Fruits texture, and nutrition details in the user app gallery slider.
                       </p>
                     </div>
@@ -670,11 +670,11 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                           {/* Top-left badge */}
                           <div className="absolute top-1.5 left-1.5 pointer-events-none z-10">
                             {isPrimary ? (
-                              <span className="bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-[9.5px] font-bold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+                              <span className="bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-[length:calc(9.5px*var(--fs))] font-bold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
                                 <Star className="w-2.5 h-2.5 fill-[color:var(--brand-accent)]" /> Cover
                               </span>
                             ) : (
-                              <span className="bg-black/60 backdrop-blur-xs text-white text-[9.5px] font-semibold px-1.5 py-0.5 rounded shadow-xs">
+                              <span className="bg-black/60 backdrop-blur-xs text-white text-[length:calc(9.5px*var(--fs))] font-semibold px-1.5 py-0.5 rounded shadow-xs">
                                 #{idx + 1}
                               </span>
                             )}
@@ -696,14 +696,14 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                           {/* Cloud / uploading hint */}
                           {typeof imgUrl === 'string' && imgUrl.startsWith('/uploads/') && (
-                            <span className="absolute bottom-1.5 left-1.5 z-10 bg-[color:var(--brand-primary)]/80 text-[color:var(--brand-accent)] text-[8px] font-bold px-1 py-0.5 rounded flex items-center gap-0.5 shadow-xs pointer-events-none">
+                            <span className="absolute bottom-1.5 left-1.5 z-10 bg-[color:var(--brand-primary)]/80 text-[color:var(--brand-accent)] text-[length:calc(8px*var(--fs))] font-bold px-1 py-0.5 rounded flex items-center gap-0.5 shadow-xs pointer-events-none">
                               <Cloud className="w-2 h-2" /> Saved
                             </span>
                           )}
                           {isLocalPreview && isUploadingImage && (
                             <span className="absolute inset-0 z-10 bg-black/35 flex flex-col items-center justify-center gap-1 pointer-events-none">
                               <Loader2 className="w-5 h-5 text-[color:var(--brand-accent)] animate-spin" />
-                              <span className="text-[10px] font-bold text-white">Uploading...</span>
+                              <span className="text-[length:calc(10px*var(--fs))] font-bold text-white">Uploading...</span>
                             </span>
                           )}
 
@@ -716,7 +716,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                                   e.stopPropagation();
                                   handleSetPrimaryImage(idx);
                                 }}
-                                className="w-full py-1 rounded bg-white text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-accent)] text-[10px] font-bold uppercase tracking-wider transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1"
+                                className="w-full py-1 rounded bg-white text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-accent)] text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-1"
                               >
                                 <Star className="w-2.5 h-2.5" />
                                 <span>Set as Cover</span>
@@ -738,17 +738,17 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         {isUploadingImage ? (
                           <>
                             <Loader2 className="w-5 h-5 text-[color:var(--brand-accent)] animate-spin" />
-                            <span className="text-[10px] font-bold text-stone-600">Uploading...</span>
+                            <span className="text-[length:calc(10px*var(--fs))] font-bold text-stone-600">Uploading...</span>
                           </>
                         ) : (
                           <>
                             <div className="w-8 h-8 rounded-full bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)] group-hover:bg-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] flex items-center justify-center transition-colors">
                               <Plus className="w-4 h-4" />
                             </div>
-                            <span className="text-[11px] font-bold text-stone-800">
+                            <span className="text-[length:calc(11px*var(--fs))] font-bold text-stone-800">
                               Add Photo
                             </span>
-                            <span className="text-[9.5px] text-stone-400 font-medium">
+                            <span className="text-[length:calc(9.5px*var(--fs))] text-stone-400 font-medium">
                               Slot {(formData.gallery?.length || 0) + 1} of 4
                             </span>
                           </>
@@ -768,8 +768,8 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">
                           Click to select 3–4 gallery photos at once
                         </p>
-                        <p className="text-[11px] text-stone-500 font-normal mt-0.5">
-                          Hold <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[10px]">Ctrl</kbd> or <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[10px]">Shift</kbd> in file explorer to select multiple files. PNG, JPG, WEBP formats.
+                        <p className="text-[length:calc(11px*var(--fs))] text-stone-500 font-normal mt-0.5">
+                          Hold <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[length:calc(10px*var(--fs))]">Ctrl</kbd> or <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[length:calc(10px*var(--fs))]">Shift</kbd> in file explorer to select multiple files. PNG, JPG, WEBP formats.
                         </p>
                       </div>
                       <button
@@ -793,7 +793,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                 {/* Short Tagline */}
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">Short Tagline / Flavor Note</label>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">Short Tagline / Flavor Note</label>
                   <input
                     type="text"
                     value={formData.tagline}
@@ -805,10 +805,10 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                 {/* Description */}
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">
                     Product Description
                   </label>
-                  <p className="text-[11px] text-stone-500 mb-1.5 font-normal">
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mb-1.5 font-normal">
                     Displays under the Description tab on the product details page.
                   </p>
                   <textarea
@@ -822,10 +822,10 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                 {/* Product Details & Specifications */}
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-800 mb-1">
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">
                     Product Details & Specifications
                   </label>
-                  <p className="text-[11px] text-stone-500 mb-1.5 font-normal">
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mb-1.5 font-normal">
                     Displays under the Product Details tab on the storefront. Add key specifications, ingredients, storage, origin, or shelf life (one bullet per line).
                   </p>
                   <textarea
@@ -883,7 +883,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Variant Name</label>
+                          <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Variant Name</label>
                           <input
                             type="text"
                             value={v.name}
@@ -893,7 +893,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Weight / Size</label>
+                          <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Weight / Size</label>
                           <input
                             type="text"
                             value={v.weight}
@@ -906,7 +906,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                       <div className="grid grid-cols-3 gap-3">
                         <div>
-                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Selling Price (₹)</label>
+                          <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Selling Price (₹)</label>
                           <input
                             type="number"
                             value={v.price}
@@ -915,7 +915,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Original Price (₹)</label>
+                          <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Original Price (₹)</label>
                           <input
                             type="number"
                             value={v.oldPrice}
@@ -924,7 +924,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-stone-600 mb-1">Stock</label>
+                          <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Stock</label>
                           <input
                             type="number"
                             value={v.stock}

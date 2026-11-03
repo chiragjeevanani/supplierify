@@ -7,7 +7,7 @@ import { useAdmin } from '../../../context/AdminContext';
 import { DEFAULT_HELP_SUPPORT } from '../../../utils/helpSupport';
 import BrandingSettings from '../components/BrandingSettings';
 import { refreshStoreRules } from '../../../hooks/useStoreRules';
-import { DEFAULT_THEME, normalizeTheme } from '../../../utils/theme';
+import { DEFAULT_THEME, normalizeTheme, DEFAULT_FONT_SCALE, normalizeFontScale } from '../../../utils/theme';
 
 const EMPTY_FORM = {
   storeName: '',
@@ -18,6 +18,7 @@ const EMPTY_FORM = {
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
+  fontScale: DEFAULT_FONT_SCALE,
   freeDeliveryThreshold: 10000,
   standardDeliveryFee: 150,
   codDeliveryFee: 150,
@@ -139,6 +140,7 @@ export default function AdminSettings() {
         logoUrl: formData.logoUrl || '',
         faviconUrl: formData.faviconUrl || '',
         theme: normalizeTheme(formData.theme),
+        fontScale: normalizeFontScale(formData.fontScale),
         minOrderQtyKg: Math.max(1, Number(formData.minOrderQtyKg) || 5),
         whatsappNumber: String(formData.whatsappNumber || '').replace(/\D/g, ''),
         freeDeliveryThreshold: Number(formData.freeDeliveryThreshold) || 0,
@@ -213,6 +215,7 @@ export default function AdminSettings() {
               logoUrl={formData.logoUrl}
               faviconUrl={formData.faviconUrl}
               theme={formData.theme}
+              fontScale={formData.fontScale}
               onChange={(key, value) => setField(key, value)}
             />
 
@@ -263,7 +266,7 @@ export default function AdminSettings() {
                     onChange={(e) => setField('minOrderQtyKg', e.target.value === '' ? '' : Number(e.target.value))}
                     className={inputClass}
                   />
-                  <span className="text-[10px] text-stone-500 mt-0.5 block">
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
                     Applies to every product line. A single product can override this in its own settings.
                   </span>
                 </div>
@@ -281,7 +284,7 @@ export default function AdminSettings() {
                     onChange={(e) => setField('whatsappNumber', e.target.value)}
                     className={inputClass}
                   />
-                  <span className="text-[10px] text-stone-500 mt-0.5 block">
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
                     Customers tapping &quot;Enquire on WhatsApp&quot; reach this number with their product and quantity pre-typed. Digits only, no + or spaces.
                   </span>
                 </div>
@@ -302,7 +305,7 @@ export default function AdminSettings() {
                     onChange={(e) => setField('freeDeliveryThreshold', e.target.value === '' ? '' : Number(e.target.value))}
                     className={inputClass}
                   />
-                  <span className="text-[10px] text-stone-400 mt-0.5 block">Waives shipping above this cart value</span>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Waives shipping above this cart value</span>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="standardDeliveryFee">
@@ -318,7 +321,7 @@ export default function AdminSettings() {
                     onChange={(e) => setField('standardDeliveryFee', e.target.value === '' ? '' : Number(e.target.value))}
                     className={inputClass}
                   />
-                  <span className="text-[10px] text-stone-400 mt-0.5 block">Used when live Shiprocket rates are off</span>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Used when live Shiprocket rates are off</span>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="codDeliveryFee">
@@ -334,7 +337,7 @@ export default function AdminSettings() {
                     onChange={(e) => setField('codDeliveryFee', e.target.value === '' ? '' : Number(e.target.value))}
                     className={inputClass}
                   />
-                  <span className="text-[10px] text-stone-400 mt-0.5 block">Cash on delivery shipping fee</span>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Cash on delivery shipping fee</span>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="gstRate">
@@ -351,11 +354,11 @@ export default function AdminSettings() {
                     onChange={(e) => setField('gstRate', e.target.value === '' ? '' : Number(e.target.value))}
                     className={inputClass}
                   />
-                  <span className="text-[10px] text-stone-400 mt-0.5 block">Calculated in cart breakdown</span>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Calculated in cart breakdown</span>
                 </div>
               </div>
 
-              <p className="text-[11px] text-stone-500 flex items-start gap-2 p-3 rounded-xl bg-white border border-stone-200">
+              <p className="text-[length:calc(11px*var(--fs))] text-stone-500 flex items-start gap-2 p-3 rounded-xl bg-white border border-stone-200">
                 <Truck className="w-4 h-4 text-[color:var(--brand-accent-dark)] shrink-0 mt-0.5" />
                 <span>
                   When Shiprocket checkout quotes are enabled, courier rates come from Shiprocket.
@@ -580,7 +583,7 @@ export default function AdminSettings() {
                     type="button"
                     onClick={addFaq}
                     disabled={(hs.faqs || []).length >= 20}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[color:var(--brand-primary)]/20 text-[11px] font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-surface)] disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[color:var(--brand-primary)]/20 text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-surface)] disabled:opacity-50"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add FAQ
@@ -592,7 +595,7 @@ export default function AdminSettings() {
                     className="p-3.5 rounded-2xl border border-stone-200 bg-white space-y-2"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                      <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-400">
                         FAQ {idx + 1}
                       </span>
                       <button

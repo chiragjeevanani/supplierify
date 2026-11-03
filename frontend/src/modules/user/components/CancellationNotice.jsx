@@ -23,10 +23,10 @@ export default function CancellationNotice({ order, compact = false }) {
       <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
       <div className="min-w-0">
         <p className="text-xs font-bold">{title}</p>
-        <p className="text-[11px] sm:text-xs mt-0.5 break-words">
+        <p className="text-[length:calc(11px*var(--fs))] sm:text-xs mt-0.5 break-words">
           <span className="font-semibold">Reason:</span> {reason}
         </p>
-        {when && <p className="text-[10px] text-rose-700/80 mt-0.5">{when}</p>}
+        {when && <p className="text-[length:calc(10px*var(--fs))] text-rose-700/80 mt-0.5">{when}</p>}
       </div>
     </div>
   );

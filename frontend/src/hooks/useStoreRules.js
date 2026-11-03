@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { settingsApi } from '../utils/api';
 import { BRAND } from '../config/brand';
-import { DEFAULT_THEME, normalizeTheme } from '../utils/theme';
+import { DEFAULT_THEME, normalizeTheme, DEFAULT_FONT_SCALE, normalizeFontScale } from '../utils/theme';
 
 /**
  * Public store settings (cached for the page session):
@@ -19,7 +19,8 @@ const DEFAULTS = {
   gstRate: 5,
   logoUrl: '',
   faviconUrl: '',
-  theme: { ...DEFAULT_THEME }
+  theme: { ...DEFAULT_THEME },
+  fontScale: DEFAULT_FONT_SCALE
 };
 
 let cache = null;
@@ -38,6 +39,7 @@ const load = () => {
         minOrderQtyKg: Number(s.minOrderQtyKg) > 0 ? Number(s.minOrderQtyKg) : DEFAULTS.minOrderQtyKg,
         whatsappNumber: String(s.whatsappNumber || '').replace(/\D/g, ''),
         theme: normalizeTheme(s.theme),
+        fontScale: normalizeFontScale(s.fontScale),
         loaded: true
       };
       listeners.forEach((fn) => fn(cache));

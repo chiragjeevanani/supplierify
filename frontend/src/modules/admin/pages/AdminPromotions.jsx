@@ -82,7 +82,7 @@ export default function AdminPromotions() {
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-4.5 py-2.5 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] font-bold text-xs sm:text-[13px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:scale-102 transition-all shrink-0"
+              className="px-4.5 py-2.5 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] font-bold text-xs sm:text-[length:calc(13px*var(--fs))] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:scale-102 transition-all shrink-0"
             >
               <Plus className="w-4 h-4 text-[color:var(--brand-accent)]" />
               <span>Create Campaign</span>
@@ -121,7 +121,7 @@ export default function AdminPromotions() {
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] px-2.5 py-1 rounded-md shadow-2xs">
+                      <span className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] px-2.5 py-1 rounded-md shadow-2xs">
                         {p.bannerTag || 'Campaign'}
                       </span>
                       <button
@@ -200,7 +200,7 @@ export default function AdminPromotions() {
           >
             <div className="p-4 sm:p-5 bg-[color:var(--brand-primary)] text-white flex items-center justify-between border-b border-[color:var(--brand-accent)]/30 shrink-0">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">CAMPAIGN BUILDER</span>
+                <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">CAMPAIGN BUILDER</span>
                 <h3 className="font-sans text-base sm:text-xl font-bold mt-0.5">New Promotional Offer</h3>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg text-stone-400 hover:text-white transition-colors">
@@ -210,7 +210,7 @@ export default function AdminPromotions() {
 
             <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 font-sans">
               <div>
-                <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Campaign Title *</label>
+                <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Campaign Title *</label>
                 <input
                   type="text"
                   required
@@ -222,7 +222,7 @@ export default function AdminPromotions() {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Tagline / Subtext</label>
+                <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Tagline / Subtext</label>
                 <input
                   type="text"
                   value={formData.tagline}
@@ -234,7 +234,7 @@ export default function AdminPromotions() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Campaign Type</label>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Campaign Type</label>
                   <select
                     value={formData.type}
                     onChange={e => setFormData({ ...formData, type: e.target.value })}
@@ -248,7 +248,7 @@ export default function AdminPromotions() {
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Discount %</label>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Discount %</label>
                   <input
                     type="number"
                     value={formData.discount}
@@ -260,7 +260,7 @@ export default function AdminPromotions() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Target Category</label>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Target Category</label>
                   <select
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
@@ -274,7 +274,7 @@ export default function AdminPromotions() {
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-[13px] font-bold text-stone-700 mb-1">Minimum Order (₹)</label>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-700 mb-1">Minimum Order (₹)</label>
                   <input
                     type="number"
                     value={formData.minOrder}

@@ -51,7 +51,7 @@ export default function ProductCard({ product, priority = false }) {
       <div className="relative w-full aspect-[4/3] sm:aspect-square overflow-hidden bg-[color:var(--brand-surface)]">
         <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
           {product.badge ? (
-            <span className="text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider bg-[color:var(--brand-accent-dark)] text-white shadow-sm">
+            <span className="text-[length:calc(10px*var(--fs))] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider bg-[color:var(--brand-accent-dark)] text-white shadow-sm">
               {product.badge}
             </span>
           ) : <span />}
@@ -92,7 +92,7 @@ export default function ProductCard({ product, priority = false }) {
           <span className="text-xs font-semibold text-stone-500">/ kg</span>
           {oldPrice > price && <span className="text-xs text-stone-400 line-through">{inr(oldPrice)}</span>}
         </div>
-        <p className="text-[11px] font-semibold text-[color:var(--brand-accent-darker)] bg-[color:var(--brand-accent)]/15 rounded px-2 py-1 mt-2 w-fit">
+        <p className="text-[length:calc(11px*var(--fs))] font-semibold text-[color:var(--brand-accent-darker)] bg-[color:var(--brand-accent)]/15 rounded px-2 py-1 mt-2 w-fit">
           Min. order {minQty} kg
         </p>
 

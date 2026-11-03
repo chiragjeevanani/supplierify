@@ -236,7 +236,7 @@ export default function AdminProfile() {
                   {initials}
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">
+                  <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">
                     ADMINISTRATOR PROFILE
                   </span>
                   <h2 className="font-sans text-base sm:text-lg font-bold mt-0.5 truncate">{profile.name}</h2>
@@ -293,23 +293,23 @@ export default function AdminProfile() {
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck className="w-5 h-5 text-emerald-700" />
                   <div>
-                    <p className="text-xs sm:text-[13px] font-bold text-[color:var(--brand-primary)]">{profile.role}</p>
-                    <p className="text-[11px] text-stone-500 font-medium">{profile.accessLevel}</p>
+                    <p className="text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-[color:var(--brand-primary)]">{profile.role}</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-500 font-medium">{profile.accessLevel}</p>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold uppercase border border-emerald-200">
+                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[length:calc(10.5px*var(--fs))] font-bold uppercase border border-emerald-200">
                   Active Session
                 </span>
               </div>
 
               <div className="space-y-3.5">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">
+                <div className="flex items-center gap-1.5 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">
                   <User className="w-3.5 h-3.5" />
                   <span>Account Details</span>
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Full Name</label>
+                  <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Full Name</label>
                   <input
                     type="text"
                     disabled={!isEditing}
@@ -321,7 +321,7 @@ export default function AdminProfile() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Login Email</label>
+                    <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Login Email</label>
                     <input
                       type="email"
                       disabled={!isEditing}
@@ -329,10 +329,10 @@ export default function AdminProfile() {
                       onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                       className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] disabled:bg-stone-50 disabled:text-stone-700 font-medium"
                     />
-                    <p className="text-[10px] text-stone-400 mt-1">Used to sign in to the admin console.</p>
+                    <p className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-1">Used to sign in to the admin console.</p>
                   </div>
                   <div>
-                    <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Phone Number</label>
+                    <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Phone Number</label>
                     <input
                       type="text"
                       disabled={!isEditing}
@@ -346,17 +346,17 @@ export default function AdminProfile() {
 
               <div className="space-y-3.5 pt-2 border-t border-stone-200">
                 <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">
+                  <div className="flex items-center gap-1.5 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">
                     <Building2 className="w-3.5 h-3.5" />
                     <span>Shipment Pickup Address (Warehouse)</span>
                   </div>
-                  <p className="text-[11px] text-stone-500 mt-1">
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1">
                     Couriers pick orders from this address — not the customer delivery address.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Warehouse / Pickup Name</label>
+                  <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Warehouse / Pickup Name</label>
                   <input
                     type="text"
                     disabled={!isEditing}
@@ -367,7 +367,7 @@ export default function AdminProfile() {
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Complete Street Address</label>
+                  <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Complete Street Address</label>
                   <input
                     type="text"
                     disabled={!isEditing}
@@ -380,7 +380,7 @@ export default function AdminProfile() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">City</label>
+                    <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">City</label>
                     <input
                       type="text"
                       disabled={!isEditing}
@@ -390,7 +390,7 @@ export default function AdminProfile() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">State</label>
+                    <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">State</label>
                     <input
                       type="text"
                       disabled={!isEditing}
@@ -400,7 +400,7 @@ export default function AdminProfile() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Pincode</label>
+                    <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Pincode</label>
                     <input
                       type="text"
                       disabled={!isEditing}
@@ -413,7 +413,7 @@ export default function AdminProfile() {
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Warehouse Phone</label>
+                  <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Warehouse Phone</label>
                   <input
                     type="text"
                     disabled={!isEditing}
@@ -426,7 +426,7 @@ export default function AdminProfile() {
                 <div className="p-3 rounded-xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-[color:var(--brand-accent-dark)] shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Full pickup address</p>
+                    <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Full pickup address</p>
                     <p className="text-xs sm:text-sm font-semibold text-[color:var(--brand-primary)] mt-0.5">{fullAddress}</p>
                   </div>
                 </div>
@@ -450,7 +450,7 @@ export default function AdminProfile() {
               <KeyRound className="w-4.5 h-4.5 text-[color:var(--brand-accent)]" />
               <div>
                 <h3 className="text-sm sm:text-base font-bold">Login Credentials</h3>
-                <p className="text-[11px] text-[color:var(--brand-border-strong)]/80 mt-0.5">
+                <p className="text-[length:calc(11px*var(--fs))] text-[color:var(--brand-border-strong)]/80 mt-0.5">
                   Change the password used to sign in. Login email is updated above under Account Details.
                 </p>
               </div>
@@ -470,12 +470,12 @@ export default function AdminProfile() {
               )}
 
               <div className="p-3 rounded-xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)]">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Current login email</p>
+                <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Current login email</p>
                 <p className="text-sm font-semibold text-[color:var(--brand-primary)] mt-0.5">{profile.email}</p>
               </div>
 
               <div>
-                <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Current Password</label>
+                <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Current Password</label>
                 <div className="relative">
                   <input
                     type={showPasswords.current ? 'text' : 'password'}
@@ -498,7 +498,7 @@ export default function AdminProfile() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">New Password</label>
+                  <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">New Password</label>
                   <div className="relative">
                     <input
                       type={showPasswords.next ? 'text' : 'password'}
@@ -519,7 +519,7 @@ export default function AdminProfile() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Confirm New Password</label>
+                  <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Confirm New Password</label>
                   <div className="relative">
                     <input
                       type={showPasswords.confirm ? 'text' : 'password'}

@@ -61,39 +61,39 @@ export default function AdminReviews() {
           {/* Top KPI Cards - Compact & Softened Weights */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-[color:var(--brand-border)] shadow-2xs space-y-0.5">
-              <div className="flex items-center justify-between text-stone-500 text-[11px] sm:text-xs font-medium uppercase tracking-wider">
+              <div className="flex items-center justify-between text-stone-500 text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider">
                 <span>Total Reviews</span>
                 <MessageSquare className="w-4 h-4 text-[color:var(--brand-primary)]" />
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold text-[color:var(--brand-primary)]">{totalCount}</h2>
-              <p className="text-[11px] sm:text-xs text-stone-400 font-normal">Verified buyer ratings</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-400 font-normal">Verified buyer ratings</p>
             </div>
 
             <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-[color:var(--brand-border)] shadow-2xs space-y-0.5">
-              <div className="flex items-center justify-between text-amber-800 text-[11px] sm:text-xs font-medium uppercase tracking-wider">
+              <div className="flex items-center justify-between text-amber-800 text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider">
                 <span>Average Rating</span>
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold text-[color:var(--brand-primary)]">{avgRating} <span className="text-xs sm:text-sm font-normal text-stone-400">/ 5.0</span></h2>
-              <p className="text-[11px] sm:text-xs text-emerald-700 font-medium">Verified Customer Ratings</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-emerald-700 font-medium">Verified Customer Ratings</p>
             </div>
 
             <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-[color:var(--brand-border)] shadow-2xs space-y-0.5">
-              <div className="flex items-center justify-between text-emerald-800 text-[11px] sm:text-xs font-medium uppercase tracking-wider">
+              <div className="flex items-center justify-between text-emerald-800 text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider">
                 <span>Approved & Live</span>
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold text-emerald-700">{approvedCount}</h2>
-              <p className="text-[11px] sm:text-xs text-stone-400 font-normal">Visible on storefront</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-400 font-normal">Visible on storefront</p>
             </div>
 
             <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-amber-200 bg-amber-50/40 shadow-2xs space-y-0.5">
-              <div className="flex items-center justify-between text-amber-900 text-[11px] sm:text-xs font-medium uppercase tracking-wider">
+              <div className="flex items-center justify-between text-amber-900 text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider">
                 <span>Pending Moderation</span>
                 <Sparkles className="w-4 h-4 text-amber-600" />
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold text-amber-800">{pendingCount}</h2>
-              <p className="text-[11px] sm:text-xs text-amber-800 font-normal">Awaiting admin review</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-amber-800 font-normal">Awaiting admin review</p>
             </div>
           </div>
 
@@ -147,17 +147,17 @@ export default function AdminReviews() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="font-sans font-bold text-xs sm:text-sm text-[color:var(--brand-primary)]">{r.author}</h4>
                         {r.verified && (
-                          <span className="text-[10.5px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.2 rounded-full border border-emerald-200">
+                          <span className="text-[length:calc(10.5px*var(--fs))] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.2 rounded-full border border-emerald-200">
                             Verified Buyer
                           </span>
                         )}
                         {r.featured && (
-                          <span className="text-[10.5px] bg-[color:var(--brand-accent)]/20 text-[color:var(--brand-primary)] font-semibold px-2 py-0.2 rounded-full border border-[color:var(--brand-accent)]/40 flex items-center gap-1">
+                          <span className="text-[length:calc(10.5px*var(--fs))] bg-[color:var(--brand-accent)]/20 text-[color:var(--brand-primary)] font-semibold px-2 py-0.2 rounded-full border border-[color:var(--brand-accent)]/40 flex items-center gap-1">
                             <Award className="w-3 h-3 text-[color:var(--brand-accent)]" /> Featured
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-stone-400 font-normal">{r.role || 'Health Enthusiast'} • {r.city || 'India'} • {r.date}</p>
+                      <p className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal">{r.role || 'Health Enthusiast'} • {r.city || 'India'} • {r.date}</p>
                     </div>
                   </div>
 
@@ -173,7 +173,7 @@ export default function AdminReviews() {
                       <span className="text-xs font-bold text-amber-900 ml-0.5">{r.rating}.0</span>
                     </div>
 
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider ${
+                    <span className={`px-2.5 py-0.5 rounded-full text-[length:calc(10.5px*var(--fs))] font-bold uppercase tracking-wider ${
                       r.status === 'Approved'
                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                         : r.status === 'Pending'
@@ -187,7 +187,7 @@ export default function AdminReviews() {
 
                 {/* Review Body */}
                 <div className="space-y-1 bg-[color:var(--brand-surface)] p-3 rounded-lg border border-[color:var(--brand-border)]">
-                  <span className="text-[10.5px] font-semibold uppercase text-[color:var(--brand-primary)] bg-white px-2 py-0.5 rounded border border-stone-200 inline-block mb-0.5">
+                  <span className="text-[length:calc(10.5px*var(--fs))] font-semibold uppercase text-[color:var(--brand-primary)] bg-white px-2 py-0.5 rounded border border-stone-200 inline-block mb-0.5">
                     Product: {r.product}
                   </span>
                   <h5 className="font-sans text-xs sm:text-sm font-bold text-stone-900">"{r.title || 'Exceptional Quality'}"</h5>
@@ -197,7 +197,7 @@ export default function AdminReviews() {
                 {/* Admin Reply Display */}
                 {r.adminReply && (
                   <div className="bg-[color:var(--brand-primary)]/5 border-l-3 border-[color:var(--brand-primary)] p-2.5 rounded-r-lg text-xs space-y-0.5">
-                    <span className="font-bold text-[color:var(--brand-primary)] flex items-center gap-1 text-[11px]">
+                    <span className="font-bold text-[color:var(--brand-primary)] flex items-center gap-1 text-[length:calc(11px*var(--fs))]">
                       <MessageSquare className="w-3 h-3 text-[color:var(--brand-accent)]" /> Response from Dry Fruit Wholesale Team:
                     </span>
                     <p className="text-stone-700 italic font-normal">{r.adminReply}</p>

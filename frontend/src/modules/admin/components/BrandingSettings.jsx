@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { Palette, RotateCcw, AlertTriangle, Check } from 'lucide-react';
+import { Palette, RotateCcw, AlertTriangle, Check, Type } from 'lucide-react';
 
 import ImageUploadField from './ImageUploadField';
 import { useStoreRules } from '../../../hooks/useStoreRules';
 import {
-  DEFAULT_THEME, THEME_PRESETS, THEME_FIELDS, applyTheme, normalizeTheme, isHex, themeWarnings
+  DEFAULT_THEME, THEME_PRESETS, THEME_FIELDS, applyTheme, normalizeTheme, isHex, themeWarnings,
+  DEFAULT_FONT_SCALE, FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_PRESETS, applyFontScale, normalizeFontScale
 } from '../../../utils/theme';
 
 const sameTheme = (a, b) => ['primary', 'accent', 'background', 'text'].every((k) => String(a?.[k]).toUpperCase() === String(b?.[k]).toUpperCase());
@@ -23,7 +24,7 @@ function ColorRow({ field, value, onChange }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <span className="text-xs font-bold text-stone-800">{field.label}</span>
-          <span className="text-[11px] text-stone-500 truncate">{field.hint}</span>
+          <span className="text-[length:calc(11px*var(--fs))] text-stone-500 truncate">{field.hint}</span>
         </div>
         <input
           type="text"
@@ -43,21 +44,28 @@ function ColorRow({ field, value, onChange }) {
  * Admin > Settings > Branding: logo, favicon and the colour theme.
  * Colour changes preview live across the whole admin panel; nothing is saved until the form is saved.
  */
-export default function BrandingSettings({ logoUrl, faviconUrl, theme, onChange }) {
-  const saved = useStoreRules().theme;
-  const savedRef = useRef(saved);
-  savedRef.current = saved;
+export default function BrandingSettings({ logoUrl, faviconUrl, theme, fontScale, onChange }) {
+  const rules = useStoreRules();
+  const savedRef = useRef({ theme: rules.theme, fontScale: rules.fontScale });
+  savedRef.current = { theme: rules.theme, fontScale: rules.fontScale };
 
   const t = normalizeTheme(theme);
   const warnings = themeWarnings(theme);
+  const scale = normalizeFontScale(fontScale);
 
   // Live preview (not persisted)
   useEffect(() => {
     applyTheme(theme, { persist: false });
   }, [theme]);
+  useEffect(() => {
+    applyFontScale(scale, { persist: false });
+  }, [scale]);
 
-  // Leaving the page without saving restores the saved colours
-  useEffect(() => () => applyTheme(savedRef.current, { persist: false }), []);
+  // Leaving the page without saving restores the saved colours and text size
+  useEffect(() => () => {
+    applyTheme(savedRef.current.theme, { persist: false });
+    applyFontScale(savedRef.current.fontScale, { persist: false });
+  }, []);
 
   const setColor = (key, value) => onChange('theme', { ...t, ...{ [key]: value } });
 
@@ -138,6 +146,56 @@ export default function BrandingSettings({ logoUrl, faviconUrl, theme, onChange 
           {THEME_FIELDS.map((f) => (
             <ColorRow key={f.key} field={f} value={theme?.[f.key] ?? t[f.key]} onChange={(v) => setColor(f.key, v)} />
           ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+            <Type className="w-4 h-4 text-[color:var(--brand-accent-dark)]" /> Text size
+          </p>
+          <button
+            type="button"
+            onClick={() => onChange('fontScale', DEFAULT_FONT_SCALE)}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-[color:var(--brand-primary)]"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Reset to normal
+          </button>
+        </div>
+        <div className="p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {FONT_SCALE_PRESETS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => onChange('fontScale', p.value)}
+                aria-pressed={scale === p.value}
+                className={`px-3.5 py-2 rounded-lg border-2 text-xs font-bold transition-colors ${
+                  scale === p.value ? 'border-[color:var(--brand-primary)] bg-white text-[color:var(--brand-primary)]' : 'border-stone-200 bg-white text-stone-600 hover:border-stone-400'
+                }`}
+              >
+                {p.label} <span className="font-normal text-stone-500">{p.value}%</span>
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-stone-500">A</span>
+            <input
+              type="range"
+              min={FONT_SCALE_MIN}
+              max={FONT_SCALE_MAX}
+              step={5}
+              value={scale}
+              onChange={(e) => onChange('fontScale', Number(e.target.value))}
+              className="flex-1 accent-[color:var(--brand-primary)]"
+              aria-label="Text size percentage"
+            />
+            <span className="text-lg font-bold text-stone-500">A</span>
+            <span className="w-12 text-right text-xs font-bold text-stone-800">{scale}%</span>
+          </div>
+          <p className="text-[length:calc(11px*var(--fs))] text-stone-500">
+            Changes the size of all text on the store and in this admin panel. It previews instantly; press Save to publish it. Page layout and images stay the same.
+          </p>
         </div>
       </div>
 

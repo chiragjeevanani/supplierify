@@ -6,7 +6,7 @@ function DetailRow({ label, value }) {
   if (value === undefined || value === null || value === '') return null;
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 py-2 border-b border-stone-100 last:border-0">
-      <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 sm:w-36 shrink-0">{label}</span>
+      <span className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-500 sm:w-36 shrink-0">{label}</span>
       <span className="text-sm text-stone-800 font-medium break-words">{value}</span>
     </div>
   );
@@ -88,7 +88,7 @@ export default function ViewProductModal({ isOpen, onClose, product, categories 
               <div className="flex flex-wrap items-center gap-2">
                 <h4 className="font-sans text-xl font-bold text-[color:var(--brand-primary)]">{product.name}</h4>
                 {product.isBestseller && (
-                  <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded">
+                  <span className="inline-flex items-center gap-1 text-[length:calc(9px*var(--fs))] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded">
                     <Flame className="w-2.5 h-2.5 text-[color:var(--brand-accent-dark)]" />
                     Bestseller
                   </span>
@@ -105,7 +105,7 @@ export default function ViewProductModal({ isOpen, onClose, product, categories 
                   <span className="text-sm text-stone-400 line-through">₹{product.oldPrice}</span>
                 ) : null}
                 <span
-                  className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                  className={`px-2.5 py-0.5 rounded-md text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider ${
                     isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                   }`}
                 >
@@ -129,7 +129,7 @@ export default function ViewProductModal({ isOpen, onClose, product, categories 
 
           {gallery.length > 1 && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-2">Gallery</p>
+              <p className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-500 mb-2">Gallery</p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {gallery.map((img, idx) => (
                   <img
@@ -144,7 +144,7 @@ export default function ViewProductModal({ isOpen, onClose, product, categories 
           )}
 
           <div className="rounded-xl border border-[color:var(--brand-border)] bg-[color:var(--brand-surface)] p-4">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)] mb-2 flex items-center gap-1.5">
+            <p className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-[color:var(--brand-primary)] mb-2 flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5" />
               Catalog Info
             </p>
@@ -158,7 +158,7 @@ export default function ViewProductModal({ isOpen, onClose, product, categories 
 
           {weightOptions.length > 0 && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-2">Weight / Variants</p>
+              <p className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-500 mb-2">Weight / Variants</p>
               <div className="space-y-2">
                 {weightOptions.map((opt, idx) => (
                   <div
@@ -181,7 +181,7 @@ export default function ViewProductModal({ isOpen, onClose, product, categories 
 
           {(product.description || product.details || product.productDetails) && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-2">Description</p>
+              <p className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-500 mb-2">Description</p>
               <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">
                 {product.description || product.details || product.productDetails}
               </p>
@@ -190,14 +190,14 @@ export default function ViewProductModal({ isOpen, onClose, product, categories 
 
           {product.ingredients && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-2">Ingredients</p>
+              <p className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-500 mb-2">Ingredients</p>
               <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">{product.ingredients}</p>
             </div>
           )}
 
           {(product.shippingWeightKg || product.lengthCm) && (
             <div className="rounded-xl border border-stone-200 p-4">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-2">Shipping</p>
+              <p className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-500 mb-2">Shipping</p>
               <DetailRow label="Weight (kg)" value={product.shippingWeightKg} />
               <DetailRow
                 label="Dimensions (cm)"

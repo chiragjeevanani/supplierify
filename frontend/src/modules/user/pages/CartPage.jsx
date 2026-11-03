@@ -114,7 +114,7 @@ export default function CartPage() {
                       <p className="text-sm text-stone-600 mt-0.5">
                         {inr(item.price)} <span className="text-xs">/ kg</span>
                       </p>
-                      <p className="text-[11px] text-stone-500">Min. {min} kg</p>
+                      <p className="text-[length:calc(11px*var(--fs))] text-stone-500">Min. {min} kg</p>
                     </div>
                   </div>
 
@@ -206,7 +206,7 @@ export default function CartPage() {
                       Apply
                     </button>
                   </div>
-                  {couponError && <p className="text-[11px] text-rose-600 font-medium">{couponError}</p>}
+                  {couponError && <p className="text-[length:calc(11px*var(--fs))] text-rose-600 font-medium">{couponError}</p>}
                 </form>
               )}
             </div>
@@ -226,12 +226,12 @@ export default function CartPage() {
               >
                 <WhatsAppIcon className="w-5 h-5" /> Enquire on WhatsApp
               </a>
-              <p className="text-[11px] text-stone-500 text-center">
+              <p className="text-[length:calc(11px*var(--fs))] text-stone-500 text-center">
                 Prefer to negotiate or pay manually? Send this cart to us on WhatsApp.
               </p>
             </div>
 
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-500">
+            <div className="flex items-center justify-center gap-1.5 text-[length:calc(11px*var(--fs))] text-stone-500">
               <ShieldCheck className="w-4 h-4 text-emerald-700" />
               <span>Secure, encrypted checkout</span>
             </div>
@@ -242,7 +242,7 @@ export default function CartPage() {
       {/* Mobile sticky bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-[color:var(--brand-border)] px-4 py-3 flex items-center gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="shrink-0">
-          <span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold">Total</span>
+          <span className="block text-[length:calc(10px*var(--fs))] uppercase tracking-wider text-stone-500 font-bold">Total</span>
           <span className="text-lg font-extrabold text-[color:var(--brand-primary)] leading-none">{inr(total)}</span>
         </div>
         <a

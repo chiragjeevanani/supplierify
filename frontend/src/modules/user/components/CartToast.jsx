@@ -54,7 +54,7 @@ export default function CartToast() {
             <h4 className="font-serif text-sm font-bold text-white truncate leading-snug">
               {product.name}
             </h4>
-            <p className="text-[11px] text-stone-300 mt-0.5">
+            <p className="text-[length:calc(11px*var(--fs))] text-stone-300 mt-0.5">
               Pack: <span className="font-bold text-[color:var(--brand-accent)]">{weight}</span> • Qty: {qty}
             </p>
             <p className="text-xs font-extrabold text-white mt-0.5">

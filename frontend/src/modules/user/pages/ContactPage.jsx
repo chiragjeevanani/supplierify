@@ -31,7 +31,7 @@ export default function ContactPage() {
           <div className="relative z-10 max-w-2xl mx-auto px-4">
             <div className="inline-flex items-center justify-center gap-2 mb-2">
               <Leaf className="w-4 h-4 text-[color:var(--brand-accent)]" />
-              <span className="text-[color:var(--brand-accent)] font-bold tracking-[0.18em] uppercase text-[10px] sm:text-xs">
+              <span className="text-[color:var(--brand-accent)] font-bold tracking-[0.18em] uppercase text-[length:calc(10px*var(--fs))] sm:text-xs">
                 Get in Touch
               </span>
             </div>
@@ -55,9 +55,9 @@ export default function ContactPage() {
                   <Phone className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Phone</p>
+                  <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Phone</p>
                   <p className="text-sm font-bold text-[color:var(--brand-primary)] truncate">{help.phone}</p>
-                  <p className="text-[10px] text-stone-500 mt-0.5 flex items-center gap-1">
+                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 flex items-center gap-1">
                     <Clock className="w-3 h-3" /> {help.phoneHours}
                   </p>
                 </div>
@@ -71,9 +71,9 @@ export default function ContactPage() {
                   <Mail className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Email</p>
+                  <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Email</p>
                   <p className="text-sm font-bold text-[color:var(--brand-primary)] break-all">{help.email}</p>
-                  <p className="text-[10px] text-stone-500 mt-0.5">{help.emailNote}</p>
+                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5">{help.emailNote}</p>
                 </div>
               </a>
 
@@ -91,9 +91,9 @@ export default function ContactPage() {
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Instagram</p>
+                  <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Instagram</p>
                   <p className="text-sm font-bold text-[color:var(--brand-primary)]">{INSTAGRAM_HANDLE}</p>
-                  <p className="text-[10px] text-stone-500 mt-0.5">Recipes, tips & offers</p>
+                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5">Recipes, tips & offers</p>
                 </div>
               </a>
 
@@ -102,7 +102,7 @@ export default function ContactPage() {
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Office</p>
+                  <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Office</p>
                   <p className="text-sm font-bold text-[color:var(--brand-primary)] leading-snug">{officeAddress}</p>
                 </div>
               </div>
@@ -119,7 +119,7 @@ export default function ContactPage() {
               </div>
               <div className="min-w-0 text-left">
                 <p className="text-sm font-bold text-[color:var(--brand-primary)]">Help & Support</p>
-                <p className="text-[10px] text-stone-500 mt-0.5">Order help, FAQs & more</p>
+                <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5">Order help, FAQs & more</p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[color:var(--brand-accent-dark)] shrink-0" />

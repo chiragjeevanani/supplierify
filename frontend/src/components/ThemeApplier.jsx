@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useStoreRules } from '../hooks/useStoreRules';
-import { applyTheme } from '../utils/theme';
+import { applyTheme, applyFontScale } from '../utils/theme';
 import { assetUrl } from '../utils/api';
 
 /**
@@ -14,6 +14,10 @@ export default function ThemeApplier() {
   useEffect(() => {
     if (rules.loaded) applyTheme(rules.theme);
   }, [rules.loaded, rules.theme]);
+
+  useEffect(() => {
+    if (rules.loaded) applyFontScale(rules.fontScale);
+  }, [rules.loaded, rules.fontScale]);
 
   useEffect(() => {
     if (!rules.loaded) return;

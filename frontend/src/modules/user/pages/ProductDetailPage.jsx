@@ -415,7 +415,7 @@ export default function ProductDetailPage() {
                     <span className="text-lg font-extrabold text-[color:var(--brand-primary)]">
                       ₹{(Number(currentPrice) * (Number(quantity) || 0)).toLocaleString('en-IN')}
                     </span>
-                    <span className="block text-[11px] text-stone-500">excl. GST &amp; shipping</span>
+                    <span className="block text-[length:calc(11px*var(--fs))] text-stone-500">excl. GST &amp; shipping</span>
                   </div>
                 </div>
               </div>
@@ -562,25 +562,25 @@ export default function ProductDetailPage() {
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                       <div className="p-3.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                        <span className="text-stone-400 block text-[11px] font-bold uppercase tracking-wider">Weight / Pack Size</span>
+                        <span className="text-stone-400 block text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider">Weight / Pack Size</span>
                         <span className="font-bold text-stone-900 mt-0.5 block">{product.weight || selectedWeight || '150g'}</span>
                       </div>
                       <div className="p-3.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                        <span className="text-stone-400 block text-[11px] font-bold uppercase tracking-wider">Category</span>
+                        <span className="text-stone-400 block text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider">Category</span>
                         <span className="font-bold text-stone-900 capitalize mt-0.5 block">{categoryLabel}</span>
                       </div>
                       <div className="p-3.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                        <span className="text-stone-400 block text-[11px] font-bold uppercase tracking-wider">Dietary & Processing</span>
+                        <span className="text-stone-400 block text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider">Dietary & Processing</span>
                         <span className="font-bold text-stone-900 mt-0.5 block">100% Vegan, Gluten-Free, Slow-Roasted (Zero Palm Oil)</span>
                       </div>
                       <div className="p-3.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                        <span className="text-stone-400 block text-[11px] font-bold uppercase tracking-wider">Shelf Life & Storage</span>
+                        <span className="text-stone-400 block text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider">Shelf Life & Storage</span>
                         <span className="font-bold text-stone-900 mt-0.5 block">9 Months • Store in a cool, dry airtight container</span>
                       </div>
                     </div>
                     {product.ingredients && (
                       <div className="p-3.5 bg-white rounded-xl border border-stone-200 shadow-2xs">
-                        <span className="text-stone-400 block text-[11px] font-bold uppercase tracking-wider">Key Ingredients</span>
+                        <span className="text-stone-400 block text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider">Key Ingredients</span>
                         <span className="font-semibold text-stone-800 mt-0.5 block">{product.ingredients}</span>
                       </div>
                     )}
@@ -637,15 +637,15 @@ export default function ProductDetailPage() {
                           <img src={r.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'} alt="" className="w-7 h-7 rounded-full object-cover" />
                           <span className="font-serif text-xs font-bold text-[color:var(--brand-primary)]">{r.author}</span>
                           {r.verified && (
-                            <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Verified Buyer</span>
+                            <span className="text-[length:calc(10px*var(--fs))] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Verified Buyer</span>
                           )}
                           {r.featured && (
-                            <span className="text-[10px] text-[color:var(--brand-accent)] bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-semibold">
+                            <span className="text-[length:calc(10px*var(--fs))] text-[color:var(--brand-accent)] bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-semibold">
                               ★ Featured
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] text-stone-400">{r.date}</span>
+                        <span className="text-[length:calc(11px*var(--fs))] text-stone-400">{r.date}</span>
                       </div>
                       <div className="flex text-amber-400">
                         {[...Array(r.rating || 5)].map((_, idx) => <Star key={idx} className="w-3.5 h-3.5 fill-amber-400" />)}
@@ -653,7 +653,7 @@ export default function ProductDetailPage() {
                       {r.title && <h5 className="font-bold text-xs text-stone-800">"{r.title}"</h5>}
                       <p className="text-xs text-stone-700 italic">"{r.content || r.comment}"</p>
                       {r.adminReply && (
-                        <div className="mt-2 text-[11px] bg-stone-50 p-2.5 rounded-lg border-l-2 border-[color:var(--brand-primary)] text-stone-600">
+                        <div className="mt-2 text-[length:calc(11px*var(--fs))] bg-stone-50 p-2.5 rounded-lg border-l-2 border-[color:var(--brand-primary)] text-stone-600">
                           <strong className="text-[color:var(--brand-primary)]">Dry Fruit Wholesale Team Response:</strong> {r.adminReply}
                         </div>
                       )}
@@ -692,7 +692,7 @@ export default function ProductDetailPage() {
       {/* MOBILE STICKY BOTTOM ACTION BAR (Positioned above fixed mobile bottom nav) */}
       <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[color:var(--brand-border)] px-4 py-2.5 z-40 md:hidden shadow-2xl flex items-center gap-3">
         <div className="flex flex-col pl-1 shrink-0">
-          <span className="text-[10px] text-stone-500 font-medium">Total Price</span>
+          <span className="text-[length:calc(10px*var(--fs))] text-stone-500 font-medium">Total Price</span>
           <span className="font-sans text-base font-extrabold text-[color:var(--brand-primary)] tracking-tight">₹{(Number(currentPrice) * (Number(quantity) || 0)).toLocaleString('en-IN')}</span>
         </div>
         <a
@@ -727,7 +727,7 @@ export default function ProductDetailPage() {
           <div className="bg-white rounded-3xl max-w-lg w-full border border-[color:var(--brand-border)] shadow-2xl overflow-hidden animate-in fade-in">
             <div className="p-6 bg-[color:var(--brand-primary)] text-white flex items-center justify-between border-b border-[color:var(--brand-accent)]/30">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">CUSTOMER FEEDBACK</span>
+                <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">CUSTOMER FEEDBACK</span>
                 <h3 className="font-serif text-lg font-bold">Write a Review for {product.name}</h3>
               </div>
               <button onClick={() => setIsWriteReviewOpen(false)} className="text-stone-400 hover:text-white">✕</button>

@@ -45,7 +45,7 @@ export default function EditBestsellerSectionModal({ isOpen, onClose, config, on
               <h3 className="font-serif text-base sm:text-lg font-bold text-white tracking-wide">
                 Section Content & Settings
               </h3>
-              <p className="text-[11px] sm:text-xs text-[#A2B5A8]">
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-[#A2B5A8]">
                 Customize the titles, badges, and links displayed on the User App homepage.
               </p>
             </div>
@@ -68,7 +68,7 @@ export default function EditBestsellerSectionModal({ isOpen, onClose, config, on
               <h4 className="text-xs sm:text-sm font-bold text-stone-900">
                 Display Bestseller Section
               </h4>
-              <p className="text-[11px] text-stone-500">
+              <p className="text-[length:calc(11px*var(--fs))] text-stone-500">
                 When disabled, the section is completely hidden from the User App homepage.
               </p>
             </div>

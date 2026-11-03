@@ -120,7 +120,7 @@ export default function OrderTrackingPage() {
       <main className="flex-1 py-3 sm:py-6 md:py-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full pb-28 md:pb-12">
         
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-[10.5px] sm:text-xs text-stone-500 mb-3 sm:mb-6">
+        <nav className="flex items-center gap-1.5 text-[length:calc(10.5px*var(--fs))] sm:text-xs text-stone-500 mb-3 sm:mb-6">
           <Link to="/" className="hover:text-[color:var(--brand-primary)] transition-colors">Home</Link>
           <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <Link to="/account?tab=orders" className="hover:text-[color:var(--brand-primary)] transition-colors">My Orders</Link>
@@ -140,7 +140,7 @@ export default function OrderTrackingPage() {
                 <h1 className="font-serif text-lg sm:text-2xl lg:text-3xl font-bold text-[color:var(--brand-primary)]">
                   Order #{order.id}
                 </h1>
-                <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                <span className={`text-[length:calc(10px*var(--fs))] sm:text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                   order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800'
                   : order.status === 'Cancelled' ? 'bg-rose-100 text-rose-800'
                   : order.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800'
@@ -153,13 +153,13 @@ export default function OrderTrackingPage() {
                 </span>
                 {/* Live polling indicator */}
                 {isLiveConnected && (
-                  <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  <span className="flex items-center gap-1 text-[length:calc(10px*var(--fs))] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                     <Wifi className="w-2.5 h-2.5 animate-pulse" />
                     Live
                   </span>
                 )}
               </div>
-              <p className="text-[11px] sm:text-xs text-stone-500 mt-0.5 sm:mt-1">
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-500 mt-0.5 sm:mt-1">
                 Placed on {order.placedAt || order.date}
                 {order.expectedDelivery ? ` • ${order.expectedDelivery.label}: ${order.expectedDelivery.value}` : ''}
               </p>
@@ -189,7 +189,7 @@ export default function OrderTrackingPage() {
 
             <div className="text-left sm:text-right pt-1 sm:pt-0 border-t sm:border-t-0 border-stone-100 flex flex-col sm:items-end gap-1.5">
               <div>
-                <span className="text-[10.5px] sm:text-xs text-stone-500 block">Total Paid Amount</span>
+                <span className="text-[length:calc(10.5px*var(--fs))] sm:text-xs text-stone-500 block">Total Paid Amount</span>
                 <p className="font-sans text-base sm:text-xl font-bold text-[color:var(--brand-primary)]">₹{order.total}</p>
               </div>
               <button
@@ -216,7 +216,7 @@ export default function OrderTrackingPage() {
 
                   return (
                     <div key={idx} className="flex md:flex-col items-center gap-3 md:gap-2 text-left md:text-center">
-                      <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm sm:shadow-md shrink-0 transition-all ${
+                      <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-[length:calc(10px*var(--fs))] sm:text-xs shadow-sm sm:shadow-md shrink-0 transition-all ${
                         isCurrent 
                           ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] ring-2 sm:ring-4 ring-[color:var(--brand-accent)]/30 animate-pulse'
                           : isDone 
@@ -230,7 +230,7 @@ export default function OrderTrackingPage() {
                         <h4 className={`text-xs sm:text-sm font-bold ${isCurrent ? 'text-[color:var(--brand-primary)]' : isDone ? 'text-stone-800' : 'text-stone-400'}`}>
                           {step.status || step.name}
                         </h4>
-                        <p className="text-[9.5px] sm:text-[10px] text-stone-400 mt-0.5">{step.time || (isDone ? '' : 'Pending')}</p>
+                        <p className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5">{step.time || (isDone ? '' : 'Pending')}</p>
                       </div>
                     </div>
                   );
@@ -243,7 +243,7 @@ export default function OrderTrackingPage() {
           <div className="pt-3 sm:pt-4 border-t border-stone-200">
             <div className="max-w-xl bg-[color:var(--brand-surface)] rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-[color:var(--brand-border)] flex flex-col justify-between space-y-3.5 sm:space-y-6">
               <div>
-                <span className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-primary-lighter)]">
+                <span className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-primary-lighter)]">
                   ASSIGNED COURIER / RIDER
                 </span>
                 <h3 className="font-serif text-base sm:text-lg font-bold text-[color:var(--brand-primary)] mt-0.5 sm:mt-1 mb-2.5 sm:mb-4">
@@ -259,16 +259,16 @@ export default function OrderTrackingPage() {
                     <div className="flex-1 min-w-0">
                       <h4 className="font-serif text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] truncate">{rider.name || 'Delivery partner'}</h4>
                       {rider.phone && (
-                        <p className="text-[11px] sm:text-xs text-stone-500">{rider.phone}</p>
+                        <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-500">{rider.phone}</p>
                       )}
                       {Number.isFinite(Number(rider.rating)) && Number(rider.rating) > 0 && (
-                        <p className="text-[11px] sm:text-xs text-stone-500">★ {Number(rider.rating).toFixed(1)}</p>
+                        <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-500">★ {Number(rider.rating).toFixed(1)}</p>
                       )}
                       {rider.vehicle && (
-                        <p className="text-[10.5px] sm:text-[11px] text-stone-400 mt-0.5">Vehicle: <strong className="text-stone-700">{rider.vehicle}</strong></p>
+                        <p className="text-[length:calc(10.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-400 mt-0.5">Vehicle: <strong className="text-stone-700">{rider.vehicle}</strong></p>
                       )}
                       {rider.eta && (
-                        <p className="text-[10.5px] sm:text-[11px] text-stone-400 mt-0.5">ETA: <strong className="text-stone-700">{rider.eta}</strong></p>
+                        <p className="text-[length:calc(10.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-400 mt-0.5">ETA: <strong className="text-stone-700">{rider.eta}</strong></p>
                       )}
                     </div>
                   </div>
@@ -285,13 +285,13 @@ export default function OrderTrackingPage() {
                     <MapPin className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                     <span>Delivering to: {order.address?.type || 'Home'}</span>
                   </p>
-                  <p className="text-[11px] sm:text-xs text-stone-600">{[order.address?.street, order.address?.city].filter(Boolean).join(', ')}{order.address?.pincode ? ` - ${order.address.pincode}` : ''}</p>
+                  <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-600">{[order.address?.street, order.address?.city].filter(Boolean).join(', ')}{order.address?.pincode ? ` - ${order.address.pincode}` : ''}</p>
                 </div>
 
                 {/* Shipment tracking (from backend / Shiprocket — no direct Shiprocket calls) */}
                 {(order.awbNumber || order.courierName || order.shiprocket?.awbCode) && (
                   <div className="space-y-1 text-xs text-stone-600 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-stone-200 mt-3">
-                    <p className="font-bold text-[color:var(--brand-primary)] text-[10px] uppercase tracking-wider mb-1">Shipment Tracking</p>
+                    <p className="font-bold text-[color:var(--brand-primary)] text-[length:calc(10px*var(--fs))] uppercase tracking-wider mb-1">Shipment Tracking</p>
                     <p>Status: <strong className="text-stone-900">{order.status}</strong>
                       {order.shiprocket?.status ? ` · ${order.shiprocket.status}` : ''}
                     </p>
@@ -328,14 +328,14 @@ export default function OrderTrackingPage() {
                 <div className="grid grid-cols-3 gap-2 pt-1 sm:pt-2">
                   <a
                     href={`tel:${rider.phone}`}
-                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl bg-[color:var(--brand-primary)] text-white text-[10.5px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-[color:var(--brand-primary-light)] transition-colors shadow-2xs min-h-[38px] sm:min-h-[44px]"
+                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl bg-[color:var(--brand-primary)] text-white text-[length:calc(10.5px*var(--fs))] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-[color:var(--brand-primary-light)] transition-colors shadow-2xs min-h-[38px] sm:min-h-[44px]"
                   >
                     <Phone className="w-3.5 h-3.5 text-[color:var(--brand-accent)]" />
                     <span>Call</span>
                   </a>
                   <a
                     href={`sms:${rider.phone}?body=${encodeURIComponent(riderMessage)}`}
-                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border border-stone-300 bg-white text-stone-800 text-[10.5px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-stone-50 transition-colors min-h-[38px] sm:min-h-[44px]"
+                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border border-stone-300 bg-white text-stone-800 text-[length:calc(10.5px*var(--fs))] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-stone-50 transition-colors min-h-[38px] sm:min-h-[44px]"
                   >
                     <MessageSquare className="w-3.5 h-3.5 text-[color:var(--brand-primary)]" />
                     <span>Message</span>
@@ -344,7 +344,7 @@ export default function OrderTrackingPage() {
                     href={`https://wa.me/${riderWhatsApp}?text=${encodeURIComponent(riderMessage)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 text-[10.5px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition-colors min-h-[38px] sm:min-h-[44px]"
+                    className="py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 text-[length:calc(10.5px*var(--fs))] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition-colors min-h-[38px] sm:min-h-[44px]"
                   >
                     <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
                     <span>WhatsApp</span>
@@ -367,8 +367,8 @@ export default function OrderTrackingPage() {
                   <img src={item.image} alt={item.name} className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl object-cover bg-white p-0.5 sm:p-1 border border-stone-200 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-serif text-xs font-bold text-[color:var(--brand-primary)] truncate">{item.name}</h4>
-                    <p className="text-[10px] sm:text-[11px] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
-                    <p className="text-[11px] sm:text-xs font-bold text-[color:var(--brand-primary)] mt-0.5">₹{item.price * item.qty}</p>
+                    <p className="text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                    <p className="text-[length:calc(11px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)] mt-0.5">₹{item.price * item.qty}</p>
                     <RateReviewButton order={order} item={item} className="mt-1.5" />
                   </div>
                 </div>

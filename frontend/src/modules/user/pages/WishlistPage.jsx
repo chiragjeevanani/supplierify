@@ -75,7 +75,7 @@ export default function WishlistPage() {
                 My Wishlist
               </h1>
             </div>
-            <p className="text-[10px] text-[color:var(--brand-accent)] font-medium leading-none mt-0.5">
+            <p className="text-[length:calc(10px*var(--fs))] text-[color:var(--brand-accent)] font-medium leading-none mt-0.5">
               {wishlistedProducts.length} {wishlistedProducts.length === 1 ? 'item saved' : 'items saved'}
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function WishlistPage() {
           {wishlistedProducts.length > 0 && (
             <button
               onClick={clearWishlist}
-              className="text-[10px] font-bold text-stone-300 hover:text-rose-400 px-2.5 py-1 rounded-lg bg-white/5 active:scale-95 transition-all"
+              className="text-[length:calc(10px*var(--fs))] font-bold text-stone-300 hover:text-rose-400 px-2.5 py-1 rounded-lg bg-white/5 active:scale-95 transition-all"
             >
               Clear
             </button>
@@ -97,7 +97,7 @@ export default function WishlistPage() {
           >
             <ShoppingBag className="w-4 h-4 text-[color:var(--brand-accent)]" />
             {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 bg-rose-500 text-white text-[9px] font-extrabold rounded-full flex items-center justify-center leading-none">
+              <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 bg-rose-500 text-white text-[length:calc(9px*var(--fs))] font-extrabold rounded-full flex items-center justify-center leading-none">
                 {itemCount}
               </span>
             )}
@@ -145,12 +145,12 @@ export default function WishlistPage() {
         {/* Mobile Quick Action Bar (shown on mobile when items exist) */}
         {wishlistedProducts.length > 0 && (
           <div className="md:hidden flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-[color:var(--brand-border)] shadow-2xs mb-3">
-            <span className="text-[11px] font-medium text-stone-600">
+            <span className="text-[length:calc(11px*var(--fs))] font-medium text-stone-600">
               <strong className="text-[color:var(--brand-primary)]">{wishlistedProducts.length}</strong> items saved
             </span>
             <button
               onClick={handleMoveAllToCart}
-              className="px-2.5 py-1 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] active:scale-95 text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-2xs"
+              className="px-2.5 py-1 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] active:scale-95 text-[length:calc(10px*var(--fs))] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-2xs"
             >
               <ShoppingBag className="w-3 h-3" />
               <span>Move All to Cart</span>
@@ -166,14 +166,14 @@ export default function WishlistPage() {
             </div>
             <div>
               <h2 className="font-serif text-lg sm:text-2xl font-bold text-[color:var(--brand-primary)]">Your Wishlist is Empty</h2>
-              <p className="text-[11px] sm:text-xs text-stone-600 leading-relaxed mt-1 sm:mt-2 max-w-md mx-auto">
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-600 leading-relaxed mt-1 sm:mt-2 max-w-md mx-auto">
                 Save your favorite dry fruits, Dry Fruits flavors, and wellness combos so you can find them easily later.
               </p>
             </div>
             <div className="pt-1 sm:pt-2">
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 sm:px-8 sm:py-3 rounded-xl sm:rounded-2xl bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] font-extrabold text-[11px] sm:text-xs uppercase tracking-wider transition-all shadow-md hover:scale-102 group"
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 sm:px-8 sm:py-3 rounded-xl sm:rounded-2xl bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] font-extrabold text-[length:calc(11px*var(--fs))] sm:text-xs uppercase tracking-wider transition-all shadow-md hover:scale-102 group"
               >
                 <span>Browse Products</span>
                 <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[color:var(--brand-accent)] group-hover:translate-x-1 transition-transform" />
@@ -217,7 +217,7 @@ export default function WishlistPage() {
 
                       {/* Badge */}
                       {p.badge && (
-                        <span className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 px-1.5 py-0.5 sm:px-2 rounded-md text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] border border-[color:var(--brand-accent)]/30 shadow-2xs">
+                        <span className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 px-1.5 py-0.5 sm:px-2 rounded-md text-[length:calc(8px*var(--fs))] sm:text-[length:calc(9px*var(--fs))] font-extrabold uppercase tracking-wider bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] border border-[color:var(--brand-accent)]/30 shadow-2xs">
                           {p.badge}
                         </span>
                       )}
@@ -241,13 +241,13 @@ export default function WishlistPage() {
                             <Star key={i} className="w-2 h-2 sm:w-2.5 sm:h-2.5 fill-amber-400 text-amber-400" />
                           ))}
                         </div>
-                        <span className="text-[9px] sm:text-[10px] text-stone-400 font-medium">({p.reviewsCount || 420})</span>
+                        <span className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-400 font-medium">({p.reviewsCount || 420})</span>
                       </div>
 
                       {/* Title */}
                       <Link 
                         to={targetLink} 
-                        className="font-serif text-[11px] sm:text-xs font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary-lighter)] block truncate transition-colors leading-tight"
+                        className="font-serif text-[length:calc(11px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary-lighter)] block truncate transition-colors leading-tight"
                         title={p.name}
                       >
                         {p.name}
@@ -255,12 +255,12 @@ export default function WishlistPage() {
 
                       {/* Price and Discount */}
                       <div className="flex items-baseline gap-1 pt-0.5">
-                        <span className="font-extrabold text-[11px] sm:text-xs text-[color:var(--brand-primary)]">₹{p.price}</span>
+                        <span className="font-extrabold text-[length:calc(11px*var(--fs))] sm:text-xs text-[color:var(--brand-primary)]">₹{p.price}</span>
                         {p.oldPrice && (
-                          <span className="text-[9px] sm:text-[10px] text-stone-400 line-through">₹{p.oldPrice}</span>
+                          <span className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-400 line-through">₹{p.oldPrice}</span>
                         )}
                         {p.discount && (
-                          <span className="text-[8px] sm:text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">
+                          <span className="text-[length:calc(8px*var(--fs))] sm:text-[length:calc(9px*var(--fs))] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">
                             {p.discount}
                           </span>
                         )}
@@ -270,7 +270,7 @@ export default function WishlistPage() {
                     {/* Add to Cart CTA */}
                     <button
                       onClick={() => addToCart(p, '1 kg', 1, false)}
-                      className="mt-2 sm:mt-3 w-full py-1 sm:py-1.5 bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-[10px] sm:text-[11px] font-bold uppercase rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-98"
+                      className="mt-2 sm:mt-3 w-full py-1 sm:py-1.5 bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] font-bold uppercase rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-98"
                     >
                       <ShoppingBag className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                       <span>Add to Cart</span>
@@ -287,7 +287,7 @@ export default function WishlistPage() {
           <section className="mt-8 sm:mt-18 pt-5 sm:pt-8 border-t border-[color:var(--brand-border)]">
             <div className="mb-3 sm:mb-5 flex items-center justify-between">
               <div>
-                <span className="text-[10px] sm:text-[11px] uppercase tracking-widest text-[color:var(--brand-primary-lighter)] font-bold">RECOMMENDED FOR YOU</span>
+                <span className="text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] uppercase tracking-widest text-[color:var(--brand-primary-lighter)] font-bold">RECOMMENDED FOR YOU</span>
                 <h3 className="font-serif text-base sm:text-2xl font-bold text-[color:var(--brand-primary)] mt-0.5">Popular dry fruits</h3>
               </div>
               <Link to="/shop" className="text-xs font-bold text-[color:var(--brand-accent-dark)] hover:underline">
@@ -326,17 +326,17 @@ export default function WishlistPage() {
                     <div className="space-y-0.5 sm:space-y-1">
                       <Link 
                         to={targetLink} 
-                        className="font-serif text-[11px] sm:text-xs font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary-lighter)] block truncate transition-colors leading-tight"
+                        className="font-serif text-[length:calc(11px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary-lighter)] block truncate transition-colors leading-tight"
                         title={p.name}
                       >
                         {p.name}
                       </Link>
-                      <p className="text-[11px] sm:text-xs font-extrabold text-[color:var(--brand-primary)]">₹{p.price}</p>
+                      <p className="text-[length:calc(11px*var(--fs))] sm:text-xs font-extrabold text-[color:var(--brand-primary)]">₹{p.price}</p>
                     </div>
 
                     <button
                       onClick={() => addToCart(p, '1 kg', 1, false)}
-                      className="mt-2 sm:mt-3 w-full py-1 sm:py-1.5 bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-[10px] sm:text-[11px] font-bold uppercase rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-98"
+                      className="mt-2 sm:mt-3 w-full py-1 sm:py-1.5 bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] font-bold uppercase rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-98"
                     >
                       <span>+ Add</span>
                     </button>
@@ -355,8 +355,8 @@ export default function WishlistPage() {
                 <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               <div>
-                <h5 className="text-[11px] sm:text-xs font-bold text-[color:var(--brand-primary)]">Free Express Delivery</h5>
-                <p className="text-[9px] sm:text-[10px] text-stone-500">On all prepaid orders above ₹499</p>
+                <h5 className="text-[length:calc(11px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)]">Free Express Delivery</h5>
+                <p className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-500">On all prepaid orders above ₹499</p>
               </div>
             </div>
 
@@ -365,8 +365,8 @@ export default function WishlistPage() {
                 <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700" />
               </div>
               <div>
-                <h5 className="text-[11px] sm:text-xs font-bold text-[color:var(--brand-primary)]">100% Wetland Harvested</h5>
-                <p className="text-[9px] sm:text-[10px] text-stone-500">Naturally puffed Grade-A dry fruits</p>
+                <h5 className="text-[length:calc(11px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)]">100% Wetland Harvested</h5>
+                <p className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-500">Naturally puffed Grade-A dry fruits</p>
               </div>
             </div>
 
@@ -375,8 +375,8 @@ export default function WishlistPage() {
                 <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               <div>
-                <h5 className="text-[11px] sm:text-xs font-bold text-[color:var(--brand-primary)]">Freshness Guarantee</h5>
-                <p className="text-[9px] sm:text-[10px] text-stone-500">Airtight nitrogen-flushed seal</p>
+                <h5 className="text-[length:calc(11px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)]">Freshness Guarantee</h5>
+                <p className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-500">Airtight nitrogen-flushed seal</p>
               </div>
             </div>
           </div>

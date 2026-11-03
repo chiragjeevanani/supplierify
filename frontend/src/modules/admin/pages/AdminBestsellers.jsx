@@ -334,7 +334,7 @@ export default function AdminBestsellers() {
             
             <div className="bg-white p-4 rounded-2xl border border-[color:var(--brand-border)] shadow-2xs flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wider font-bold text-stone-500">Total Selected</p>
+                <p className="text-[length:calc(11px*var(--fs))] uppercase tracking-wider font-bold text-stone-500">Total Selected</p>
                 <p className="text-2xl font-serif font-extrabold text-[color:var(--brand-primary)] mt-0.5">{totalCount}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[color:var(--brand-surface)] border border-stone-200 flex items-center justify-center text-[color:var(--brand-primary)]">
@@ -344,7 +344,7 @@ export default function AdminBestsellers() {
 
             <div className="bg-white p-4 rounded-2xl border border-[color:var(--brand-border)] shadow-2xs flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wider font-bold text-emerald-700">Active in Carousel</p>
+                <p className="text-[length:calc(11px*var(--fs))] uppercase tracking-wider font-bold text-emerald-700">Active in Carousel</p>
                 <p className="text-2xl font-serif font-extrabold text-emerald-800 mt-0.5">{activeCount}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
@@ -354,7 +354,7 @@ export default function AdminBestsellers() {
 
             <div className="bg-white p-4 rounded-2xl border border-[color:var(--brand-border)] shadow-2xs flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wider font-bold text-amber-700">Hidden / Inactive</p>
+                <p className="text-[length:calc(11px*var(--fs))] uppercase tracking-wider font-bold text-amber-700">Hidden / Inactive</p>
                 <p className="text-2xl font-serif font-extrabold text-amber-800 mt-0.5">{inactiveCount}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
@@ -364,7 +364,7 @@ export default function AdminBestsellers() {
 
             <div className="bg-white p-4 rounded-2xl border border-[color:var(--brand-border)] shadow-2xs flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wider font-bold text-stone-500">Section Visibility</p>
+                <p className="text-[length:calc(11px*var(--fs))] uppercase tracking-wider font-bold text-stone-500">Section Visibility</p>
                 <p className={`text-base sm:text-lg font-bold mt-1 ${config.isEnabled ? 'text-[color:var(--brand-primary)]' : 'text-stone-400'}`}>
                   {config.isEnabled ? '● LIVE ON APP' : '○ HIDDEN'}
                 </p>
@@ -501,12 +501,12 @@ export default function AdminBestsellers() {
                                 {prod.name}
                               </h3>
                               {prod.badge && (
-                                <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-[color:var(--brand-accent)]/20 text-[color:var(--brand-primary)] border border-[color:var(--brand-accent)]/30 uppercase tracking-wide">
+                                <span className="text-[length:calc(9px*var(--fs))] font-extrabold px-2 py-0.5 rounded-md bg-[color:var(--brand-accent)]/20 text-[color:var(--brand-primary)] border border-[color:var(--brand-accent)]/30 uppercase tracking-wide">
                                   {prod.badge}
                                 </span>
                               )}
                               {!item.isActive && (
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-stone-200 text-stone-600">
+                                <span className="text-[length:calc(9px*var(--fs))] font-bold px-2 py-0.5 rounded-md bg-stone-200 text-stone-600">
                                   Hidden from Section
                                 </span>
                               )}
@@ -528,7 +528,7 @@ export default function AdminBestsellers() {
                               ₹{prod.price}
                             </span>
                             {prod.oldPrice > prod.price && (
-                              <span className="text-[11px] text-stone-400 line-through">
+                              <span className="text-[length:calc(11px*var(--fs))] text-stone-400 line-through">
                                 ₹{prod.oldPrice}
                               </span>
                             )}
@@ -680,7 +680,7 @@ export default function AdminBestsellers() {
                   <h3 className="font-serif text-base sm:text-lg font-bold text-white">
                     Live User App Section Preview
                   </h3>
-                  <p className="text-[11px] text-[#A2B5A8]">
+                  <p className="text-[length:calc(11px*var(--fs))] text-[#A2B5A8]">
                     This is the exact carousel layout your customers see on the homepage.
                   </p>
                 </div>
@@ -728,7 +728,7 @@ export default function AdminBestsellers() {
                       <span className="hidden sm:block h-[1px] w-8 bg-[color:var(--brand-accent)]"></span>
                     </div>
 
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-[color:var(--brand-primary)]">
+                    <span className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-primary)]">
                       {config.viewAllText}
                     </span>
                   </div>
@@ -752,7 +752,7 @@ export default function AdminBestsellers() {
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               />
                               {prod.badge && (
-                                <span className="absolute top-2 left-2 text-[9px] font-extrabold px-2 py-0.5 rounded bg-[color:var(--brand-accent-dark)] text-white uppercase">
+                                <span className="absolute top-2 left-2 text-[length:calc(9px*var(--fs))] font-extrabold px-2 py-0.5 rounded bg-[color:var(--brand-accent-dark)] text-white uppercase">
                                   {prod.badge}
                                 </span>
                               )}
@@ -761,7 +761,7 @@ export default function AdminBestsellers() {
                             <h4 className="font-bold text-xs sm:text-sm text-stone-900 truncate">
                               {prod.name}
                             </h4>
-                            <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                            <p className="text-[length:calc(11px*var(--fs))] text-stone-500 truncate mt-0.5">
                               {prod.subtitle || prod.flavor}
                             </p>
                           </div>
@@ -770,7 +770,7 @@ export default function AdminBestsellers() {
                             <span className="font-extrabold text-sm text-[color:var(--brand-primary)]">
                               ₹{prod.price}
                             </span>
-                            <span className="text-[10px] uppercase font-bold text-[color:var(--brand-primary)] bg-[color:var(--brand-surface)] px-2.5 py-1 rounded-lg border border-stone-200">
+                            <span className="text-[length:calc(10px*var(--fs))] uppercase font-bold text-[color:var(--brand-primary)] bg-[color:var(--brand-surface)] px-2.5 py-1 rounded-lg border border-stone-200">
                               Add to Cart
                             </span>
                           </div>

@@ -21,7 +21,7 @@ function TrendBadge({ pct }) {
   const Icon = up ? TrendingUp : TrendingDown;
   return (
     <span
-      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 font-sans border ${
+      className={`text-[length:calc(11px*var(--fs))] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 font-sans border ${
         up
           ? 'text-emerald-800 bg-emerald-50 border-emerald-200'
           : 'text-rose-800 bg-rose-50 border-rose-200'
@@ -133,48 +133,48 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 font-sans w-full">
             <Link to="/admin/analytics" aria-label="Open Total Revenue" className="block bg-white rounded-xl p-3.5 sm:p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1 relative overflow-hidden hover:border-[color:var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-accent)]">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Total Revenue</span>
+                <span className="text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Total Revenue</span>
                 {!isLoading && <TrendBadge pct={kpis.revenueTrendPct} />}
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold tracking-normal text-[color:var(--brand-primary)]">
                 {isLoading ? '—' : `₹${Number(kpis.totalRevenue || 0).toLocaleString('en-IN')}`}
               </h2>
-              <p className="text-[11px] sm:text-xs text-stone-400 font-sans font-normal">Live gross transactions sync</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-400 font-sans font-normal">Live gross transactions sync</p>
             </Link>
 
             <Link to="/admin/orders" aria-label="Open Total Orders" className="block bg-white rounded-xl p-3.5 sm:p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1 hover:border-[color:var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-accent)]">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Total Orders</span>
+                <span className="text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Total Orders</span>
                 {!isLoading && <TrendBadge pct={kpis.ordersTrendPct} />}
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold tracking-normal text-[color:var(--brand-primary)]">
                 {isLoading ? '—' : Number(kpis.totalOrders || 0).toLocaleString('en-IN')}
               </h2>
-              <p className="text-[11px] sm:text-xs text-stone-400 font-sans font-normal">Quick Commerce & Courier Orders</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-400 font-sans font-normal">Quick Commerce & Courier Orders</p>
             </Link>
 
             <Link to="/admin/customers" aria-label="Open Total Customers" className="block bg-white rounded-xl p-3.5 sm:p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1 hover:border-[color:var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-accent)]">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Total Customers</span>
+                <span className="text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Total Customers</span>
                 {!isLoading && <TrendBadge pct={kpis.customersTrendPct} />}
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold tracking-normal text-[color:var(--brand-primary)]">
                 {isLoading ? '—' : Number(kpis.totalCustomers || 0).toLocaleString('en-IN')}
               </h2>
-              <p className="text-[11px] sm:text-xs text-stone-400 font-sans font-normal">Registered customer accounts</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-400 font-sans font-normal">Registered customer accounts</p>
             </Link>
 
             <Link to="/admin/customers" aria-label="Open Repeat Rate" className="block bg-white rounded-xl p-3.5 sm:p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1 hover:border-[color:var(--brand-primary)] hover:shadow-sm transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-accent)]">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Repeat Rate</span>
-                <span className="text-[11px] font-semibold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)]/20 border border-[color:var(--brand-accent)]/40 px-2 py-0.5 rounded-full font-sans">
+                <span className="text-[length:calc(11px*var(--fs))] sm:text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">Repeat Rate</span>
+                <span className="text-[length:calc(11px*var(--fs))] font-semibold text-[color:var(--brand-primary)] bg-[color:var(--brand-accent)]/20 border border-[color:var(--brand-accent)]/40 px-2 py-0.5 rounded-full font-sans">
                   {isLoading ? '—' : `${kpis.repeatRate ?? 0}% Rate`}
                 </span>
               </div>
               <h2 className="font-sans text-xl sm:text-2xl font-semibold tracking-normal text-[color:var(--brand-primary)]">
                 {isLoading ? '—' : Number(kpis.repeatCustomers || 0).toLocaleString('en-IN')}
               </h2>
-              <p className="text-[11px] sm:text-xs text-stone-400 font-sans font-normal">Customers with 2+ orders</p>
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-400 font-sans font-normal">Customers with 2+ orders</p>
             </Link>
           </div>
 
@@ -185,8 +185,8 @@ export default function AdminDashboard() {
               className="p-3 bg-white rounded-xl border border-[color:var(--brand-border)] hover:border-[color:var(--brand-primary)] flex items-center justify-between group shadow-2xs transition-all"
             >
               <div>
-                <span className="text-stone-400 text-[10.5px] font-medium uppercase font-sans">Manage Catalog</span>
-                <h4 className="font-sans font-semibold text-xs sm:text-[13px] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">
+                <span className="text-stone-400 text-[length:calc(10.5px*var(--fs))] font-medium uppercase font-sans">Manage Catalog</span>
+                <h4 className="font-sans font-semibold text-xs sm:text-[length:calc(13px*var(--fs))] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">
                   {isLoading ? '—' : `${productCount} Products`}
                 </h4>
               </div>
@@ -198,8 +198,8 @@ export default function AdminDashboard() {
               className="p-3 bg-white rounded-xl border border-[color:var(--brand-border)] hover:border-[color:var(--brand-primary)] flex items-center justify-between group shadow-2xs transition-all"
             >
               <div>
-                <span className="text-stone-400 text-[10.5px] font-medium uppercase font-sans">Warehouse Hub</span>
-                <h4 className="font-sans font-semibold text-xs sm:text-[13px] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">Stock Health</h4>
+                <span className="text-stone-400 text-[length:calc(10.5px*var(--fs))] font-medium uppercase font-sans">Warehouse Hub</span>
+                <h4 className="font-sans font-semibold text-xs sm:text-[length:calc(13px*var(--fs))] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">Stock Health</h4>
               </div>
               <ArrowUpRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-[color:var(--brand-primary)] transition-colors" />
             </Link>
@@ -209,8 +209,8 @@ export default function AdminDashboard() {
               className="p-3.5 bg-white rounded-xl border border-[color:var(--brand-border)] hover:border-[color:var(--brand-primary)] flex items-center justify-between group shadow-2xs transition-all"
             >
               <div>
-                <span className="text-stone-400 text-[10.5px] font-medium uppercase font-sans">Live Fulfillment</span>
-                <h4 className="font-sans font-semibold text-xs sm:text-[13px] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">
+                <span className="text-stone-400 text-[length:calc(10.5px*var(--fs))] font-medium uppercase font-sans">Live Fulfillment</span>
+                <h4 className="font-sans font-semibold text-xs sm:text-[length:calc(13px*var(--fs))] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">
                   {isLoading ? '—' : `${queueCount} Queue`}
                 </h4>
               </div>
@@ -222,8 +222,8 @@ export default function AdminDashboard() {
               className="p-3.5 bg-white rounded-xl border border-[color:var(--brand-border)] hover:border-[color:var(--brand-primary)] flex items-center justify-between group shadow-2xs transition-all"
             >
               <div>
-                <span className="text-stone-400 text-[10.5px] font-medium uppercase font-sans">Performance</span>
-                <h4 className="font-sans font-semibold text-xs sm:text-[13px] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">BI Analytics</h4>
+                <span className="text-stone-400 text-[length:calc(10.5px*var(--fs))] font-medium uppercase font-sans">Performance</span>
+                <h4 className="font-sans font-semibold text-xs sm:text-[length:calc(13px*var(--fs))] text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors">BI Analytics</h4>
               </div>
               <ArrowUpRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-[color:var(--brand-primary)] transition-colors" />
             </Link>
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
                         />
                         <div>
                           <h4 className="font-sans text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] truncate max-w-[130px]">{p.name}</h4>
-                          <p className="text-[11px] text-stone-500 font-medium">
+                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 font-medium">
                             ₹{p.price} • {p.stockCount ?? 0} in stock
                           </p>
                         </div>
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
 
             <div className="overflow-x-auto font-sans w-full">
               <table className="w-full text-left">
-                <thead className="bg-[color:var(--brand-surface)] text-stone-600 font-bold border-b border-stone-200 uppercase tracking-wider text-xs sm:text-[12px]">
+                <thead className="bg-[color:var(--brand-surface)] text-stone-600 font-bold border-b border-stone-200 uppercase tracking-wider text-xs sm:text-[length:calc(12px*var(--fs))]">
                   <tr>
                     <th className="py-3 px-3.5">Order ID</th>
                     <th className="py-3 px-3.5">Customer</th>
@@ -404,7 +404,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-3.5">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                            className={`px-2.5 py-1 rounded-full text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider ${
                               ord.status === 'Delivered'
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                                 : ord.status === 'Out for Delivery'

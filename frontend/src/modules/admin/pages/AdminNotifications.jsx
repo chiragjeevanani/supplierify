@@ -206,7 +206,7 @@ export default function AdminNotifications() {
             <div className="flex items-center gap-2.5">
               <h2 className="font-sans text-base sm:text-lg font-bold text-[color:var(--brand-primary)]">Notifications</h2>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-[11px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-[length:calc(11px*var(--fs))] font-bold">
                   {unreadCount} unread
                 </span>
               )}
@@ -287,17 +287,17 @@ export default function AdminNotifications() {
                     Firebase Cloud Messaging (FCM) Push Engine
                   </h3>
                   {fcmStatus?.isInitialized ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[length:calc(11px*var(--fs))] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                       <CheckCircle2 className="w-3 h-3" /> Live Delivery
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[length:calc(11px*var(--fs))] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                       <Sparkles className="w-3 h-3" /> Standby Mock Mode (Credentials Pending)
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs sm:text-[13px] text-stone-300 font-normal leading-relaxed">
+                <p className="text-xs sm:text-[length:calc(13px*var(--fs))] text-stone-300 font-normal leading-relaxed">
                   Real-time push delivery across Web & Mobile with multi-device token capping (10 tokens/user). Dispatches instant alerts on new orders, status changes, and stock alerts.
                 </p>
 
@@ -322,7 +322,7 @@ export default function AdminNotifications() {
                     </strong>
                   </span>
 
-                  <span className="text-[11px] text-stone-400 hidden sm:inline">
+                  <span className="text-[length:calc(11px*var(--fs))] text-stone-400 hidden sm:inline">
                     Max 10 per account
                   </span>
                 </div>
@@ -419,7 +419,7 @@ export default function AdminNotifications() {
               <div className="p-12 text-center text-stone-400 space-y-1">
                 <Bell className="w-8 h-8 mx-auto text-stone-300 stroke-[1.5]" />
                 <p className="text-xs font-medium">No notifications right now</p>
-                <p className="text-[11px] text-stone-400">Order updates, inventory alerts, and customer activity will appear here.</p>
+                <p className="text-[length:calc(11px*var(--fs))] text-stone-400">Order updates, inventory alerts, and customer activity will appear here.</p>
               </div>
             ) : (
               notifications.map((n) => {
@@ -445,11 +445,11 @@ export default function AdminNotifications() {
                           <Link
                             to={linkTarget}
                             onClick={() => handleMarkAsRead(notifId)}
-                            className="font-sans text-xs sm:text-[13px] font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-accent)] transition-colors truncate"
+                            className="font-sans text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-accent)] transition-colors truncate"
                           >
                             {n.title}
                           </Link>
-                          <span className="text-[11px] text-stone-400 font-normal shrink-0">
+                          <span className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal shrink-0">
                             • {n.time || 'Just now'}
                           </span>
                         </div>

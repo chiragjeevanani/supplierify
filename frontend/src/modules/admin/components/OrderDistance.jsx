@@ -46,7 +46,7 @@ export default function OrderDistance({ orderId, variant = 'row' }) {
 
   return (
     <div className="p-3.5 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-1 text-xs">
-      <span className="text-stone-400 block text-[10px] font-bold uppercase">Distance from store</span>
+      <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Distance from store</span>
       <div className="flex items-center gap-1.5 text-stone-700">
         {state.status === 'loading' && (
           <>

@@ -181,7 +181,7 @@ export default function AccountPage() {
                   <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
 
-                <span className="text-[9.5px] sm:text-[10px] font-extrabold uppercase tracking-widest text-[color:var(--brand-accent)] bg-[color:var(--brand-primary-light)] px-3 py-0.5 rounded-full border border-[color:var(--brand-accent)]/30 mb-1.5">
+                <span className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] font-extrabold uppercase tracking-widest text-[color:var(--brand-accent)] bg-[color:var(--brand-primary-light)] px-3 py-0.5 rounded-full border border-[color:var(--brand-accent)]/30 mb-1.5">
                   Account Sign In
                 </span>
 
@@ -189,7 +189,7 @@ export default function AccountPage() {
                   Please Log In First
                 </h1>
 
-                <p className="text-[11.5px] sm:text-xs text-[#A2B5A8] mt-1 font-normal max-w-xs leading-relaxed">
+                <p className="text-[length:calc(11.5px*var(--fs))] sm:text-xs text-[#A2B5A8] mt-1 font-normal max-w-xs leading-relaxed">
                   Sign in to track live orders, manage saved delivery addresses, and access member offers.
                 </p>
               </div>
@@ -205,8 +205,8 @@ export default function AccountPage() {
                     <Package className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold text-[color:var(--brand-primary)] truncate">Live Tracking</p>
-                    <p className="text-[9.5px] text-stone-500 truncate">Real-time status</p>
+                    <p className="text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-primary)] truncate">Live Tracking</p>
+                    <p className="text-[length:calc(9.5px*var(--fs))] text-stone-500 truncate">Real-time status</p>
                   </div>
                 </div>
 
@@ -215,8 +215,8 @@ export default function AccountPage() {
                     <Tag className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold text-[color:var(--brand-primary)] truncate">VIP Coupons</p>
-                    <p className="text-[9.5px] text-stone-500 truncate">Member discounts</p>
+                    <p className="text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-primary)] truncate">VIP Coupons</p>
+                    <p className="text-[length:calc(9.5px*var(--fs))] text-stone-500 truncate">Member discounts</p>
                   </div>
                 </div>
 
@@ -225,8 +225,8 @@ export default function AccountPage() {
                     <MapPin className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold text-[color:var(--brand-primary)] truncate">Saved Addresses</p>
-                    <p className="text-[9.5px] text-stone-500 truncate">1-Click checkout</p>
+                    <p className="text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-primary)] truncate">Saved Addresses</p>
+                    <p className="text-[length:calc(9.5px*var(--fs))] text-stone-500 truncate">1-Click checkout</p>
                   </div>
                 </div>
               </div>
@@ -252,7 +252,7 @@ export default function AccountPage() {
               </div>
 
               {/* Security Badge */}
-              <div className="flex items-center justify-center gap-1.5 text-[10.5px] text-stone-500 pt-2 border-t border-stone-100">
+              <div className="flex items-center justify-center gap-1.5 text-[length:calc(10.5px*var(--fs))] text-stone-500 pt-2 border-t border-stone-100">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>256-bit Encrypted • 100% Secure</span>
               </div>
@@ -522,7 +522,7 @@ export default function AccountPage() {
                   {currentTabObj.label}
                 </h1>
               </div>
-              <p className="text-[10px] text-[color:var(--brand-accent)] font-medium leading-none mt-0.5 truncate">
+              <p className="text-[length:calc(10px*var(--fs))] text-[color:var(--brand-accent)] font-medium leading-none mt-0.5 truncate">
                 {currentTabObj.desc}
               </p>
             </div>
@@ -581,7 +581,7 @@ export default function AccountPage() {
                   aria-label="Add Profile Picture"
                 >
                   <Camera className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-110" />
-                  <span className="text-[7.5px] sm:text-[8.5px] font-bold uppercase tracking-wider text-[color:var(--brand-accent)] mt-0.5">Add</span>
+                  <span className="text-[length:calc(7.5px*var(--fs))] sm:text-[length:calc(8.5px*var(--fs))] font-bold uppercase tracking-wider text-[color:var(--brand-accent)] mt-0.5">Add</span>
                 </button>
               )}
             </div>
@@ -591,11 +591,11 @@ export default function AccountPage() {
                 <h1 className="text-base sm:text-2xl font-bold tracking-tight text-white truncate">
                   Welcome back, {user?.name?.split(' ')[0] || 'Vini'} 👋
                 </h1>
-                <span className="text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] uppercase tracking-wider whitespace-nowrap">
+                <span className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] font-extrabold px-2 py-0.5 rounded-full bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] uppercase tracking-wider whitespace-nowrap">
                   {user?.tier || 'Gold Member'}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#A2B5A8] mt-0.5 truncate font-normal">
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-[#A2B5A8] mt-0.5 truncate font-normal">
                 {user?.email} • {user?.phone}
               </p>
             </div>
@@ -606,7 +606,7 @@ export default function AccountPage() {
         {/* MOBILE VERTICAL MENU (Shown on Mobile when no tab is selected) */}
         {isMobileMenu && (
           <div className="lg:hidden space-y-2 mb-6 animate-fadeIn font-sans">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500 px-1 mb-2">
+            <p className="text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-500 px-1 mb-2">
               Account Menu
             </p>
             {accountTabs.map((item) => {
@@ -625,13 +625,13 @@ export default function AccountPage() {
                       <h4 className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent-dark)] transition-colors">
                         {item.label}
                       </h4>
-                      <p className="text-[10.5px] text-stone-500 font-normal">{item.desc}</p>
+                      <p className="text-[length:calc(10.5px*var(--fs))] text-stone-500 font-normal">{item.desc}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {item.badge !== undefined && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[color:var(--brand-surface)] border border-stone-200 text-[color:var(--brand-primary)]">
+                      <span className="text-[length:calc(10px*var(--fs))] font-extrabold px-2 py-0.5 rounded-full bg-[color:var(--brand-surface)] border border-stone-200 text-[color:var(--brand-primary)]">
                         {item.badge}
                       </span>
                     )}
@@ -666,7 +666,7 @@ export default function AccountPage() {
           
           {/* LEFT: Dark Green Sidebar (Desktop only >= 1024px) */}
           <aside className="hidden lg:block lg:col-span-3 bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] rounded-3xl p-4 sm:p-5 border border-[color:var(--brand-accent)]/30 shadow-xl space-y-1 sticky top-24">
-            <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-accent)]">Account Dashboard</p>
+            <p className="px-3 py-2 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-[color:var(--brand-accent)]">Account Dashboard</p>
             
             {accountTabs.map((item) => {
               const Icon = item.icon;
@@ -686,7 +686,7 @@ export default function AccountPage() {
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    <span className={`text-[length:calc(10px*var(--fs))] font-bold px-2 py-0.5 rounded-full ${
                       isActive ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)]' : 'bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)]'
                     }`}>
                       {item.badge}
@@ -738,12 +738,12 @@ export default function AccountPage() {
                             <span className="font-bold text-sm text-[color:var(--brand-primary)]">Order #{ord.id}</span>
                             <span className="text-xs text-stone-500">• {ord.date}</span>
                           </div>
-                          <p className="text-[11px] text-stone-500 mt-0.5">Payment: {ord.paymentMethod} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
+                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">Payment: {ord.paymentMethod} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
                           {ord.expectedDelivery && (
-                            <p className="text-[11px] text-stone-500 mt-0.5">{ord.expectedDelivery.label}: <strong className="text-stone-900">{ord.expectedDelivery.value}</strong></p>
+                            <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">{ord.expectedDelivery.label}: <strong className="text-stone-900">{ord.expectedDelivery.value}</strong></p>
                           )}
                           {(ord.awbNumber || ord.shiprocket?.awbCode || ord.courierName || ord.shiprocket?.courierName) && (
-                            <p className="text-[11px] text-stone-500 mt-0.5 break-words">
+                            <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5 break-words">
                               {ord.shiprocket?.courierName || ord.courierName ? `Courier: ${ord.shiprocket?.courierName || ord.courierName}` : ''}
                               {(ord.awbNumber || ord.shiprocket?.awbCode) ? ` • AWB: ${ord.shiprocket?.awbCode || ord.awbNumber}` : ''}
                             </p>
@@ -751,7 +751,7 @@ export default function AccountPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
+                          <span className={`px-2.5 py-0.5 rounded-full text-[length:calc(11px*var(--fs))] font-bold uppercase ${
                             ord.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800'
                             : ord.status === 'Cancelled' ? 'bg-rose-100 text-rose-800'
                             : ord.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800'
@@ -804,7 +804,7 @@ export default function AccountPage() {
                             <img src={item.image} alt="" className="w-9 h-9 rounded-lg object-cover" />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-stone-900 truncate">{item.name}</p>
-                              <p className="text-[10px] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                              <p className="text-[length:calc(10px*var(--fs))] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
                               <RateReviewButton order={ord} item={item} className="mt-1" />
                             </div>
                           </div>
@@ -829,7 +829,7 @@ export default function AccountPage() {
                       <div>
                         <span className="font-mono text-base font-extrabold text-[color:var(--brand-primary)] tracking-wider">{c.code}</span>
                         <p className="text-xs text-stone-600 mt-0.5 font-medium">{c.description}</p>
-                        <p className="text-[10px] text-stone-400 mt-1">Valid till: {c.validity}</p>
+                        <p className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-1">Valid till: {c.validity}</p>
                       </div>
                       <button
                         onClick={() => handleCopyCoupon(c.code)}
@@ -889,13 +889,13 @@ export default function AccountPage() {
                           <div>
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                <span className={`text-[length:calc(10px*var(--fs))] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider ${
                                   isPrimary ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)]' : 'bg-stone-100 text-stone-700'
                                 }`}>
                                   {addr.type}
                                 </span>
                                 {isPrimary && (
-                                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <span className="text-[length:calc(10px*var(--fs))] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                                     <CheckCircle2 className="w-3 h-3 text-emerald-700" />
                                     <span>Primary</span>
                                   </span>
@@ -909,7 +909,7 @@ export default function AccountPage() {
                                   className="text-xs font-bold flex items-center gap-1.5 text-stone-400 hover:text-[color:var(--brand-primary)] transition-colors"
                                 >
                                   <div className="w-4 h-4 rounded-full border-2 border-stone-300 flex items-center justify-center" />
-                                  <span className="text-[11px]">Set Primary</span>
+                                  <span className="text-[length:calc(11px*var(--fs))]">Set Primary</span>
                                 </button>
                               )}
                             </div>
@@ -920,7 +920,7 @@ export default function AccountPage() {
                             <p className="text-xs text-stone-600 mt-1 leading-relaxed font-normal">
                               {addr.street}, {addr.city}, {addr.state} - <strong className="text-stone-900 font-bold">{addr.pincode}</strong>
                             </p>
-                            <p className="text-[11px] text-stone-500 mt-1.5 font-medium">
+                            <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1.5 font-medium">
                               📞 {addr.phone || user?.phone}
                             </p>
                           </div>
@@ -968,7 +968,7 @@ export default function AccountPage() {
 
                 <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-tr from-[color:var(--brand-primary)] to-[color:var(--brand-primary-light)] text-white max-w-sm border border-[color:var(--brand-accent)]/40 shadow-xl space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] uppercase tracking-widest text-[color:var(--brand-accent)] font-bold">Dry Fruit Wholesale Preferred Card</span>
+                    <span className="text-[length:calc(10px*var(--fs))] uppercase tracking-widest text-[color:var(--brand-accent)] font-bold">Dry Fruit Wholesale Preferred Card</span>
                     <CreditCard className="w-5 h-5 text-[color:var(--brand-accent)]" />
                   </div>
                   <p className="font-mono text-base tracking-widest pt-2">•••• •••• •••• 4289</p>
@@ -1006,7 +1006,7 @@ export default function AccountPage() {
 
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-bold text-[color:var(--brand-primary)] uppercase tracking-wider">Profile Picture</h4>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">
                       {user?.avatar ? 'Custom picture uploaded. Click to update or remove.' : 'No photo uploaded. This space remains blank until you add one.'}
                     </p>
                     <div className="flex items-center gap-2 mt-2.5">
@@ -1077,7 +1077,7 @@ export default function AccountPage() {
                       placeholder="you@example.com"
                       className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-300 bg-white text-[color:var(--brand-primary)] focus:outline-none focus:border-[color:var(--brand-primary)]"
                     />
-                    <span className="text-[10px] text-stone-400 mt-0.5 block">Used for order updates and invoices</span>
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Used for order updates and invoices</span>
                   </div>
 
                   <div>
@@ -1104,7 +1104,7 @@ export default function AccountPage() {
                         className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-300 bg-white text-[color:var(--brand-primary)] focus:outline-none focus:border-[color:var(--brand-primary)]"
                       />
                     </div>
-                    <span className="text-[10px] text-stone-400 mt-0.5 block">
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">
                       10-digit number used for OTP login
                     </span>
                   </div>
@@ -1143,9 +1143,9 @@ export default function AccountPage() {
                       <Phone className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Call us</p>
+                      <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Call us</p>
                       <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] truncate">{supportPhone}</p>
-                      <p className="text-[10px] text-stone-500 mt-0.5 flex items-center gap-1">
+                      <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 flex items-center gap-1">
                         <Clock className="w-3 h-3" /> {help.phoneHours}
                       </p>
                     </div>
@@ -1159,9 +1159,9 @@ export default function AccountPage() {
                       <Mail className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Email</p>
+                      <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Email</p>
                       <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] break-all">{supportEmail}</p>
-                      <p className="text-[10px] text-stone-500 mt-0.5">{help.emailNote}</p>
+                      <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5">{help.emailNote}</p>
                     </div>
                   </a>
 
@@ -1173,11 +1173,11 @@ export default function AccountPage() {
                       <MessageCircle className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">{help.writeTitle}</p>
+                      <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">{help.writeTitle}</p>
                       <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] inline-flex items-center gap-1">
                         Contact form <ChevronRight className="w-3.5 h-3.5" />
                       </p>
-                      <p className="text-[10px] text-stone-500 mt-0.5">{help.writeNote}</p>
+                      <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5">{help.writeNote}</p>
                     </div>
                   </Link>
                 </div>
@@ -1206,7 +1206,7 @@ export default function AccountPage() {
                           />
                         </button>
                         {open && (
-                          <p className="px-3.5 pb-3 text-[11px] sm:text-xs text-stone-600 leading-relaxed">
+                          <p className="px-3.5 pb-3 text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-600 leading-relaxed">
                             {item.a}
                           </p>
                         )}
@@ -1216,7 +1216,7 @@ export default function AccountPage() {
                 </div>
 
                 <div className="pt-1 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between border-t border-stone-100">
-                  <p className="text-[11px] text-stone-500">
+                  <p className="text-[length:calc(11px*var(--fs))] text-stone-500">
                     Need more detail? Open the full help centre for shipping & returns guides.
                   </p>
                   <Link
@@ -1258,7 +1258,7 @@ export default function AccountPage() {
 
             {/* Address Type Selector */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)] mb-1">
+              <label className="block text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-[color:var(--brand-primary)] mb-1">
                 Address Type
               </label>
               <div className="flex gap-2">

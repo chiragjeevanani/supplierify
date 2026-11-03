@@ -134,7 +134,7 @@ export default function AddBestsellerProductModal({ isOpen, onClose, onAdd, exis
               <h3 className="font-serif text-base sm:text-lg font-bold text-white tracking-wide">
                 Add Products to Bestsellers
               </h3>
-              <p className="text-[11px] sm:text-xs text-[#A2B5A8]">
+              <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-[#A2B5A8]">
                 Select from your existing store catalog to showcase in the Bestsellers carousel.
               </p>
             </div>
@@ -267,12 +267,12 @@ export default function AddBestsellerProductModal({ isOpen, onClose, onAdd, exis
                           {prod.name}
                         </h4>
                         {prod.badge && (
-                          <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)] uppercase">
+                          <span className="text-[length:calc(9px*var(--fs))] font-extrabold px-1.5 py-0.2 rounded bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)] uppercase">
                             {prod.badge}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-stone-500 truncate">
+                      <p className="text-[length:calc(11px*var(--fs))] text-stone-500 truncate">
                         {prod.subtitle || prod.flavor || prod.category}
                       </p>
                     </div>
@@ -285,11 +285,11 @@ export default function AddBestsellerProductModal({ isOpen, onClose, onAdd, exis
                       ₹{prod.price}
                     </div>
                     {isAlreadyAdded ? (
-                      <span className="inline-block text-[10px] font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
+                      <span className="inline-block text-[length:calc(10px*var(--fs))] font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
                         Already in Bestsellers
                       </span>
                     ) : (
-                      <span className="text-[10px] text-stone-500 font-medium">
+                      <span className="text-[length:calc(10px*var(--fs))] text-stone-500 font-medium">
                         {prod.inStock !== false ? 'In Stock' : 'Out of Stock'}
                       </span>
                     )}

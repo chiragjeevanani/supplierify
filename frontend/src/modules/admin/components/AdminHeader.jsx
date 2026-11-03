@@ -373,7 +373,7 @@ export default function AdminHeader({ onMenuClick, title = 'Dashboard' }) {
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] text-[10px] font-extrabold px-1 min-w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white shadow-2xs">
+              <span className="absolute -top-1 -right-1 bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] text-[length:calc(10px*var(--fs))] font-extrabold px-1 min-w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white shadow-2xs">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -388,8 +388,8 @@ export default function AdminHeader({ onMenuClick, title = 'Dashboard' }) {
               {initials}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-xs sm:text-[13px] font-bold text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors leading-tight">{displayName}</p>
-              <p className="text-[11px] text-stone-400 font-medium">{hubLabel}</p>
+              <p className="text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-[color:var(--brand-primary)] group-hover:text-[color:var(--brand-accent)] transition-colors leading-tight">{displayName}</p>
+              <p className="text-[length:calc(11px*var(--fs))] text-stone-400 font-medium">{hubLabel}</p>
             </div>
           </Link>
         </div>

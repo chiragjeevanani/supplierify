@@ -67,7 +67,7 @@ export default function AdminProfileModal({ isOpen, onClose }) {
               AD
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">
+              <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">
                 ADMINISTRATOR PROFILE
               </span>
               <h3 className="font-sans text-base sm:text-lg font-bold mt-0.5">{profile.name}</h3>
@@ -93,11 +93,11 @@ export default function AdminProfileModal({ isOpen, onClose }) {
             <div className="flex items-center gap-2.5">
               <ShieldCheck className="w-5 h-5 text-emerald-700" />
               <div>
-                <p className="text-xs sm:text-[13px] font-bold text-[color:var(--brand-primary)]">{profile.role}</p>
-                <p className="text-[11px] text-stone-500 font-medium">{profile.accessLevel}</p>
+                <p className="text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-[color:var(--brand-primary)]">{profile.role}</p>
+                <p className="text-[length:calc(11px*var(--fs))] text-stone-500 font-medium">{profile.accessLevel}</p>
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold uppercase border border-emerald-200">
+            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[length:calc(10.5px*var(--fs))] font-bold uppercase border border-emerald-200">
               Active Session
             </span>
           </div>
@@ -105,7 +105,7 @@ export default function AdminProfileModal({ isOpen, onClose }) {
           {/* Profile Form */}
           <form onSubmit={handleSave} className="space-y-3.5">
             <div>
-              <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Full Name</label>
+              <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Full Name</label>
               <input
                 type="text"
                 disabled={!isEditing}
@@ -117,7 +117,7 @@ export default function AdminProfileModal({ isOpen, onClose }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Email Address</label>
+                <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Email Address</label>
                 <input
                   type="email"
                   disabled={!isEditing}
@@ -128,7 +128,7 @@ export default function AdminProfileModal({ isOpen, onClose }) {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Phone Number</label>
+                <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Phone Number</label>
                 <input
                   type="text"
                   disabled={!isEditing}
@@ -140,7 +140,7 @@ export default function AdminProfileModal({ isOpen, onClose }) {
             </div>
 
             <div>
-              <label className="block text-xs sm:text-[12.5px] font-bold text-stone-700 mb-1">Headquarters Location</label>
+              <label className="block text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold text-stone-700 mb-1">Headquarters Location</label>
               <input
                 type="text"
                 disabled={!isEditing}

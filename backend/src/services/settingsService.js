@@ -17,6 +17,16 @@ export function sanitizeTheme(raw = {}, fallback = DEFAULT_THEME) {
   return { primary: pick('primary'), accent: pick('accent'), background: pick('background'), text: pick('text') };
 }
 
+export const FONT_SCALE_MIN = 85;
+export const FONT_SCALE_MAX = 125;
+
+/** Whole-number percentage inside the allowed range; anything invalid becomes 100. */
+export function sanitizeFontScale(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n <= 0) return 100;
+  return Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, n));
+}
+
 export const DEFAULT_SETTINGS = {
   configKey: 'default_store_settings',
   gstRate: 5,
@@ -25,6 +35,7 @@ export const DEFAULT_SETTINGS = {
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
+  fontScale: 100,
   standardDeliveryFee: 150,
   codDeliveryFee: 150,
   freeDeliveryThreshold: 10000,
@@ -177,6 +188,7 @@ class SettingsService {
       logoUrl: cleanImageUrl(settings.logoUrl) || '',
       faviconUrl: cleanImageUrl(settings.faviconUrl) || '',
       theme: sanitizeTheme(settings.theme),
+      fontScale: sanitizeFontScale(settings.fontScale),
       standardDeliveryFee: typeof settings.standardDeliveryFee === 'number' ? settings.standardDeliveryFee : DEFAULT_SETTINGS.standardDeliveryFee,
       codDeliveryFee: typeof settings.codDeliveryFee === 'number' ? settings.codDeliveryFee : DEFAULT_SETTINGS.codDeliveryFee,
       freeDeliveryThreshold: typeof settings.freeDeliveryThreshold === 'number' ? settings.freeDeliveryThreshold : DEFAULT_SETTINGS.freeDeliveryThreshold,
@@ -210,6 +222,8 @@ class SettingsService {
           sanitized[key] = Number(updateData[key]);
         } else if (key === 'theme') {
           sanitized.theme = sanitizeTheme(updateData.theme);
+        } else if (key === 'fontScale') {
+          sanitized.fontScale = sanitizeFontScale(updateData.fontScale);
         } else if (key === 'logoUrl' || key === 'faviconUrl') {
           sanitized[key] = cleanImageUrl(updateData[key]) || '';
         } else if (key === 'whatsappNumber') {

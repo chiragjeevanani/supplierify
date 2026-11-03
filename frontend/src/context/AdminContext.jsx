@@ -91,7 +91,8 @@ const SETTINGS_UPDATE_KEYS = [
   'whatsappNumber',
   'logoUrl',
   'faviconUrl',
-  'theme'
+  'theme',
+  'fontScale'
 ];
 
 function sanitizeSettingsPayload(raw = {}) {

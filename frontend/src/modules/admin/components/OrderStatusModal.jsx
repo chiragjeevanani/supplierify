@@ -64,7 +64,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
         {/* Modal Header (Fixed at top) */}
         <div className="p-4 sm:p-5 bg-[color:var(--brand-primary)] text-white flex items-center justify-between border-b border-[color:var(--brand-accent)]/30 shrink-0">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">ORDER MANAGEMENT & DETAILS</span>
+            <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">ORDER MANAGEMENT & DETAILS</span>
             <h3 className="font-sans text-base sm:text-xl font-bold mt-0.5">Order #{order.id}</h3>
             <p className="text-xs text-stone-300 font-normal">{order.date} • {order.paymentMethod || 'Online Payment (Prepaid)'}</p>
           </div>
@@ -109,7 +109,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
               </select>
 
               <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">Status Note / Reason</label>
+                <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Status Note / Reason</label>
                 <input
                   type="text"
                   value={statusNote}
@@ -124,12 +124,12 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
             <div className="p-4 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-3 shadow-2xs">
               <div className="flex items-center justify-between border-b border-stone-100 pb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">Dispatch & Logistics Assignment</span>
-                <span className="text-[11px] text-stone-400">Optional / Live Courier Sync</span>
+                <span className="text-[length:calc(11px*var(--fs))] text-stone-400">Optional / Live Courier Sync</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-600 mb-1">Courier Partner</label>
+                  <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Courier Partner</label>
                   <input
                     type="text"
                     value={courierName}
@@ -140,7 +140,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-600 mb-1">AWB / Tracking Number</label>
+                  <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">AWB / Tracking Number</label>
                   <input
                     type="text"
                     value={awbNumber}
@@ -151,7 +151,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-600 mb-1">Delivery Rider / Captain</label>
+                  <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Delivery Rider / Captain</label>
                   <input
                     type="text"
                     value={riderName}
@@ -162,7 +162,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-600 mb-1">Rider Phone</label>
+                  <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Rider Phone</label>
                   <input
                     type="text"
                     value={riderPhone}
@@ -174,7 +174,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">Delivery / Handling Notes</label>
+                <label className="block text-[length:calc(11px*var(--fs))] font-semibold text-stone-600 mb-1">Delivery / Handling Notes</label>
                 <input
                   type="text"
                   value={deliveryNotes}
@@ -191,7 +191,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
               <div className="p-3.5 sm:p-4 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-1.5 shadow-2xs">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[color:var(--brand-primary)]">
                   <User className="w-4 h-4 text-[color:var(--brand-accent)]" />
-                  <span className="uppercase text-[10px] tracking-wider text-stone-500">Customer Details</span>
+                  <span className="uppercase text-[length:calc(10px*var(--fs))] tracking-wider text-stone-500">Customer Details</span>
                 </div>
                 <p className="text-sm font-semibold text-stone-900">{order.customer}</p>
                 <p className="text-xs text-stone-600 font-medium">📞 {order.phone || 'Not provided'}</p>
@@ -202,11 +202,11 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
               <div className="p-3.5 sm:p-4 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-1.5 shadow-2xs">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[color:var(--brand-primary)]">
                   <MapPin className="w-4 h-4 text-emerald-700" />
-                  <span className="uppercase text-[10px] tracking-wider text-stone-500">
+                  <span className="uppercase text-[length:calc(10px*var(--fs))] tracking-wider text-stone-500">
                     Delivery Address ({order.address?.type || 'Home'})
                   </span>
                 </div>
-                <p className="text-xs sm:text-[13px] text-stone-700 font-medium leading-relaxed">
+                <p className="text-xs sm:text-[length:calc(13px*var(--fs))] text-stone-700 font-medium leading-relaxed">
                   {order.address?.street || '502 Lotus Orchid, Scheme 54, Vijay Nagar'}, {order.address?.city || 'Mumbai'}, {order.address?.state || 'Maharashtra'} - {order.address?.pincode || '452010'}
                 </p>
               </div>

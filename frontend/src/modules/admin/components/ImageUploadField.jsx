@@ -96,8 +96,8 @@ export default function ImageUploadField({
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
       </div>
-      {hint && <p className="text-[11px] text-stone-500 mt-1.5">{hint}</p>}
-      {error && <p className="text-[11px] text-rose-600 font-semibold mt-1.5">{error}</p>}
+      {hint && <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1.5">{hint}</p>}
+      {error && <p className="text-[length:calc(11px*var(--fs))] text-rose-600 font-semibold mt-1.5">{error}</p>}
     </div>
   );
 }

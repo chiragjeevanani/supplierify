@@ -138,7 +138,7 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
           </div>
 
           <div className="px-4 py-3 bg-[color:var(--brand-primary-light)] border-b border-[color:var(--brand-accent)]/15">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[color:var(--brand-accent)]">
+            <span className="text-[length:calc(10px*var(--fs))] uppercase font-bold tracking-widest text-[color:var(--brand-accent)]">
               STORE ADMINISTRATION
             </span>
           </div>
@@ -159,7 +159,7 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
                 end={link.end}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-3.5 py-2.5 rounded-md text-[13.5px] sm:text-sm font-semibold tracking-wide transition-all ${
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-md text-[length:calc(13.5px*var(--fs))] sm:text-sm font-semibold tracking-wide transition-all ${
                     isActive
                       ? 'bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] font-bold shadow-sm'
                       : 'text-[color:var(--brand-border-strong)] hover:bg-white/5 hover:text-white'
@@ -171,7 +171,7 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
                   <span>{link.name}</span>
                 </div>
                 {link.badge && (
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)]">
+                  <span className="text-[length:calc(11px*var(--fs))] font-bold px-2 py-0.5 rounded bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)]">
                     {link.badge}
                   </span>
                 )}
@@ -184,7 +184,7 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
         <div className="shrink-0 p-4 border-t border-[color:var(--brand-accent)]/20 bg-[color:var(--brand-primary-dark)]">
           <Link
             to="/"
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md bg-[color:var(--brand-primary-light)] hover:bg-[color:var(--brand-primary-lighter)] text-[color:var(--brand-accent)] border border-[color:var(--brand-accent)]/30 text-xs sm:text-[13px] font-bold uppercase tracking-wider transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md bg-[color:var(--brand-primary-light)] hover:bg-[color:var(--brand-primary-lighter)] text-[color:var(--brand-accent)] border border-[color:var(--brand-accent)]/30 text-xs sm:text-[length:calc(13px*var(--fs))] font-bold uppercase tracking-wider transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             <span>View Public Store</span>

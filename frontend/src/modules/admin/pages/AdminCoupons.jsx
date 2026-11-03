@@ -109,7 +109,7 @@ export default function AdminCoupons() {
               <button
                 type="button"
                 onClick={handleOpenCreate}
-                className="px-4.5 py-2.5 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] font-bold text-xs sm:text-[13px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:scale-102 transition-all cursor-pointer"
+                className="px-4.5 py-2.5 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] font-bold text-xs sm:text-[length:calc(13px*var(--fs))] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:scale-102 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4 text-[color:var(--brand-accent)]" />
                 <span>Create Coupon</span>
@@ -151,7 +151,7 @@ export default function AdminCoupons() {
           <div className="bg-white rounded-xl border border-[color:var(--brand-border)] shadow-2xs overflow-hidden w-full">
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left">
-                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[12px] font-bold">
+                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[length:calc(12px*var(--fs))] font-bold">
                   <tr>
                     <th className="py-3.5 px-4">Coupon Code</th>
                     <th className="py-3.5 px-4">Discount</th>

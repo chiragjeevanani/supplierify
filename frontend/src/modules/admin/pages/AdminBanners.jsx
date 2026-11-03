@@ -91,12 +91,12 @@ function BannerModal({ initial, onClose, onSaved }) {
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-stone-800 mb-1">Button link</label>
               <input className={inputClass} value={form.link} onChange={(e) => set('link', e.target.value)} placeholder="/shop or /shop?category=cashews" />
-              <p className="text-[11px] text-stone-500 mt-1">A page on your site (starts with /) or a full https:// address.</p>
+              <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1">A page on your site (starts with /) or a full https:// address.</p>
             </div>
             <div>
               <label className="block text-xs font-bold text-stone-800 mb-1">Order</label>
               <input type="number" className={inputClass} value={form.sortOrder} onChange={(e) => set('sortOrder', e.target.value)} />
-              <p className="text-[11px] text-stone-500 mt-1">Smaller shows first.</p>
+              <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-1">Smaller shows first.</p>
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm font-semibold text-stone-700">
@@ -200,7 +200,7 @@ export default function AdminBanners() {
                   <div className="flex-1 p-4 flex flex-col gap-2 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-[color:var(--brand-primary)] truncate">{b.title || 'Untitled banner'}</h3>
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${b.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-600'}`}>
+                      <span className={`text-[length:calc(10px*var(--fs))] font-extrabold px-2 py-0.5 rounded-full ${b.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-600'}`}>
                         {b.status === 'ACTIVE' ? 'LIVE' : 'HIDDEN'}
                       </span>
                     </div>

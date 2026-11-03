@@ -356,7 +356,7 @@ export default function AdminOrders() {
           <div className="bg-white rounded-xl border border-[color:var(--brand-border)] shadow-2xs overflow-hidden w-full">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[12.5px] font-bold">
+                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold">
                   <tr>
                     <th className="py-3.5 px-5 w-[14%]">Order ID</th>
                     <th className="py-3.5 px-5 w-[22%]">Customer Info</th>
@@ -389,24 +389,24 @@ export default function AdminOrders() {
                         <td className="py-4 px-5">
                           <button
                             onClick={() => setSelectedOrderForDetail(ord)}
-                            className="font-bold text-sm sm:text-[15px] text-[color:var(--brand-primary)] hover:text-[color:var(--brand-accent)] hover:underline"
+                            className="font-bold text-sm sm:text-[length:calc(15px*var(--fs))] text-[color:var(--brand-primary)] hover:text-[color:var(--brand-accent)] hover:underline"
                           >
                             #{ord.id}
                           </button>
                           {ord.awbNumber && (
-                            <span className="block text-[10.5px] font-mono text-stone-400 mt-0.5 truncate max-w-[120px]">
+                            <span className="block text-[length:calc(10.5px*var(--fs))] font-mono text-stone-400 mt-0.5 truncate max-w-[120px]">
                               AWB: {ord.awbNumber}
                             </span>
                           )}
                         </td>
 
                         <td className="py-4 px-5">
-                          <div className="font-semibold text-stone-900 text-xs sm:text-[14px]">{ord.customer}</div>
+                          <div className="font-semibold text-stone-900 text-xs sm:text-[length:calc(14px*var(--fs))]">{ord.customer}</div>
                           <div className="text-xs text-stone-400 font-normal mt-0.5">{ord.phone || 'Not provided'}</div>
                         </td>
 
                         <td className="py-4 px-5 text-stone-700">
-                          <div className="font-medium text-stone-900 text-xs sm:text-[14px] truncate max-w-[240px]">
+                          <div className="font-medium text-stone-900 text-xs sm:text-[length:calc(14px*var(--fs))] truncate max-w-[240px]">
                             {ord.items?.[0]?.name || 'Product'}
                             {(ord.items?.length || 1) > 1 && ` +${ord.items.length - 1} more`}
                           </div>
@@ -416,7 +416,7 @@ export default function AdminOrders() {
                         <td className="py-4 px-5">
                           <div className="font-bold text-sm sm:text-base text-stone-900">₹{ord.total}</div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                            <span className={`text-[length:calc(10px*var(--fs))] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
                               ord.paymentStatus === 'PAID'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : ord.paymentStatus === 'FAILED'
@@ -427,7 +427,7 @@ export default function AdminOrders() {
                             }`}>
                               {ord.paymentStatus || 'PENDING'}
                             </span>
-                            <span className="text-[10px] text-stone-400 font-medium">({ord.paymentMethod || 'COD'})</span>
+                            <span className="text-[length:calc(10px*var(--fs))] text-stone-400 font-medium">({ord.paymentMethod || 'COD'})</span>
                           </div>
                         </td>
 
@@ -458,7 +458,7 @@ export default function AdminOrders() {
                           </select>
                         </td>
 
-                        <td className="py-4 px-5 text-stone-600 font-medium text-xs sm:text-[13.5px]">
+                        <td className="py-4 px-5 text-stone-600 font-medium text-xs sm:text-[length:calc(13.5px*var(--fs))]">
                           {ord.date}
                         </td>
 
@@ -552,13 +552,13 @@ export default function AdminOrders() {
             {/* Header */}
             <div className="p-5 bg-[color:var(--brand-primary)] text-white flex items-center justify-between border-b border-[color:var(--brand-accent)]/30 shrink-0">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">ORDER INVOICE BREAKDOWN</span>
+                <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">ORDER INVOICE BREAKDOWN</span>
                 <h3 className="font-sans text-lg font-bold">Order #{selectedOrderForDetail.id}</h3>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-stone-300 font-normal mt-0.5">
                   <span>{selectedOrderForDetail.placedAt || selectedOrderForDetail.date}</span>
                   <span>•</span>
                   <span>{selectedOrderForDetail.paymentMethod}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  <span className={`px-1.5 py-0.5 rounded text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider ${
                     selectedOrderForDetail.paymentStatus === 'PAID'
                       ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/40'
                       : selectedOrderForDetail.paymentStatus === 'FAILED'
@@ -570,7 +570,7 @@ export default function AdminOrders() {
                     {selectedOrderForDetail.paymentStatus || 'PENDING'}
                   </span>
                   {selectedOrderForDetail.transactionId && (
-                    <span className="text-[10.5px] font-mono text-stone-300 truncate max-w-[170px]">
+                    <span className="text-[length:calc(10.5px*var(--fs))] font-mono text-stone-300 truncate max-w-[170px]">
                       TXN: {selectedOrderForDetail.transactionId}
                     </span>
                   )}
@@ -588,13 +588,13 @@ export default function AdminOrders() {
               {/* Customer & Address */}
               <div className="p-4 rounded-xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] grid grid-cols-2 gap-4 text-xs sm:text-sm">
                 <div>
-                  <span className="text-stone-400 block text-[10px] font-bold uppercase">Customer</span>
+                  <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Customer</span>
                   <strong className="text-stone-800 font-semibold">{selectedOrderForDetail.customer}</strong>
                   <p className="text-stone-500 mt-0.5">{selectedOrderForDetail.phone}</p>
                   <p className="text-stone-500">{selectedOrderForDetail.email}</p>
                 </div>
                 <div>
-                  <span className="text-stone-400 block text-[10px] font-bold uppercase">Delivery Address ({selectedOrderForDetail.address?.type || 'Home'})</span>
+                  <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Delivery Address ({selectedOrderForDetail.address?.type || 'Home'})</span>
                   <p className="text-stone-700 font-medium leading-relaxed mt-0.5">
                     {selectedOrderForDetail.address?.street}, {selectedOrderForDetail.address?.city}, {selectedOrderForDetail.address?.state} - {selectedOrderForDetail.address?.pincode}
                   </p>
@@ -603,7 +603,7 @@ export default function AdminOrders() {
 
               {selectedOrderForDetail.expectedDelivery && (
                 <div className="p-3.5 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-1 text-xs">
-                  <span className="text-stone-400 block text-[10px] font-bold uppercase">Delivery timing</span>
+                  <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Delivery timing</span>
                   <p className="text-stone-700">
                     {selectedOrderForDetail.expectedDelivery.label}:{' '}
                     <strong className="text-stone-900">{selectedOrderForDetail.expectedDelivery.value}</strong>
@@ -616,13 +616,13 @@ export default function AdminOrders() {
               {/* Courier & Dispatch Info if present */}
               {(selectedOrderForDetail.courierName || selectedOrderForDetail.awbNumber || selectedOrderForDetail.rider?.name) && (
                 <div className="p-3.5 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-1 text-xs">
-                  <span className="text-stone-400 block text-[10px] font-bold uppercase">Dispatch Information</span>
+                  <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Dispatch Information</span>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-stone-700">
                     {selectedOrderForDetail.courierName && <span>Courier: <strong className="text-stone-900">{selectedOrderForDetail.courierName}</strong></span>}
                     {selectedOrderForDetail.awbNumber && <span>AWB: <strong className="text-stone-900 font-mono">{selectedOrderForDetail.awbNumber}</strong></span>}
                     {selectedOrderForDetail.rider?.name && <span>Rider: <strong className="text-stone-900">{selectedOrderForDetail.rider.name} ({selectedOrderForDetail.rider.phone || ''})</strong></span>}
                   </div>
-                  {selectedOrderForDetail.deliveryNotes && <p className="text-stone-500 text-[11px] italic mt-1">Notes: {selectedOrderForDetail.deliveryNotes}</p>}
+                  {selectedOrderForDetail.deliveryNotes && <p className="text-stone-500 text-[length:calc(11px*var(--fs))] italic mt-1">Notes: {selectedOrderForDetail.deliveryNotes}</p>}
                 </div>
               )}
 
@@ -638,7 +638,7 @@ export default function AdminOrders() {
                     type="button"
                     disabled={!enabled || Boolean(shiprocketBusy)}
                     onClick={() => handleShiprocketAction(key)}
-                    className="px-2.5 py-1.5 rounded-md border border-stone-300 bg-white text-[10px] font-bold uppercase tracking-wider text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-2.5 py-1.5 rounded-md border border-stone-300 bg-white text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {shiprocketBusy === key ? '...' : label}
                   </button>
@@ -646,8 +646,8 @@ export default function AdminOrders() {
                 return (
                   <div className="p-3.5 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-2.5 text-xs">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-stone-400 block text-[10px] font-bold uppercase">Shiprocket Shipment</span>
-                      <span className="text-[10px] font-semibold text-stone-500">
+                      <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Shiprocket Shipment</span>
+                      <span className="text-[length:calc(10px*var(--fs))] font-semibold text-stone-500">
                         {sr.status || (hasShipment ? 'Created' : 'Not created')}
                       </span>
                     </div>
@@ -725,7 +725,7 @@ export default function AdminOrders() {
                       </div>
                     )}
                     {shiprocketMsg && (
-                      <p className="text-[11px] text-stone-600 bg-stone-50 border border-stone-200 rounded-md px-2 py-1.5">
+                      <p className="text-[length:calc(11px*var(--fs))] text-stone-600 bg-stone-50 border border-stone-200 rounded-md px-2 py-1.5">
                         {shiprocketMsg}
                       </p>
                     )}

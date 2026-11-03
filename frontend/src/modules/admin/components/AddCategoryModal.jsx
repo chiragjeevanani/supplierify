@@ -168,7 +168,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
               className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/10 bg-white"
             />
             {formData.slug && (
-              <p className="text-[11px] text-stone-400 mt-1 font-mono">
+              <p className="text-[length:calc(11px*var(--fs))] text-stone-400 mt-1 font-mono">
                 Slug: <span className="text-stone-600">{formData.slug}</span>
               </p>
             )}
@@ -181,7 +181,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
               <button
                 type="button"
                 onClick={() => setShowUrlInput(!showUrlInput)}
-                className="text-[11px] text-[color:var(--brand-primary)] hover:underline font-medium cursor-pointer"
+                className="text-[length:calc(11px*var(--fs))] text-[color:var(--brand-primary)] hover:underline font-medium cursor-pointer"
               >
                 {showUrlInput ? 'Use file upload' : 'Enter image URL'}
               </button>
@@ -237,7 +237,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
                       <UploadCloud className="w-3.5 h-3.5 text-stone-600" />
                       <span>{formData.image ? 'Change Image' : 'Upload Image'}</span>
                     </button>
-                    <p className="text-[11px] text-stone-400 mt-1">PNG, JPG, or WEBP up to 5MB</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-400 mt-1">PNG, JPG, or WEBP up to 5MB</p>
                   </div>
                 )}
               </div>

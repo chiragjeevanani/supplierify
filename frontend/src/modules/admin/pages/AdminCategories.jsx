@@ -177,7 +177,7 @@ export default function AdminCategories() {
                     setEditingCategory(null);
                     setIsCategoryModalOpen(true);
                   }}
-                  className="px-4 py-2 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-[13px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm hover:scale-102 hover:bg-[color:var(--brand-primary-light)] transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-[length:calc(13px*var(--fs))] uppercase tracking-wider flex items-center gap-1.5 shadow-sm hover:scale-102 hover:bg-[color:var(--brand-primary-light)] transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4 text-[color:var(--brand-accent)]" />
                   <span>Add Category</span>
@@ -320,7 +320,7 @@ export default function AdminCategories() {
                               {cat.name}
                             </h3>
                             {cat.badge && (
-                              <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)] border border-[color:var(--brand-primary)]/15 text-[10px] font-bold uppercase tracking-wider">
+                              <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)] border border-[color:var(--brand-primary)]/15 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider">
                                 {cat.badge}
                               </span>
                             )}
@@ -334,7 +334,7 @@ export default function AdminCategories() {
 
                           <div className="flex items-center gap-2.5 mt-1 flex-wrap text-xs">
                             {/* Active / Inactive Badge */}
-                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                            <span className={`px-2.5 py-0.5 rounded-full text-[length:calc(11px*var(--fs))] font-bold ${
                               isActive
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                 : 'bg-rose-100 text-rose-800 border border-rose-300'
@@ -343,7 +343,7 @@ export default function AdminCategories() {
                             </span>
 
                             {/* Products count pill */}
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 text-[11px] font-semibold">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 text-[length:calc(11px*var(--fs))] font-semibold">
                               <Package className="w-3 h-3 text-amber-700" />
                               <span>{pCount} {pCount === 1 ? 'product' : 'products'}</span>
                             </span>
@@ -417,7 +417,7 @@ export default function AdminCategories() {
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-2xs ${
+                            <span className={`px-2.5 py-0.5 rounded-full text-[length:calc(11px*var(--fs))] font-bold shadow-2xs ${
                               isActive
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                 : 'bg-rose-100 text-rose-800 border border-rose-300'
@@ -425,7 +425,7 @@ export default function AdminCategories() {
                               {isActive ? 'Active' : 'Inactive'}
                             </span>
                             {cat.badge && (
-                              <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-[10px] font-bold uppercase tracking-wider shadow-2xs">
+                              <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider shadow-2xs">
                                 {cat.badge}
                               </span>
                             )}

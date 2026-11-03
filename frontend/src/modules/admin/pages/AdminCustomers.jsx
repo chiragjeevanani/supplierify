@@ -123,7 +123,7 @@ export default function AdminCustomers() {
           {/* Top CRM KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div className="bg-white rounded-xl p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Total Customers</span>
                 <Users className="w-4 h-4 text-[color:var(--brand-primary)]" />
               </div>
@@ -132,7 +132,7 @@ export default function AdminCustomers() {
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-emerald-800 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-emerald-800 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Repeat Rate</span>
                 <Award className="w-4 h-4 text-emerald-600" />
               </div>
@@ -141,7 +141,7 @@ export default function AdminCustomers() {
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Total CRM Orders</span>
                 <ShoppingBag className="w-4 h-4 text-[color:var(--brand-primary)]" />
               </div>
@@ -150,7 +150,7 @@ export default function AdminCustomers() {
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-1">
-              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[12px] font-bold uppercase tracking-wider">
+              <div className="flex items-center justify-between text-stone-600 text-xs sm:text-[length:calc(12px*var(--fs))] font-bold uppercase tracking-wider">
                 <span>Cumulative LTV</span>
                 <Award className="w-4 h-4 text-[color:var(--brand-accent)]" />
               </div>
@@ -209,7 +209,7 @@ export default function AdminCustomers() {
           <div className="bg-white rounded-xl border border-[color:var(--brand-border)] shadow-2xs overflow-hidden w-full">
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left">
-                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[12.5px] font-bold">
+                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold">
                   <tr>
                     <th className="py-3.5 px-4">Customer</th>
                     <th className="py-3.5 px-4">Loyalty Tier</th>
@@ -244,8 +244,8 @@ export default function AdminCustomers() {
                               </div>
                             )}
                             <div>
-                              <div className="font-sans font-bold text-sm sm:text-[15px] text-[color:var(--brand-primary)]">{c.name || 'Customer'}</div>
-                              <div className="text-xs sm:text-[12px] text-stone-500 font-medium">{c.email || 'No email'} • {c.phone || 'No phone'}</div>
+                              <div className="font-sans font-bold text-sm sm:text-[length:calc(15px*var(--fs))] text-[color:var(--brand-primary)]">{c.name || 'Customer'}</div>
+                              <div className="text-xs sm:text-[length:calc(12px*var(--fs))] text-stone-500 font-medium">{c.email || 'No email'} • {c.phone || 'No phone'}</div>
                             </div>
                           </div>
                         </td>
@@ -321,7 +321,7 @@ export default function AdminCustomers() {
                   </div>
                 )}
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">{selectedCustomer.tier || 'Member'}</span>
+                  <span className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-widest text-[color:var(--brand-accent)]">{selectedCustomer.tier || 'Member'}</span>
                   <h3 className="font-sans text-base sm:text-xl font-bold mt-0.5">{selectedCustomer.name || 'Customer'}</h3>
                   <p className="text-xs text-stone-300">Customer since {selectedCustomer.memberSince || 'Member'}</p>
                 </div>
@@ -335,15 +335,15 @@ export default function AdminCustomers() {
               {/* Contact Info */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] text-xs sm:text-sm">
                 <div>
-                  <span className="text-stone-500 block text-[11px] font-bold uppercase">Phone</span>
+                  <span className="text-stone-500 block text-[length:calc(11px*var(--fs))] font-bold uppercase">Phone</span>
                   <strong className="text-stone-800 font-semibold">{selectedCustomer.phone || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span className="text-stone-500 block text-[11px] font-bold uppercase">Email</span>
+                  <span className="text-stone-500 block text-[length:calc(11px*var(--fs))] font-bold uppercase">Email</span>
                   <strong className="text-stone-800 font-semibold truncate block">{selectedCustomer.email || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span className="text-stone-500 block text-[11px] font-bold uppercase">Lifetime Spend</span>
+                  <span className="text-stone-500 block text-[length:calc(11px*var(--fs))] font-bold uppercase">Lifetime Spend</span>
                   <strong className="text-[color:var(--brand-primary)] font-bold">₹{(Number(selectedCustomer.totalSpent) || 0).toLocaleString('en-IN')}</strong>
                 </div>
               </div>
@@ -365,7 +365,7 @@ export default function AdminCustomers() {
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-stone-900 text-sm">₹{ord.total}</div>
-                          <span className="text-[11px] font-bold uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                          <span className="text-[length:calc(11px*var(--fs))] font-bold uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
                             {ord.status}
                           </span>
                         </div>

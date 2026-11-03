@@ -126,7 +126,7 @@ export default function PrivacyPolicyPage() {
             <p className="text-sm sm:text-base text-[#A2B5A8] max-w-2xl mx-auto leading-relaxed">
               How Dry Fruit Wholesale collects, uses, and protects your information. This page is public — no login required.
             </p>
-            <p className="text-[11px] text-[color:var(--brand-accent)]/90 mt-4 font-medium">Last updated: 1 October 2026</p>
+            <p className="text-[length:calc(11px*var(--fs))] text-[color:var(--brand-accent)]/90 mt-4 font-medium">Last updated: 1 October 2026</p>
           </div>
         </div>
 
@@ -143,7 +143,7 @@ export default function PrivacyPolicyPage() {
                 className="bg-white rounded-2xl border border-[color:var(--brand-border)] p-3 sm:p-4 flex flex-col items-center text-center gap-2 shadow-sm"
               >
                 <Icon className="w-5 h-5 text-[color:var(--brand-accent-dark)]" />
-                <span className="text-[10px] sm:text-xs font-bold text-[color:var(--brand-primary)]">{label}</span>
+                <span className="text-[length:calc(10px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)]">{label}</span>
               </div>
             ))}
           </div>

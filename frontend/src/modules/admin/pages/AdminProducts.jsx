@@ -160,7 +160,7 @@ export default function AdminProducts() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveStatusFilter(tab.id)}
-                  className={`px-3 py-1.5 rounded-md text-xs sm:text-[13px] font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-[length:calc(13px*var(--fs))] font-semibold transition-all ${
                     activeStatusFilter === tab.id
                       ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] shadow-xs'
                       : 'text-stone-600 hover:text-[color:var(--brand-primary)]'
@@ -179,7 +179,7 @@ export default function AdminProducts() {
                     showFeedback('success', 'Catalog refreshed from live database.');
                   }
                 }}
-                className="px-3.5 py-2 rounded-md bg-white border border-stone-200 text-stone-700 hover:bg-[color:var(--brand-surface)] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                className="px-3.5 py-2 rounded-md bg-white border border-stone-200 text-stone-700 hover:bg-[color:var(--brand-surface)] font-semibold text-xs sm:text-[length:calc(13px*var(--fs))] flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
                 title="Refresh product list"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-stone-500" />
@@ -192,7 +192,7 @@ export default function AdminProducts() {
                   setEditingProduct(null);
                   setIsAddModalOpen(true);
                 }}
-                className="px-4 py-2 rounded-md gold-gradient-btn text-[color:var(--brand-primary)] font-bold text-xs sm:text-[13px] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:scale-102 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-md gold-gradient-btn text-[color:var(--brand-primary)] font-bold text-xs sm:text-[length:calc(13px*var(--fs))] uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm hover:scale-102 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4 text-[color:var(--brand-primary)]" />
                 <span>Add Product</span>
@@ -215,11 +215,11 @@ export default function AdminProducts() {
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <span className="text-xs sm:text-[13px] text-stone-600 font-medium">Category:</span>
+              <span className="text-xs sm:text-[length:calc(13px*var(--fs))] text-stone-600 font-medium">Category:</span>
               <select
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="px-3 py-1.5 rounded-md border border-stone-300 text-xs sm:text-[13px] font-semibold bg-stone-50 text-stone-800 focus:outline-none cursor-pointer"
+                className="px-3 py-1.5 rounded-md border border-stone-300 text-xs sm:text-[length:calc(13px*var(--fs))] font-semibold bg-stone-50 text-stone-800 focus:outline-none cursor-pointer"
               >
                 <option value="all">All Categories</option>
                 {(categories && categories.length > 0 ? categories : CATEGORIES).map(c => {
@@ -236,7 +236,7 @@ export default function AdminProducts() {
           <div className="bg-white rounded-lg border border-[color:var(--brand-border)] shadow-2xs overflow-hidden w-full">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[12.5px] font-bold">
+                <thead className="bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] uppercase tracking-wider text-xs sm:text-[length:calc(12.5px*var(--fs))] font-bold">
                   <tr>
                     <th className="py-3.5 px-2 sm:px-5 w-[8%]">Image</th>
                     <th className="py-3.5 px-2 sm:px-5 w-[28%]">Product Name</th>
@@ -312,9 +312,9 @@ export default function AdminProducts() {
                           </td>
                           <td className="py-3.5 px-2 sm:px-5 min-w-[90px]">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-sans font-semibold text-sm sm:text-[15px] text-[color:var(--brand-primary)]">{p.name}</span>
+                              <span className="font-sans font-semibold text-sm sm:text-[length:calc(15px*var(--fs))] text-[color:var(--brand-primary)]">{p.name}</span>
                               {p.isBestseller && (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[length:calc(9px*var(--fs))] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded">
                                   <Flame className="w-2.5 h-2.5 text-[color:var(--brand-accent-dark)]" />
                                   Bestseller
                                 </span>
@@ -323,14 +323,14 @@ export default function AdminProducts() {
                             <div className="flex items-center gap-2 flex-wrap mt-0.5">
                               <span className="text-xs text-stone-400 font-normal">{p.flavor || p.subtitle || 'Dry fruit'} • {p.weight || '1 kg'}</span>
                               {p.gallery && p.gallery.length > 1 && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[length:calc(10px*var(--fs))] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
                                   <ImageIcon className="w-2.5 h-2.5 text-emerald-600" />
                                   {p.gallery.length} photos
                                 </span>
                               )}
                             </div>
                             {/* Phones: the Category / Stock / Status columns are hidden, so show them here */}
-                            <div className="lg:hidden mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-[11px] text-stone-500">
+                            <div className="lg:hidden mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-[length:calc(11px*var(--fs))] text-stone-500">
                               <span className="md:hidden capitalize">
                                 {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
                               </span>
@@ -338,14 +338,14 @@ export default function AdminProducts() {
                             </div>
                             <button
                               onClick={() => handleToggle(p)}
-                              className={`sm:hidden mt-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider cursor-pointer ${
+                              className={`sm:hidden mt-1.5 px-2.5 py-1 rounded-md text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider cursor-pointer ${
                                 isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                               }`}
                             >
                               {isActive ? 'Active' : 'Inactive'}
                             </button>
                           </td>
-                          <td className="hidden md:table-cell py-3.5 px-5 capitalize text-stone-700 font-medium text-xs sm:text-[13.5px]">
+                          <td className="hidden md:table-cell py-3.5 px-5 capitalize text-stone-700 font-medium text-xs sm:text-[length:calc(13.5px*var(--fs))]">
                             {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
                           </td>
                           <td className="py-3.5 px-2 sm:px-5 whitespace-nowrap">
@@ -353,7 +353,7 @@ export default function AdminProducts() {
                             {p.oldPrice && (
                               <span className="hidden sm:inline text-xs text-stone-400 line-through ml-1.5">₹{p.oldPrice}</span>
                             )}
-                            <span className="text-[11px] text-stone-400 font-normal"> /kg</span>
+                            <span className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal"> /kg</span>
                           </td>
                           <td className="hidden lg:table-cell py-3.5 px-5">
                             <span className={`font-semibold text-xs sm:text-sm ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-700'}`}>

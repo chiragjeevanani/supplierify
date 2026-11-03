@@ -39,6 +39,13 @@ const settingsSchema = new mongoose.Schema(
       background: { type: String, default: '#F7F3E9' },
       text: { type: String, default: '#182019' }
     },
+    // Text size as a percentage of normal (100 = default), applied across the whole site
+    fontScale: {
+      type: Number,
+      default: 100,
+      min: [85, 'Text size cannot be below 85%'],
+      max: [125, 'Text size cannot exceed 125%']
+    },
 
     // 2. Delivery Configuration
     standardDeliveryFee: {

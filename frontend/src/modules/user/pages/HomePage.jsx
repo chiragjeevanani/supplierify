@@ -67,7 +67,7 @@ export default function HomePage() {
         <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-[color:var(--brand-accent)]/15" aria-hidden />
         <div className="absolute right-24 -bottom-16 w-48 h-48 rounded-full bg-[color:var(--brand-accent)]/10" aria-hidden />
         <div className="relative max-w-2xl">
-          <span className="inline-block text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--brand-accent)] mb-3">
+          <span className="inline-block text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-[0.18em] text-[color:var(--brand-accent)] mb-3">
             Wholesale only
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold leading-tight">
@@ -134,7 +134,7 @@ export default function HomePage() {
                 </div>
                 <div className="p-3">
                   <h3 className="font-bold text-sm text-[color:var(--brand-primary)] line-clamp-1">{c.name}</h3>
-                  {c.subtext && <p className="text-[11px] text-stone-500 line-clamp-1">{c.subtext}</p>}
+                  {c.subtext && <p className="text-[length:calc(11px*var(--fs))] text-stone-500 line-clamp-1">{c.subtext}</p>}
                 </div>
               </Link>
             ))}

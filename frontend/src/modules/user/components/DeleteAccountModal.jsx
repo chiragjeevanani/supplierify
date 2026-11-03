@@ -68,7 +68,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }) {
             <li>You will be signed out. You can sign up again later with the same number.</li>
           </ul>
 
-          <label className="block pt-1 text-[11px] font-bold uppercase tracking-wider text-stone-700">
+          <label className="block pt-1 text-[length:calc(11px*var(--fs))] font-bold uppercase tracking-wider text-stone-700">
             Type DELETE to confirm
             <input
               type="text"
