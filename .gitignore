@@ -31,5 +31,4 @@ temp_auto_push.bat
 temp_interactive_push.bat
 _archive_old_brand/
 
-# Build output (the committed copy for the API server is backend/public)
-frontend/dist
+# Build output: frontend/dist and backend/public are both committed so hosts without a build step can serve the site
