@@ -57,8 +57,8 @@ const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:5174',
   'http://localhost:5175',
-  'https://your-domain.example',
-  'https://www.your-domain.example'
+  'https://supplierfy.in',
+  'https://www.supplierfy.in'
 ];
 const allowAllOrigins = env.CLIENT_URL === '*';
 const allowedOrigins = allowAllOrigins
