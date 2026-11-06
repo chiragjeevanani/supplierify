@@ -97,7 +97,9 @@ export default function UserLayout({ children }) {
   };
 
   const waUrl = buildWhatsAppUrl(whatsappNumber, buildGeneralEnquiry({ storeName: storeName || BRAND.name }));
-  const hideFab = /^\/(product|cart|checkout|login)/.test(location.pathname);
+  // The floating button is hidden only where a fixed bottom bar already has its own WhatsApp icon (or would cover it)
+  const hideFab =
+    /^\/(product|checkout)/.test(location.pathname) || (location.pathname.startsWith('/cart') && lineCount > 0);
 
   const sidebar = (
     <div className="h-full flex flex-col bg-[color:var(--brand-primary)] text-white">
