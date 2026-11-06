@@ -50,7 +50,7 @@ export default function HomePage() {
     return (picked.length ? picked : products).slice(0, 4);
   }, [products]);
 
-  const waUrl = buildWhatsAppUrl(rules.whatsappNumber, buildGeneralEnquiry({ storeName: rules.storeName }));
+  const waUrl = buildWhatsAppUrl(rules.whatsappNumber, buildGeneralEnquiry({ greeting: rules.whatsappGreeting }));
 
   const steps = [
     { icon: Boxes, title: `Choose your quantity`, text: `Pick products by the kilo. Minimum order is ${rules.minOrderQtyKg} kg per product.` },

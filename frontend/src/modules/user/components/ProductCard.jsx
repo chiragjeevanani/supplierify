@@ -43,7 +43,7 @@ export default function ProductCard({ product, priority = false }) {
 
   const waUrl = buildWhatsAppUrl(
     rules.whatsappNumber,
-    buildProductEnquiry({ product, qty, storeName: rules.storeName })
+    buildProductEnquiry({ product, qty, greeting: rules.whatsappGreeting })
   );
 
   return (

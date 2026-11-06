@@ -29,6 +29,13 @@ const settingsSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    // Opening line of every pre-typed WhatsApp message, e.g. "Hello Supplierfy"
+    whatsappGreeting: {
+      type: String,
+      trim: true,
+      maxlength: [120, 'WhatsApp greeting cannot exceed 120 characters'],
+      default: 'Hello Supplierfy'
+    },
 
     // 1c. Storefront branding (managed by the admin)
     logoUrl: { type: String, trim: true, default: '' },

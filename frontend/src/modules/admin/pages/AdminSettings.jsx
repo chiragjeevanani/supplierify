@@ -15,6 +15,7 @@ const EMPTY_FORM = {
   supportPhone: '',
   minOrderQtyKg: 5,
   whatsappNumber: '',
+  whatsappGreeting: '',
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
@@ -143,6 +144,7 @@ export default function AdminSettings() {
         fontScale: normalizeFontScale(formData.fontScale),
         minOrderQtyKg: Math.max(1, Number(formData.minOrderQtyKg) || 5),
         whatsappNumber: String(formData.whatsappNumber || '').replace(/\D/g, ''),
+        whatsappGreeting: String(formData.whatsappGreeting || '').trim(),
         freeDeliveryThreshold: Number(formData.freeDeliveryThreshold) || 0,
         standardDeliveryFee: Number(formData.standardDeliveryFee) || 0,
         codDeliveryFee: Number(formData.codDeliveryFee) || 0,
@@ -286,6 +288,24 @@ export default function AdminSettings() {
                   />
                   <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
                     Customers tapping &quot;Enquire on WhatsApp&quot; reach this number with their product and quantity pre-typed. Digits only, no + or spaces.
+                  </span>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="whatsappGreeting">
+                    WhatsApp Message Greeting
+                  </label>
+                  <input
+                    id="whatsappGreeting"
+                    name="whatsappGreeting"
+                    type="text"
+                    maxLength={120}
+                    placeholder="e.g. Hello Supplierfy"
+                    value={formData.whatsappGreeting || ''}
+                    onChange={(e) => setField('whatsappGreeting', e.target.value)}
+                    className={inputClass}
+                  />
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
+                    First words of every WhatsApp message, e.g. &quot;{(formData.whatsappGreeting || 'Hello Supplierfy').trim()}, I would like to enquire about a wholesale order…&quot;. Leave empty to use &quot;Hello Supplierfy&quot;.
                   </span>
                 </div>
               </div>
