@@ -12,6 +12,8 @@ export const BRAND = {
     'Wholesale dry fruits, nuts, dates and seeds sold by the kilo. Minimum order applies. Order online or enquire on WhatsApp.',
   // Shown until the admin saves their own values in Settings
   defaultMinOrderQtyKg: 5,
+  // WhatsApp number used until the admin saves their own in Settings (digits, with country code)
+  defaultWhatsappNumber: '918779099497',
   unitLabel: 'kg'
 };
 
