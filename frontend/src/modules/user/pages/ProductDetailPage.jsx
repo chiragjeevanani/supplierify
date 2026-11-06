@@ -235,7 +235,7 @@ export default function ProductDetailPage() {
 
   const waUrl = buildWhatsAppUrl(
     rules.whatsappNumber,
-    buildProductEnquiry({ product, qty: quantity, storeName: rules.storeName })
+    buildProductEnquiry({ product, qty: quantity, greeting: rules.whatsappGreeting })
   );
 
   const handleAddToCart = async (openDrawer = true) => {

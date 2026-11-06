@@ -45,7 +45,7 @@ const PAGE_TITLES = [
 const SIDEBAR_KEY = 'wholesale_sidebar_hidden';
 
 export default function UserLayout({ children }) {
-  const { lineCount, whatsappNumber, storeName } = useCart();
+  const { lineCount, whatsappNumber, whatsappGreeting, storeName } = useCart();
   const { wishlistCount } = useWishlist();
   const { user } = useAuth();
   const location = useLocation();
@@ -96,7 +96,7 @@ export default function UserLayout({ children }) {
     return 0;
   };
 
-  const waUrl = buildWhatsAppUrl(whatsappNumber, buildGeneralEnquiry({ storeName: storeName || BRAND.name }));
+  const waUrl = buildWhatsAppUrl(whatsappNumber, buildGeneralEnquiry({ greeting: whatsappGreeting }));
   // The floating button is hidden only where a fixed bottom bar already has its own WhatsApp icon (or would cover it)
   const hideFab =
     /^\/(product|checkout)/.test(location.pathname) || (location.pathname.startsWith('/cart') && lineCount > 0);

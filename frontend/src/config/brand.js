@@ -14,6 +14,8 @@ export const BRAND = {
   defaultMinOrderQtyKg: 5,
   // WhatsApp number used until the admin saves their own in Settings (digits, with country code)
   defaultWhatsappNumber: '918779099497',
+  // Opening line of the pre-typed WhatsApp message until the admin sets their own in Settings
+  defaultWhatsappGreeting: 'Hello Supplierfy',
   unitLabel: 'kg'
 };
 

@@ -10,7 +10,7 @@ import { buildGeneralEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
 
 export default function AboutPage() {
   const rules = useStoreRules();
-  const waUrl = buildWhatsAppUrl(rules.whatsappNumber, buildGeneralEnquiry({ storeName: rules.storeName }));
+  const waUrl = buildWhatsAppUrl(rules.whatsappNumber, buildGeneralEnquiry({ greeting: rules.whatsappGreeting }));
 
   const points = [
     { icon: BadgeCheck, title: 'Quality graded stock', text: 'Every lot is sorted and graded before it is packed, so what you order is what you receive.' },
