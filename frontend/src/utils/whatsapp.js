@@ -3,13 +3,22 @@ import { BRAND } from '../config/brand';
 /**
  * WhatsApp enquiry helpers.
  * `https://wa.me/<number>?text=<message>` opens WhatsApp with the message pre-typed, so the customer
- * only has to press send. When no number is configured, `wa.me/?text=` lets the customer pick a contact.
+ * only has to press send. Without a number WhatsApp shows a "share with..." contact picker instead, so
+ * buildWhatsAppUrl returns '' in that case and callers hide the button.
  */
 
 const digitsOnly = (v) => String(v || '').replace(/\D/g, '');
 
+/** Digits with country code; a bare 10-digit Indian number gets 91 in front so wa.me can find it. */
+export function normalizeWhatsAppNumber(number) {
+  let n = digitsOnly(number).replace(/^0+/, '');
+  if (n.length === 10) n = '91' + n;
+  return n;
+}
+
 export function buildWhatsAppUrl(number, text) {
-  const n = digitsOnly(number);
+  const n = normalizeWhatsAppNumber(number);
+  if (n.length < 10) return '';
   return `https://wa.me/${n}?text=${encodeURIComponent(text || '')}`;
 }
 

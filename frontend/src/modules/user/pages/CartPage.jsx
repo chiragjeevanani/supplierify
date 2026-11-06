@@ -218,17 +218,21 @@ export default function CartPage() {
               >
                 Pay online (Razorpay) <ArrowRight className="w-4 h-4" />
               </Link>
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full min-h-[48px] rounded-xl bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm flex items-center justify-center gap-2"
-              >
-                <WhatsAppIcon className="w-5 h-5" /> Enquire on WhatsApp
-              </a>
-              <p className="text-[length:calc(11px*var(--fs))] text-stone-500 text-center">
-                Prefer to negotiate or pay manually? Send this cart to us on WhatsApp.
-              </p>
+              {waUrl && (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full min-h-[48px] rounded-xl bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <WhatsAppIcon className="w-5 h-5" /> Enquire on WhatsApp
+                </a>
+              )}
+              {waUrl && (
+                <p className="text-[length:calc(11px*var(--fs))] text-stone-500 text-center">
+                  Prefer to negotiate or pay manually? Send this cart to us on WhatsApp.
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-center gap-1.5 text-[length:calc(11px*var(--fs))] text-stone-500">
@@ -245,15 +249,17 @@ export default function CartPage() {
           <span className="block text-[length:calc(10px*var(--fs))] uppercase tracking-wider text-stone-500 font-bold">Total</span>
           <span className="text-lg font-extrabold text-[color:var(--brand-primary)] leading-none">{inr(total)}</span>
         </div>
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Enquire on WhatsApp"
-          className="w-11 h-11 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0"
-        >
-          <WhatsAppIcon className="w-5 h-5" />
-        </a>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Enquire on WhatsApp"
+            className="w-11 h-11 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+          </a>
+        )}
         <Link
           to="/checkout"
           className="flex-1 min-h-[44px] rounded-xl bg-gradient-to-r from-[color:var(--brand-accent)] to-[color:var(--brand-accent-dark)] text-[color:var(--brand-primary)] text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5"

@@ -146,15 +146,17 @@ export default function UserLayout({ children }) {
       </nav>
 
       <div className="shrink-0 p-3 border-t border-white/10">
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm py-3 transition-colors"
-        >
-          <WhatsAppIcon className="w-5 h-5" />
-          Chat on WhatsApp
-        </a>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm py-3 transition-colors"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+            Chat on WhatsApp
+          </a>
+        )}
         <p className="text-[length:calc(11px*var(--fs))] text-white/50 text-center mt-2">Wholesale orders only</p>
       </div>
     </div>
@@ -259,7 +261,7 @@ export default function UserLayout({ children }) {
         </footer>
       </div>
 
-      {!hideFab && (
+      {!hideFab && waUrl && (
         <a
           href={waUrl}
           target="_blank"

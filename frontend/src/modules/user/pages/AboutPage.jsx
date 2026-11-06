@@ -70,14 +70,16 @@ export default function AboutPage() {
         <Link to="/shop" className="rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] font-bold px-5 py-3 hover:bg-[color:var(--brand-primary-hover)]">
           Browse products
         </Link>
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857]"
-        >
-          <WhatsAppIcon className="w-5 h-5" /> Chat on WhatsApp
-        </a>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857]"
+          >
+            <WhatsAppIcon className="w-5 h-5" /> Chat on WhatsApp
+          </a>
+        )}
       </div>
     </div>
   );

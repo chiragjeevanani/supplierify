@@ -456,15 +456,17 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 w-full py-3.5 px-6 rounded-xl bg-[#25D366] hover:bg-[#1fb857] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md"
-              >
-                <WhatsAppIcon className="w-5 h-5" />
-                <span>Enquire on WhatsApp</span>
-              </a>
+              {waUrl && (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 w-full py-3.5 px-6 rounded-xl bg-[#25D366] hover:bg-[#1fb857] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md"
+                >
+                  <WhatsAppIcon className="w-5 h-5" />
+                  <span>Enquire on WhatsApp</span>
+                </a>
+              )}
 
             </div>
 
@@ -695,15 +697,17 @@ export default function ProductDetailPage() {
           <span className="text-[length:calc(10px*var(--fs))] text-stone-500 font-medium">Total Price</span>
           <span className="font-sans text-base font-extrabold text-[color:var(--brand-primary)] tracking-tight">₹{(Number(currentPrice) * (Number(quantity) || 0)).toLocaleString('en-IN')}</span>
         </div>
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Enquire on WhatsApp"
-          className="w-11 h-11 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0"
-        >
-          <WhatsAppIcon className="w-5 h-5" />
-        </a>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Enquire on WhatsApp"
+            className="w-11 h-11 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+          </a>
+        )}
         <div className="flex-1 grid grid-cols-2 gap-2">
           <button
             onClick={() => handleAddToCart(true)}
