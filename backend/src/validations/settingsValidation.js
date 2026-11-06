@@ -9,6 +9,7 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'gstRate',
   'minOrderQtyKg',
   'whatsappNumber',
+  'whatsappGreeting',
   'logoUrl',
   'faviconUrl',
   'theme',
@@ -114,6 +115,10 @@ export const validateUpdateSettings = (req, res, next) => {
     if (digits.length < 10 || digits.length > 15) {
       errors.push({ field: 'whatsappNumber', message: 'WhatsApp number must be 10-15 digits including country code' });
     }
+  }
+
+  if (body.whatsappGreeting !== undefined && String(body.whatsappGreeting).trim().length > 120) {
+    errors.push({ field: 'whatsappGreeting', message: 'WhatsApp greeting cannot exceed 120 characters' });
   }
 
   // 2. Standard Delivery Fee validation

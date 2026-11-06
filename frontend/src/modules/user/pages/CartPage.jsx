@@ -43,7 +43,7 @@ export default function CartPage() {
 
   const waUrl = buildWhatsAppUrl(
     rules.whatsappNumber,
-    buildCartEnquiry({ items: cartItems, storeName: rules.storeName })
+    buildCartEnquiry({ items: cartItems, greeting: rules.whatsappGreeting })
   );
 
   if (cartItems.length === 0) {

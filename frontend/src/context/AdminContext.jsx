@@ -89,6 +89,7 @@ const SETTINGS_UPDATE_KEYS = [
   // Wholesale rules + branding (must be listed here or the admin Save silently drops them)
   'minOrderQtyKg',
   'whatsappNumber',
+  'whatsappGreeting',
   'logoUrl',
   'faviconUrl',
   'theme',
