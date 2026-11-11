@@ -12,7 +12,8 @@ function resolveApiBase() {
 
   // Never ship a localhost API URL in a production build (breaks your-domain.example)
   if (envUrl && !/localhost|127\.0\.0\.1/i.test(envUrl)) {
-    return envUrl;
+    // Accept a bare host (https://api.example.com) as well as one that already ends in /api or /api/v1
+    return /\/api(\/v\d+)?$/i.test(envUrl) ? envUrl : `${envUrl}/api/v1`;
   }
 
   if (typeof window !== 'undefined') {

@@ -561,6 +561,7 @@ export function CartProvider({ children }) {
       lineCount,
       minOrderQtyKg: rules.minOrderQtyKg,
       whatsappNumber: rules.whatsappNumber,
+      whatsappGreeting: rules.whatsappGreeting,
       storeName: rules.storeName,
       subtotal,
       discountAmount,
