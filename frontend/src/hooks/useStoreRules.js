@@ -12,7 +12,8 @@ import { DEFAULT_THEME, normalizeTheme, DEFAULT_FONT_SCALE, normalizeFontScale }
 const DEFAULTS = {
   storeName: BRAND.name,
   minOrderQtyKg: BRAND.defaultMinOrderQtyKg,
-  whatsappNumber: '',
+  whatsappNumber: BRAND.defaultWhatsappNumber,
+  whatsappGreeting: BRAND.defaultWhatsappGreeting,
   supportPhone: '',
   supportEmail: '',
   storeAddress: '',
@@ -37,7 +38,8 @@ const load = () => {
         ...DEFAULTS,
         ...s,
         minOrderQtyKg: Number(s.minOrderQtyKg) > 0 ? Number(s.minOrderQtyKg) : DEFAULTS.minOrderQtyKg,
-        whatsappNumber: String(s.whatsappNumber || '').replace(/\D/g, ''),
+        whatsappNumber: String(s.whatsappNumber || '').replace(/\D/g, '') || BRAND.defaultWhatsappNumber,
+        whatsappGreeting: String(s.whatsappGreeting || '').trim() || BRAND.defaultWhatsappGreeting,
         theme: normalizeTheme(s.theme),
         fontScale: normalizeFontScale(s.fontScale),
         loaded: true

@@ -45,7 +45,7 @@ const PAGE_TITLES = [
 const SIDEBAR_KEY = 'wholesale_sidebar_hidden';
 
 export default function UserLayout({ children }) {
-  const { lineCount, whatsappNumber, storeName } = useCart();
+  const { lineCount, whatsappNumber, whatsappGreeting, storeName } = useCart();
   const { wishlistCount } = useWishlist();
   const { user } = useAuth();
   const location = useLocation();
@@ -96,8 +96,10 @@ export default function UserLayout({ children }) {
     return 0;
   };
 
-  const waUrl = buildWhatsAppUrl(whatsappNumber, buildGeneralEnquiry({ storeName: storeName || BRAND.name }));
-  const hideFab = /^\/(product|cart|checkout|login)/.test(location.pathname);
+  const waUrl = buildWhatsAppUrl(whatsappNumber, buildGeneralEnquiry({ greeting: whatsappGreeting }));
+  // The floating button is hidden only where a fixed bottom bar already has its own WhatsApp icon (or would cover it)
+  const hideFab =
+    /^\/(product|checkout)/.test(location.pathname) || (location.pathname.startsWith('/cart') && lineCount > 0);
 
   const sidebar = (
     <div className="h-full flex flex-col bg-[color:var(--brand-primary)] text-white">
@@ -146,15 +148,17 @@ export default function UserLayout({ children }) {
       </nav>
 
       <div className="shrink-0 p-3 border-t border-white/10">
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm py-3 transition-colors"
-        >
-          <WhatsAppIcon className="w-5 h-5" />
-          Chat on WhatsApp
-        </a>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white font-bold text-sm py-3 transition-colors"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+            Chat on WhatsApp
+          </a>
+        )}
         <p className="text-[length:calc(11px*var(--fs))] text-white/50 text-center mt-2">Wholesale orders only</p>
       </div>
     </div>
@@ -259,7 +263,7 @@ export default function UserLayout({ children }) {
         </footer>
       </div>
 
-      {!hideFab && (
+      {!hideFab && waUrl && (
         <a
           href={waUrl}
           target="_blank"

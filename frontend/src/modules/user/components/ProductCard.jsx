@@ -43,7 +43,7 @@ export default function ProductCard({ product, priority = false }) {
 
   const waUrl = buildWhatsAppUrl(
     rules.whatsappNumber,
-    buildProductEnquiry({ product, qty, storeName: rules.storeName })
+    buildProductEnquiry({ product, qty, greeting: rules.whatsappGreeting })
   );
 
   return (
@@ -119,17 +119,19 @@ export default function ProductCard({ product, priority = false }) {
               >
                 {isAdded ? <><Check className="w-4 h-4 text-[color:var(--brand-accent)]" /> Added</> : <><ShoppingCart className="w-4 h-4 text-[color:var(--brand-accent)]" /> Add to cart</>}
               </button>
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="w-11 h-11 rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white flex items-center justify-center shrink-0"
-                title="Enquire on WhatsApp"
-                aria-label="Enquire on WhatsApp"
-              >
-                <WhatsAppIcon className="w-5 h-5" />
-              </a>
+              {waUrl && (
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-11 h-11 rounded-lg bg-[#25D366] hover:bg-[#1fb857] text-white flex items-center justify-center shrink-0"
+                  title="Enquire on WhatsApp"
+                  aria-label="Enquire on WhatsApp"
+                >
+                  <WhatsAppIcon className="w-5 h-5" />
+                </a>
+              )}
             </div>
           </>
         )}

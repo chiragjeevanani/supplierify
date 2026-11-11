@@ -1,0 +1,12 @@
+# Single-page app: serve index.html for every route (e.g. refreshing /cart or /product/abc)
+# instead of the host's "page does not exist" screen. Real files and folders are still served as-is.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  # Missing build files should stay a real 404 (not an HTML page pretending to be a script)
+  RewriteCond %{REQUEST_URI} !^/(assets|uploads)/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

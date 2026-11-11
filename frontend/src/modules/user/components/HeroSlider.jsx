@@ -16,8 +16,12 @@ function BannerLink({ to, className, children, label }) {
  * Shows `fallback` (the default welcome section) when there is no active banner.
  */
 export default function HeroSlider({ fallback }) {
-  const [banners, setBanners] = useState(null); // null = loading
+  const [allBanners, setBanners] = useState(null); // null = loading
+  const [brokenIds, setBrokenIds] = useState(() => new Set());
   const [index, setIndex] = useState(0);
+  // Slides whose image can't be loaded are dropped instead of showing an empty coloured box
+  const banners = allBanners && allBanners.filter((b) => !brokenIds.has(b._id));
+  const markBroken = (id) => setBrokenIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
   const [paused, setPaused] = useState(false);
   const timer = useRef(null);
 
@@ -45,6 +49,7 @@ export default function HeroSlider({ fallback }) {
     return <div className="rounded-2xl bg-[color:var(--brand-border)]/60 animate-pulse aspect-[16/9] sm:aspect-[16/6]" aria-hidden />;
   }
   if (count === 0) return fallback;
+  if (index >= count) setIndex(0);
 
   return (
     <section
@@ -72,7 +77,9 @@ export default function HeroSlider({ fallback }) {
               src={assetUrl(b.image)}
               alt={b.title || 'Banner'}
               className="absolute inset-0 w-full h-full object-cover"
-              loading={i === 0 ? 'eager' : 'lazy'}
+              data-no-fallback
+              onError={() => markBroken(b._id)}
+              loading="eager"
               decoding="async"
             />
             {hasText ? (

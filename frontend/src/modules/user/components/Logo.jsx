@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf } from 'lucide-react';
 import { BRAND } from '../../../config/brand';
@@ -13,14 +13,23 @@ export default function Logo({ variant = 'dark', size = 'default', to = '/', cla
   const rules = useStoreRules();
   const name = rules.storeName || BRAND.name;
   const light = variant === 'light';
+  // If the uploaded logo file can't be loaded (deleted / moved), fall back to the text mark
+  const [failedUrl, setFailedUrl] = useState('');
+  useEffect(() => { setFailedUrl(''); }, [rules.logoUrl]);
 
-  if (rules.logoUrl) {
+  if (rules.logoUrl && failedUrl !== rules.logoUrl) {
     const h = { small: 'h-9', default: 'h-11', large: 'h-14' }[size] || 'h-11';
     return (
       <Link to={to} className={`inline-flex items-center select-none shrink-0 ${className}`} aria-label={name}>
         {/* On dark backgrounds the logo sits on a light plate so any logo colours stay readable */}
         <span className={light ? 'bg-white/95 rounded-lg px-2 py-1 inline-flex' : 'inline-flex'}>
-          <img src={assetUrl(rules.logoUrl)} alt={name} className={`${h} w-auto max-w-[170px] object-contain`} />
+          <img
+            src={assetUrl(rules.logoUrl)}
+            alt={name}
+            data-no-fallback
+            onError={() => setFailedUrl(rules.logoUrl)}
+            className={`${h} w-auto max-w-[170px] object-contain`}
+          />
         </span>
       </Link>
     );
