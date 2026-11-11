@@ -50,7 +50,7 @@ export default function HomePage() {
     return (picked.length ? picked : products).slice(0, 4);
   }, [products]);
 
-  const waUrl = buildWhatsAppUrl(rules.whatsappNumber, buildGeneralEnquiry({ storeName: rules.storeName }));
+  const waUrl = buildWhatsAppUrl(rules.whatsappNumber, buildGeneralEnquiry({ greeting: rules.whatsappGreeting }));
 
   const steps = [
     { icon: Boxes, title: `Choose your quantity`, text: `Pick products by the kilo. Minimum order is ${rules.minOrderQtyKg} kg per product.` },
@@ -84,14 +84,16 @@ export default function HomePage() {
             >
               Browse catalogue <ArrowRight className="w-4 h-4" />
             </Link>
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857]"
-            >
-              <WhatsAppIcon className="w-5 h-5" /> Enquire on WhatsApp
-            </a>
+            {waUrl && (
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857]"
+              >
+                <WhatsAppIcon className="w-5 h-5" /> Enquire on WhatsApp
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -181,14 +183,16 @@ export default function HomePage() {
             <p className="text-sm text-stone-600">Message us on WhatsApp with your requirement and we will get back to you with the best price.</p>
           </div>
         </div>
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857] shrink-0"
-        >
-          <WhatsAppIcon className="w-5 h-5" /> Chat with us
-        </a>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] text-white font-bold px-5 py-3 hover:bg-[#1fb857] shrink-0"
+          >
+            <WhatsAppIcon className="w-5 h-5" /> Chat with us
+          </a>
+        )}
       </section>
     </div>
   );

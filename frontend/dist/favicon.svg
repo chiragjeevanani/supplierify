@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Dry Fruit Wholesale">
+  <rect width="64" height="64" rx="14" fill="#0E2A1B"/>
+  <path fill="#D4AF37" d="M32 12c10 4 17 12 17 22 0 9-7 18-17 18S15 43 15 34c0-10 7-18 17-22z"/>
+  <path fill="none" stroke="#0E2A1B" stroke-width="3" stroke-linecap="round" d="M32 20v28M32 32l8-7M32 40l7-6"/>
+</svg>
