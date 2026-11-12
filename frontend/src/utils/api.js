@@ -607,6 +607,11 @@ export const orderApi = {
   }
 };
 
+// Pay on credit (buy now, pay later)
+export const creditApi = {
+  getMyCredit: () => apiRequest('/users/credit', { method: 'GET' })
+};
+
 // Admin Order Management API
 // Admin: registered customers (real accounts + order stats)
 export const adminUserApi = {
@@ -614,7 +619,13 @@ export const adminUserApi = {
     const query = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) query.append('search', search);
     return apiRequest(`/admin/users?${query.toString()}`, { method: 'GET' });
-  }
+  },
+  getCredit: (id) => apiRequest(`/admin/users/${id}/credit`, { method: 'GET' }),
+  // creditLimitOverride: number, or null to use the store default; creditBlocked: boolean
+  updateCredit: (id, data) => apiRequest(`/admin/users/${id}/credit`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  })
 };
 
 export const adminDashboardApi = {
@@ -653,6 +664,11 @@ export const adminOrderApi = {
   dispatchOrder: (id, dispatchData = {}) => apiRequest(`/admin/orders/${id}/dispatch`, {
     method: 'PATCH',
     body: JSON.stringify(dispatchData)
+  }),
+  // Credit / cash orders: record payment received (PAID) or undo it (PENDING)
+  updatePayment: (id, status, note = '') => apiRequest(`/admin/orders/${id}/payment`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, note })
   }),
   cancelOrder: (id, reason = '') => apiRequest(`/admin/orders/${id}/cancel`, {
     method: 'PATCH',

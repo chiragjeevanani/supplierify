@@ -155,6 +155,8 @@ export const formatOrder = (o) => {
     total: o.pricing?.total ?? o.total ?? 0,
     paymentMethod: o.payment?.method || o.paymentMethod || 'COD',
     paymentStatus: o.payment?.status || 'PENDING',
+    creditDueDate: o.payment?.creditDueDate || null,
+    paidAt: o.payment?.paidAt || null,
     transactionId: o.payment?.transactionId || '',
     deliveryType: o.delivery?.type || o.deliveryType || "Standard Express Courier",
     status: mapStatusToDisplay(o.status),
@@ -695,7 +697,9 @@ export function AuthProvider({ children }) {
       const rawPayment = String(orderPayload.paymentMethod || '');
       const rawUpper = rawPayment.toUpperCase();
       // Check COD / cash-on-delivery BEFORE UPI so "Cash / UPI on Delivery" stays COD
-      if (rawUpper.includes('COD') || rawUpper.includes('CASH') || rawUpper.includes('ON DELIVERY') || rawUpper.includes('DOORSTEP')) {
+      if (rawUpper === 'CREDIT') {
+        normalizedPayment = 'CREDIT';
+      } else if (rawUpper.includes('COD') || rawUpper.includes('CASH') || rawUpper.includes('ON DELIVERY') || rawUpper.includes('DOORSTEP')) {
         normalizedPayment = 'COD';
       } else if (rawUpper.includes('UPI') || rawUpper.includes('GPAY') || rawUpper.includes('PHONEPE')) {
         normalizedPayment = 'UPI';

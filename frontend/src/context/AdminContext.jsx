@@ -93,7 +93,11 @@ const SETTINGS_UPDATE_KEYS = [
   'logoUrl',
   'faviconUrl',
   'theme',
-  'fontScale'
+  'fontScale',
+  'creditEnabled',
+  'creditEligibilityAmount',
+  'creditLimit',
+  'creditDueDays'
 ];
 
 function sanitizeSettingsPayload(raw = {}) {

@@ -14,12 +14,13 @@ export const validatePlaceOrder = (req, res, next) => {
 
   if (paymentMethod !== undefined) {
     let normalized = String(paymentMethod).toUpperCase().trim();
-    if (normalized.includes('COD') || normalized.includes('CASH') || normalized.includes('DELIVERY')) normalized = 'COD';
+    if (normalized === 'CREDIT' || normalized === 'PAY_ON_CREDIT') normalized = 'CREDIT';
+    else if (normalized.includes('COD') || normalized.includes('CASH') || normalized.includes('DELIVERY')) normalized = 'COD';
     else if (normalized.includes('UPI') || normalized.includes('GPAY') || normalized.includes('PHONEPE') || normalized.includes('PAYTM')) normalized = 'UPI';
     else if (normalized.includes('CARD') || normalized.includes('CREDIT') || normalized.includes('DEBIT')) normalized = 'CARD';
     else if (normalized.includes('NET') || normalized.includes('BANK')) normalized = 'NETBANKING';
 
-    const validMethods = ['COD', 'UPI', 'CARD', 'NETBANKING'];
+    const validMethods = ['COD', 'UPI', 'CARD', 'NETBANKING', 'CREDIT'];
     if (!validMethods.includes(normalized)) {
       errors.push({
         field: 'paymentMethod',

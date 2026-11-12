@@ -14,6 +14,10 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'faviconUrl',
   'theme',
   'fontScale',
+  'creditEnabled',
+  'creditEligibilityAmount',
+  'creditLimit',
+  'creditDueDays',
   'standardDeliveryFee',
   'codDeliveryFee',
   'freeDeliveryThreshold',
@@ -95,6 +99,20 @@ export const validateUpdateSettings = (req, res, next) => {
         }
       }
     }
+  }
+
+  for (const key of ['creditEligibilityAmount', 'creditLimit']) {
+    if (body[key] !== undefined) {
+      const n = Number(body[key]);
+      if (!Number.isFinite(n) || n < 0) errors.push({ field: key, message: 'Credit amounts must be 0 or more' });
+    }
+  }
+  if (body.creditDueDays !== undefined) {
+    const d = Number(body.creditDueDays);
+    if (!Number.isFinite(d) || d < 1 || d > 365) errors.push({ field: 'creditDueDays', message: 'Payment due days must be between 1 and 365' });
+  }
+  if (body.creditEnabled !== undefined && typeof body.creditEnabled !== 'boolean') {
+    errors.push({ field: 'creditEnabled', message: 'Credit on/off must be true or false' });
   }
 
   if (body.fontScale !== undefined) {

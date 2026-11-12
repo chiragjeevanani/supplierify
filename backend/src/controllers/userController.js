@@ -8,6 +8,16 @@ import Notification from '../models/Notification.js';
 import Otp from '../models/Otp.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
+import { getCreditSummary } from '../services/creditService.js';
+
+export const getMyCredit = async (req, res, next) => {
+  try {
+    const credit = await getCreditSummary(req.user._id);
+    return sendSuccess(res, 'Credit details', { credit }, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
 
 /**
  * Get Authenticated User Profile

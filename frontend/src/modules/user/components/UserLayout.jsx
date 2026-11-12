@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, ShoppingBag, LayoutGrid, ShoppingCart, Heart, User, LifeBuoy, Shield, X, Search, Package,
-  Info, Phone, Menu, LogIn
+  Info, Phone, Menu, LogIn, Wallet
 } from 'lucide-react';
+import { useStoreRules } from '../../../hooks/useStoreRules';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import Logo from './Logo';
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { label: 'Categories', to: '/shop?tab=categories', icon: LayoutGrid, match: (p, s) => p === '/shop' && s.includes('tab=categories') },
   { label: 'My Cart', to: '/cart', icon: ShoppingCart, badge: 'cart' },
   { label: 'My Orders', to: '/account?tab=orders', icon: Package, match: (p, s) => p === '/account' && s.includes('tab=orders') },
+  { label: 'Credit', to: '/credit', icon: Wallet, needsCredit: true },
   { label: 'Favourites', to: '/wishlist', icon: Heart, badge: 'wishlist' },
   { label: 'My Account', to: '/account', icon: User, match: (p, s) => p === '/account' && !s.includes('tab=orders') },
   { label: 'Help & Support', to: '/help-support', icon: LifeBuoy },
@@ -35,6 +37,7 @@ const PAGE_TITLES = [
   ['/wishlist', 'Favourites'],
   ['/order-tracking', 'Track Order'],
   ['/account', 'My Account'],
+  ['/credit', 'Credit'],
   ['/login', 'Login'],
   ['/about', 'About Us'],
   ['/contact', 'Contact'],
@@ -48,6 +51,7 @@ export default function UserLayout({ children }) {
   const { lineCount, whatsappNumber, whatsappGreeting, storeName } = useCart();
   const { wishlistCount } = useWishlist();
   const { user } = useAuth();
+  const { creditEnabled } = useStoreRules();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -116,7 +120,7 @@ export default function UserLayout({ children }) {
 
       <nav className="flex-1 overflow-y-auto py-3 px-2" aria-label="Main navigation">
         <ul className="space-y-0.5">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.needsCredit || creditEnabled).map((item) => {
             const Icon = item.icon;
             const badge = badgeFor(item);
             return (

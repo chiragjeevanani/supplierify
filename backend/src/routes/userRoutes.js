@@ -11,6 +11,7 @@ router.use(authMiddleware, requireUser);
 
 // Profile endpoints
 router.get('/profile', userController.getProfile);
+router.get('/credit', userController.getMyCredit);
 router.put('/profile', validateUpdateProfile, userController.updateProfile);
 router.patch('/profile', validateUpdateProfile, userController.updateProfile);
 

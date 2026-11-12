@@ -6,6 +6,7 @@ import usePagination from '../../../hooks/usePagination';
 import AdminPagination from '../components/AdminPagination';
 import { formatOrder } from '../../../context/AuthContext';
 import { adminUserApi, adminOrderApi } from '../../../utils/api';
+import CustomerCreditPanel from '../components/CustomerCreditPanel';
 
 export default function AdminCustomers() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -272,6 +273,13 @@ export default function AdminCustomers() {
 
                         <td className="py-3 px-4 font-bold text-[color:var(--brand-primary)] text-sm sm:text-base">
                           ₹{spentNum.toLocaleString('en-IN')}
+                          {c.credit && (c.credit.eligible || c.credit.blocked || c.credit.used > 0) && (
+                            <div className={`text-[length:calc(11px*var(--fs))] font-semibold mt-0.5 ${c.credit.blocked ? 'text-rose-700' : 'text-sky-700'}`}>
+                              {c.credit.blocked
+                                ? 'Credit blocked'
+                                : `Credit: ₹${Math.round(c.credit.available).toLocaleString('en-IN')} of ₹${Math.round(c.credit.limit).toLocaleString('en-IN')} free`}
+                            </div>
+                          )}
                         </td>
 
                         <td className="py-3 px-4 text-right">
@@ -347,6 +355,14 @@ export default function AdminCustomers() {
                   <strong className="text-[color:var(--brand-primary)] font-bold">₹{(Number(selectedCustomer.totalSpent) || 0).toLocaleString('en-IN')}</strong>
                 </div>
               </div>
+
+              <CustomerCreditPanel
+                customerId={selectedCustomer._id || selectedCustomer.id}
+                onSaved={(credit) => {
+                  const id = selectedCustomer._id || selectedCustomer.id;
+                  setCustomers((prev) => prev.map((c) => ((c._id || c.id) === id ? { ...c, credit } : c)));
+                }}
+              />
 
               {/* Order History */}
               <div className="space-y-3">

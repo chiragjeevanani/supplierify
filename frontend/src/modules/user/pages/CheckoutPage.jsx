@@ -12,7 +12,8 @@ import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
 import { resolveProductImage } from '../../../utils/productImage';
 import { getThemeHex } from '../../../utils/theme';
-import { paymentApi, shippingApi, addressApi, cartApi } from '../../../utils/api';
+import { paymentApi, shippingApi, addressApi, cartApi, creditApi } from '../../../utils/api';
+import { useStoreRules } from '../../../hooks/useStoreRules';
 import {
   calculateCheckoutTotals,
   checkoutPaymentMethodKey,
@@ -73,7 +74,19 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState(user?.email || '');
 
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
-  const [paymentMethod, setPaymentMethod] = useState('online'); // wholesale checkout is Razorpay (online) only
+  const [paymentMethod, setPaymentMethod] = useState('online'); // 'online' (Razorpay) or 'credit' (pay later)
+  const { creditEnabled } = useStoreRules();
+  const [credit, setCredit] = useState(null);
+
+  // Pay-on-credit details for eligible customers
+  useEffect(() => {
+    if (!creditEnabled || !token) { setCredit(null); return; }
+    let alive = true;
+    creditApi.getMyCredit()
+      .then((res) => { if (alive) setCredit(res?.data?.credit || null); })
+      .catch(() => { if (alive) setCredit(null); });
+    return () => { alive = false; };
+  }, [creditEnabled, token]);
   const [couponCodeInput, setCouponCodeInput] = useState('');
   const [couponError, setCouponError] = useState('');
   const [orderError, setOrderError] = useState('');
@@ -139,6 +152,19 @@ export default function CheckoutPage() {
   }, [subtotal, discountAmount, paymentMethod, shippingSettings, shiprocketDeliveryFee, shiprocketCheckoutEnabled]);
 
   const { deliveryFee, tax, total } = checkoutPricing;
+
+  const inrFmt = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
+  const creditBlockReason = !credit?.eligible
+    ? 'Pay on credit is not available on your account yet.'
+    : credit.overdueCount > 0
+    ? 'Please clear your overdue credit payments first.'
+    : total > credit.available
+    ? `This order is more than your available credit (${inrFmt(credit.available)}).`
+    : '';
+  // Fall back to online payment if credit stops being usable (e.g. cart grew past the limit)
+  useEffect(() => {
+    if (paymentMethod === 'credit' && creditBlockReason) setPaymentMethod('online');
+  }, [paymentMethod, creditBlockReason]);
   const settingsPrepaidFee = resolveDeliveryFee({
     subtotal,
     paymentMethod: 'UPI',
@@ -406,6 +432,25 @@ export default function CheckoutPage() {
 
     try {
       const isOnline = ONLINE_PAYMENTS_ENABLED && paymentMethod === 'online';
+
+      // Pay on credit: order is created now and paid later (the server re-checks the credit limit)
+      if (paymentMethod === 'credit') {
+        if (creditBlockReason) {
+          setOrderError(creditBlockReason);
+          setIsOrderPlacing(false);
+          return;
+        }
+        const newOrderId = await placeOrder({
+          items: cartItems,
+          couponApplied: appliedCoupon?.code,
+          paymentMethod: 'CREDIT',
+          address: selectedAddress
+        });
+        clearCart();
+        setIsOrderPlacing(false);
+        navigate(`/order-tracking/${newOrderId}`);
+        return;
+      }
 
       // COD: create order immediately (unchanged)
       if (!isOnline) {
@@ -945,6 +990,58 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {creditEnabled && credit && !credit.blocked && (
+                      credit.eligible ? (
+                        <div
+                          role="button"
+                          tabIndex={creditBlockReason ? -1 : 0}
+                          aria-disabled={Boolean(creditBlockReason)}
+                          onClick={() => { if (!creditBlockReason) setPaymentMethod('credit'); }}
+                          onKeyDown={(e) => { if (!creditBlockReason && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setPaymentMethod('credit'); } }}
+                          className={`p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 ${
+                            creditBlockReason
+                              ? 'border-stone-200 opacity-60 cursor-not-allowed'
+                              : paymentMethod === 'credit'
+                              ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-surface)] shadow-xs cursor-pointer'
+                              : 'border-stone-200 hover:border-stone-400 cursor-pointer'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 sm:gap-3.5">
+                              <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
+                                <Wallet className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                              </div>
+                              <div>
+                                <span className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">Pay on credit</span>
+                                <p className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">
+                                  {creditBlockReason || `Pay within ${credit.dueDays} days · ${inrFmt(credit.available)} available`}
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                paymentMethod === 'credit'
+                                  ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]'
+                                  : 'border-stone-300'
+                              }`}
+                            >
+                              {paymentMethod === 'credit' && (
+                                <Check className="w-2.5 h-2.5 text-[color:var(--brand-accent)] stroke-[3]" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <Link
+                          to="/credit"
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-stone-300 text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-500 hover:border-stone-400"
+                        >
+                          <Lock className="w-3.5 h-3.5 shrink-0" />
+                          Pay on credit unlocks after {inrFmt(credit.eligibilityAmount)} of paid orders · {inrFmt(credit.remainingToUnlock)} to go
+                        </Link>
+                      )
+                    )}
+
                   </div>
 
                   {/* Order Error Alert */}
@@ -979,7 +1076,7 @@ export default function CheckoutPage() {
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 fill-[color:var(--brand-primary)]" />
-                          <span className="font-sans">CONFIRM & PAY ₹{total}</span>
+                          <span className="font-sans">{paymentMethod === 'credit' ? `PLACE ORDER ON CREDIT ₹${total}` : `CONFIRM & PAY ₹${total}`}</span>
                         </>
                       )}
                     </button>

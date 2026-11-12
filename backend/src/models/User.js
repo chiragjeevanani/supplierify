@@ -75,6 +75,16 @@ const userSchema = new mongoose.Schema(
     lastLoginAt: {
       type: Date,
       default: Date.now
+    },
+    // Pay-on-credit: admin can give this customer their own limit (null = store default) or block credit
+    creditLimitOverride: {
+      type: Number,
+      default: null,
+      min: [0, 'Credit limit cannot be negative']
+    },
+    creditBlocked: {
+      type: Boolean,
+      default: false
     }
   },
   {

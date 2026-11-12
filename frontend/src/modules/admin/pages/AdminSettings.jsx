@@ -14,6 +14,10 @@ const EMPTY_FORM = {
   supportEmail: '',
   supportPhone: '',
   minOrderQtyKg: 5,
+  creditEnabled: false,
+  creditEligibilityAmount: 50000,
+  creditLimit: 25000,
+  creditDueDays: 30,
   whatsappNumber: '',
   whatsappGreeting: '',
   logoUrl: '',
@@ -43,6 +47,8 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState(EMPTY_FORM);
+  // Becomes true once the admin edits anything; until then the form follows the latest server settings
+  // (the first copy can come from a stale browser cache that lacks newer fields)
   const hydratedRef = useRef(false);
 
   // Hydrate once from context/API settings — do not reset while the admin is typing
@@ -64,17 +70,18 @@ export default function AdminSettings() {
     if (!hs.email) hs.email = settings.supportEmail || settings.storeEmail || DEFAULT_HELP_SUPPORT.email;
 
     setFormData((prev) => ({ ...prev, ...settings, helpSupport: hs }));
-    hydratedRef.current = true;
   }, [settings]);
 
   const setField = (key, value) => {
     setSaved(false);
+    hydratedRef.current = true;
     setError('');
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const setHelpField = (key, value) => {
     setSaved(false);
+    hydratedRef.current = true;
     setError('');
     setFormData((prev) => ({
       ...prev,
@@ -84,6 +91,7 @@ export default function AdminSettings() {
 
   const setFaqField = (index, key, value) => {
     setSaved(false);
+    hydratedRef.current = true;
     setError('');
     setFormData((prev) => {
       const faqs = [...(prev.helpSupport?.faqs || [])];
@@ -94,6 +102,7 @@ export default function AdminSettings() {
 
   const addFaq = () => {
     setSaved(false);
+    hydratedRef.current = true;
     setFormData((prev) => {
       const faqs = [...(prev.helpSupport?.faqs || [])];
       if (faqs.length >= 20) return prev;
@@ -104,6 +113,7 @@ export default function AdminSettings() {
 
   const removeFaq = (index) => {
     setSaved(false);
+    hydratedRef.current = true;
     setFormData((prev) => {
       const faqs = (prev.helpSupport?.faqs || []).filter((_, i) => i !== index);
       return { ...prev, helpSupport: { ...(prev.helpSupport || DEFAULT_HELP_SUPPORT), faqs } };
@@ -143,6 +153,10 @@ export default function AdminSettings() {
         theme: normalizeTheme(formData.theme),
         fontScale: normalizeFontScale(formData.fontScale),
         minOrderQtyKg: Math.max(1, Number(formData.minOrderQtyKg) || 5),
+        creditEnabled: formData.creditEnabled === true,
+        creditEligibilityAmount: Math.max(0, Number(formData.creditEligibilityAmount) || 0),
+        creditLimit: Math.max(0, Number(formData.creditLimit) || 0),
+        creditDueDays: Math.min(365, Math.max(1, Math.round(Number(formData.creditDueDays) || 30))),
         whatsappNumber: String(formData.whatsappNumber || '').replace(/\D/g, ''),
         whatsappGreeting: String(formData.whatsappGreeting || '').trim(),
         freeDeliveryThreshold: Number(formData.freeDeliveryThreshold) || 0,
@@ -307,6 +321,75 @@ export default function AdminSettings() {
                   <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
                     First words of every WhatsApp message, e.g. &quot;{(formData.whatsappGreeting || 'Hello Supplierfy').trim()}, I would like to enquire about a wholesale order…&quot;. Leave empty to use &quot;Hello Supplierfy&quot;.
                   </span>
+                </div>
+              </div>
+
+              {/* Pay on credit (buy now, pay later) */}
+              <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-stone-900">Pay on credit</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-600 mt-0.5 max-w-xl">
+                      Regular customers can buy now and pay later. A customer unlocks credit once their paid orders add up to the amount below. Credit orders stay unpaid until you press &quot;Mark paid&quot; on the Orders page.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.creditEnabled === true}
+                      onChange={(e) => setField('creditEnabled', e.target.checked)}
+                      className="w-5 h-5 accent-[color:var(--brand-primary)]"
+                    />
+                    <span className="text-xs font-bold text-stone-800">{formData.creditEnabled ? 'On' : 'Off'}</span>
+                  </label>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${formData.creditEnabled ? '' : 'opacity-60'}`}>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="creditEligibilityAmount">
+                      Unlock after total orders of (₹)
+                    </label>
+                    <input
+                      id="creditEligibilityAmount"
+                      type="number"
+                      min={0}
+                      step={1000}
+                      value={formData.creditEligibilityAmount ?? 0}
+                      onChange={(e) => setField('creditEligibilityAmount', e.target.value === '' ? '' : Number(e.target.value))}
+                      className={inputClass}
+                    />
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">Only paid, non-cancelled orders count.</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="creditLimit">
+                      Credit limit per customer (₹)
+                    </label>
+                    <input
+                      id="creditLimit"
+                      type="number"
+                      min={0}
+                      step={1000}
+                      value={formData.creditLimit ?? 0}
+                      onChange={(e) => setField('creditLimit', e.target.value === '' ? '' : Number(e.target.value))}
+                      className={inputClass}
+                    />
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">Most a customer can owe at once. You can change it for one customer on the Customers page.</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="creditDueDays">
+                      Pay within (days)
+                    </label>
+                    <input
+                      id="creditDueDays"
+                      type="number"
+                      min={1}
+                      max={365}
+                      step={1}
+                      value={formData.creditDueDays ?? 30}
+                      onChange={(e) => setField('creditDueDays', e.target.value === '' ? '' : Number(e.target.value))}
+                      className={inputClass}
+                    />
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">Customers with an overdue payment cannot place new credit orders.</span>
+                  </div>
                 </div>
               </div>
 

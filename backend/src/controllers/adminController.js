@@ -8,6 +8,7 @@ const CUSTOMER_TIER_GOLD = 2000;
 const CUSTOMER_TIER_PLATINUM = 5000;
 import { sendSuccess, sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
+import { getCreditOverviewForUsers, getCreditSummary, updateCustomerCredit } from '../services/creditService.js';
 
 /**
  * Admin Login
@@ -137,6 +138,7 @@ export const getAllUsers = async (req, res, next) => {
         ])
       : [];
     const statsById = new Map(statRows.map((r) => [String(r._id), r]));
+    const creditById = await getCreditOverviewForUsers(users);
 
     const enriched = users.map((u) => {
       const st = statsById.get(String(u._id)) || {};
@@ -170,7 +172,8 @@ export const getAllUsers = async (req, res, next) => {
         city: st.city || u.addresses?.[0]?.city || '',
         state: st.state || u.addresses?.[0]?.state || '',
         lastOrderAt: st.lastOrderAt || null,
-        tier
+        tier,
+        credit: creditById.get(String(u._id)) || null
       };
     });
 
@@ -216,7 +219,30 @@ export const updateUserStatus = async (req, res, next) => {
   }
 };
 
+export const getUserCredit = async (req, res, next) => {
+  try {
+    const credit = await getCreditSummary(req.params.id);
+    return sendSuccess(res, 'Customer credit', { credit });
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
+export const updateUserCredit = async (req, res, next) => {
+  try {
+    const { creditLimitOverride, creditBlocked } = req.body || {};
+    const credit = await updateCustomerCredit(req.params.id, { creditLimitOverride, creditBlocked });
+    return sendSuccess(res, 'Customer credit updated', { credit });
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
 export default {
+  getUserCredit,
+  updateUserCredit,
   login,
   getProfile,
   getDashboard,

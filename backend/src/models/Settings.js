@@ -54,6 +54,15 @@ const settingsSchema = new mongoose.Schema(
       max: [125, 'Text size cannot exceed 125%']
     },
 
+    // 1d. Pay on credit (buy now, pay later) for regular customers
+    creditEnabled: { type: Boolean, default: false },
+    // Customers unlock credit once their paid orders add up to this amount (₹)
+    creditEligibilityAmount: { type: Number, default: 50000, min: [0, 'Eligibility amount cannot be negative'] },
+    // Credit limit every eligible customer gets (₹); can be overridden per customer
+    creditLimit: { type: Number, default: 25000, min: [0, 'Credit limit cannot be negative'] },
+    // Days a customer has to pay for a credit order
+    creditDueDays: { type: Number, default: 30, min: [1, 'Due days must be at least 1'], max: [365, 'Due days cannot exceed 365'] },
+
     // 2. Delivery Configuration
     standardDeliveryFee: {
       type: Number,

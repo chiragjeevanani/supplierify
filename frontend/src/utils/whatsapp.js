@@ -75,3 +75,16 @@ export function buildCartEnquiry({ items = [], greeting }) {
 export function buildGeneralEnquiry({ greeting } = {}) {
   return `${hello(greeting)}, I would like to know more about your wholesale dry fruits.`;
 }
+
+/** "I'd like to pay for my credit order(s)" message. */
+export function buildCreditPaymentMessage({ orders = [], greeting } = {}) {
+  const lines = orders.map((o) => `• Order #${o.orderNumber}: ${inr(o.amount)}`);
+  const total = orders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+  return [
+    `${hello(greeting)},`,
+    `I would like to pay for my credit order${orders.length === 1 ? '' : 's'}:`,
+    ...lines,
+    orders.length > 1 ? `Total: ${inr(total)}` : '',
+    'Please share the payment details.'
+  ].filter(Boolean).join('\n');
+}

@@ -11,6 +11,7 @@ import OrderStatusModal from '../components/OrderStatusModal';
 import OrderDistance from '../components/OrderDistance';
 import InvoicePreviewModal from '../../user/components/InvoicePreviewModal';
 import { useAuth, formatOrder } from '../../../context/AuthContext';
+import { paymentMethodLabel, isCreditOrder, formatDueDate } from '../../../utils/paymentLabel';
 import { adminOrderApi } from '../../../utils/api';
 import { getStatusOptions, isTerminalStatus, friendlyStatusError } from '../../../utils/orderStatusFlow';
 
@@ -267,6 +268,24 @@ export default function AdminOrders() {
   };
 
   // Admin order cancellation with stock restoration
+  // Credit / cash orders: record that the customer has paid (or undo it)
+  const handlePaymentToggle = async (ord) => {
+    const markPaid = ord.paymentStatus !== 'PAID';
+    const question = markPaid
+      ? `Record payment of ₹${ord.total} for order #${ord.id} as received?`
+      : `Mark order #${ord.id} as NOT paid? Its amount will count against the customer's credit again.`;
+    if (!window.confirm(question)) return;
+    try {
+      const res = await adminOrderApi.updatePayment(ord.id, markPaid ? 'PAID' : 'PENDING');
+      if (res?.data?.order) {
+        const formatted = formatOrder(res.data.order);
+        setOrdersList(prev => prev.map(o => o.id === ord.id ? formatted : o));
+      }
+    } catch (err) {
+      alert(`Could not update payment: ${err.message}`);
+    }
+  };
+
   const handleCancelOrder = async (orderId) => {
     const reason = window.prompt('Enter reason for cancelling this order:', 'Cancelled by administrator');
     if (reason === null) return; // Cancelled prompt
@@ -427,8 +446,24 @@ export default function AdminOrders() {
                             }`}>
                               {ord.paymentStatus || 'PENDING'}
                             </span>
-                            <span className="text-[length:calc(10px*var(--fs))] text-stone-400 font-medium">({ord.paymentMethod || 'COD'})</span>
+                            <span className={`text-[length:calc(10px*var(--fs))] font-medium ${isCreditOrder(ord) ? 'text-sky-700 font-bold' : 'text-stone-400'}`}>({paymentMethodLabel(ord.paymentMethod || 'COD')})</span>
                           </div>
+                          {isCreditOrder(ord) && ord.status !== 'Cancelled' && (
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              {ord.paymentStatus !== 'PAID' && ord.creditDueDate && (
+                                <span className={`text-[length:calc(10px*var(--fs))] font-semibold ${new Date(ord.creditDueDate) < new Date() ? 'text-rose-700' : 'text-stone-500'}`}>
+                                  {new Date(ord.creditDueDate) < new Date() ? 'Overdue since' : 'Due'} {formatDueDate(ord.creditDueDate)}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handlePaymentToggle(ord)}
+                                className={`text-[length:calc(10px*var(--fs))] font-bold px-2 py-0.5 rounded border ${ord.paymentStatus === 'PAID' ? 'border-stone-300 text-stone-500 hover:bg-stone-100' : 'border-emerald-600 text-emerald-700 hover:bg-emerald-50'}`}
+                              >
+                                {ord.paymentStatus === 'PAID' ? 'Undo paid' : 'Mark paid'}
+                              </button>
+                            </div>
+                          )}
                         </td>
 
                         <td className="py-4 px-5">

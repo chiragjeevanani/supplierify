@@ -20,6 +20,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useWishlist } from '../../../context/WishlistContext';
 import { useAdmin } from '../../../context/AdminContext';
 import { resolveHelpSupport } from '../../../utils/helpSupport';
+import { paymentMethodLabel, isCreditOrder, formatDueDate } from '../../../utils/paymentLabel';
 
 export default function AccountPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -738,7 +739,7 @@ export default function AccountPage() {
                             <span className="font-bold text-sm text-[color:var(--brand-primary)]">Order #{ord.id}</span>
                             <span className="text-xs text-stone-500">• {ord.date}</span>
                           </div>
-                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">Payment: {ord.paymentMethod} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
+                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">Payment: {paymentMethodLabel(ord.paymentMethod)}{isCreditOrder(ord) && ord.paymentStatus !== 'PAID' && ord.status !== 'Cancelled' && ord.creditDueDate ? ` (due ${formatDueDate(ord.creditDueDate)})` : ''} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
                           {ord.expectedDelivery && (
                             <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">{ord.expectedDelivery.label}: <strong className="text-stone-900">{ord.expectedDelivery.value}</strong></p>
                           )}

@@ -39,6 +39,8 @@ router.put('/profile', validateAdminProfileUpdate, adminController.updateProfile
 router.get('/dashboard', adminController.getDashboard);
 router.get('/analytics', adminController.getAnalytics);
 router.get('/users', adminController.getAllUsers);
+router.get('/users/:id/credit', adminController.getUserCredit);
+router.patch('/users/:id/credit', adminController.updateUserCredit);
 router.patch('/users/:id/status', validateUserStatusUpdate, adminController.updateUserStatus);
 
 export default router;

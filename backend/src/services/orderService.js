@@ -10,6 +10,7 @@ import settingsService from './settingsService.js';
 import couponService from './couponService.js';
 import notificationService from './notificationService.js';
 import { calculateOrderTotals } from '../utils/pricing.js';
+import { assertCanUseCredit } from './creditService.js';
 import { resolveMinQtyKg, minQtyMessage } from '../utils/minQty.js';
 import { resolveShiprocketDeliveryFee } from './shippingQuoteService.js';
 
@@ -335,7 +336,7 @@ export const placeOrder = async (userId, payload) => {
   }
 
   const settings = await settingsService.getSettings();
-  const normalizedPaymentMethod = ['UPI', 'CARD', 'NETBANKING'].includes(String(paymentMethod).toUpperCase())
+  const normalizedPaymentMethod = ['UPI', 'CARD', 'NETBANKING', 'CREDIT'].includes(String(paymentMethod).toUpperCase())
     ? String(paymentMethod).toUpperCase()
     : 'COD';
 
@@ -367,6 +368,12 @@ export const placeOrder = async (userId, payload) => {
     deliveryFee: shipQuote.error ? undefined : shipQuote.deliveryFee
   });
   const { deliveryFee, tax, total } = pricing;
+
+  // Pay on credit: only eligible customers, within their available credit, nothing overdue
+  let creditDueDate = null;
+  if (normalizedPaymentMethod === 'CREDIT') {
+    ({ dueDate: creditDueDate } = await assertCanUseCredit(userId, total));
+  }
 
   // 6. Address Snapshot
   const addressSnapshot = {
@@ -454,7 +461,8 @@ export const placeOrder = async (userId, payload) => {
       },
       payment: {
         method: normalizedPaymentMethod,
-        status: initialPaymentStatus,
+        status: normalizedPaymentMethod === 'CREDIT' ? 'PENDING' : initialPaymentStatus,
+        creditDueDate,
         transactionId: paymentDetails.transactionId || '',
         upiApp: paymentDetails.upiApp || ''
       },
@@ -830,11 +838,15 @@ export const updateOrderStatusAdmin = async (orderId, newStatusRaw, { updatedBy 
 
   if (newStatus === 'DELIVERED') {
     order.delivery.status = 'Delivered';
-    order.payment.status = 'PAID';
-    await Payment.findOneAndUpdate(
-      { order: order._id },
-      { $set: { status: 'PAID', paidAt: new Date() } }
-    ).catch(() => {});
+    // Credit orders stay unpaid on delivery — the admin records the payment when it arrives
+    if (order.payment.method !== 'CREDIT') {
+      order.payment.status = 'PAID';
+      order.payment.paidAt = order.payment.paidAt || new Date();
+      await Payment.findOneAndUpdate(
+        { order: order._id },
+        { $set: { status: 'PAID', paidAt: new Date() } }
+      ).catch(() => {});
+    }
   } else if (newStatus === 'OUT_FOR_DELIVERY') {
     order.delivery.status = 'Out for Delivery';
     applyRiderDetails(order, rider);
@@ -1056,6 +1068,45 @@ export const dispatchOrderAdmin = async (orderId, dispatchPayload = {}) => {
 /**
  * Cancel Order with Atomic Inventory Stock Restoration & Anti-Duplicate Guards
  */
+/**
+ * Admin records that payment for a credit (or COD) order has been received, or undoes it.
+ * Online (Razorpay) payments are never changed here.
+ */
+export const updatePaymentStatusAdmin = async (orderId, { status, note = '', updatedBy = 'Admin' } = {}) => {
+  const target = String(status || '').toUpperCase();
+  if (!['PAID', 'PENDING'].includes(target)) {
+    const err = new Error('Payment status must be PAID or PENDING');
+    err.statusCode = 400;
+    throw err;
+  }
+  const query = mongoose.Types.ObjectId.isValid(orderId) ? { _id: orderId } : { orderNumber: orderId };
+  const order = await Order.findOne(query);
+  if (!order) {
+    const err = new Error('Order not found');
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!['CREDIT', 'COD'].includes(order.payment.method)) {
+    const err = new Error('Only credit and cash orders can be marked paid by hand. Online payments update automatically.');
+    err.statusCode = 400;
+    throw err;
+  }
+  if (order.status === 'CANCELLED') {
+    const err = new Error('This order is cancelled.');
+    err.statusCode = 400;
+    throw err;
+  }
+  order.payment.status = target;
+  order.payment.paidAt = target === 'PAID' ? new Date() : null;
+  order.payment.paymentNote = String(note || '').trim().slice(0, 300);
+  await order.save();
+  await Payment.findOneAndUpdate(
+    { order: order._id },
+    { $set: { status: target, paidAt: order.payment.paidAt } }
+  ).catch(() => {});
+  return order;
+};
+
 export const cancelOrder = async (orderId, options = {}) => {
   const {
     cancelledBy = 'CUSTOMER',
@@ -1231,6 +1282,7 @@ export const cancelOrder = async (orderId, options = {}) => {
 };
 
 export default {
+  updatePaymentStatusAdmin,
   getCheckoutSummary,
   placeOrder,
   getOrderById,

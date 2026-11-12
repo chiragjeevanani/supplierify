@@ -37,6 +37,10 @@ export const DEFAULT_SETTINGS = {
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
   fontScale: 100,
+  creditEnabled: false,
+  creditEligibilityAmount: 50000,
+  creditLimit: 25000,
+  creditDueDays: 30,
   standardDeliveryFee: 150,
   codDeliveryFee: 150,
   freeDeliveryThreshold: 10000,
@@ -191,6 +195,10 @@ class SettingsService {
       faviconUrl: cleanImageUrl(settings.faviconUrl) || '',
       theme: sanitizeTheme(settings.theme),
       fontScale: sanitizeFontScale(settings.fontScale),
+      creditEnabled: settings.creditEnabled === true,
+      creditEligibilityAmount: Number(settings.creditEligibilityAmount) >= 0 ? Number(settings.creditEligibilityAmount) : DEFAULT_SETTINGS.creditEligibilityAmount,
+      creditLimit: Number(settings.creditLimit) >= 0 ? Number(settings.creditLimit) : DEFAULT_SETTINGS.creditLimit,
+      creditDueDays: Number(settings.creditDueDays) >= 1 ? Math.round(Number(settings.creditDueDays)) : DEFAULT_SETTINGS.creditDueDays,
       standardDeliveryFee: typeof settings.standardDeliveryFee === 'number' ? settings.standardDeliveryFee : DEFAULT_SETTINGS.standardDeliveryFee,
       codDeliveryFee: typeof settings.codDeliveryFee === 'number' ? settings.codDeliveryFee : DEFAULT_SETTINGS.codDeliveryFee,
       freeDeliveryThreshold: typeof settings.freeDeliveryThreshold === 'number' ? settings.freeDeliveryThreshold : DEFAULT_SETTINGS.freeDeliveryThreshold,
@@ -220,10 +228,14 @@ class SettingsService {
     const sanitized = {};
     for (const key of ALLOWED_SETTINGS_FIELDS) {
       if (updateData[key] !== undefined) {
-        if (['gstRate', 'minOrderQtyKg', 'standardDeliveryFee', 'codDeliveryFee', 'freeDeliveryThreshold', 'lowStockThreshold'].includes(key)) {
+        if (['gstRate', 'minOrderQtyKg', 'standardDeliveryFee', 'codDeliveryFee', 'freeDeliveryThreshold', 'lowStockThreshold', 'creditEligibilityAmount', 'creditLimit'].includes(key)) {
           sanitized[key] = Number(updateData[key]);
         } else if (key === 'theme') {
           sanitized.theme = sanitizeTheme(updateData.theme);
+        } else if (key === 'creditEnabled') {
+          sanitized.creditEnabled = updateData.creditEnabled === true || updateData.creditEnabled === 'true';
+        } else if (key === 'creditDueDays') {
+          sanitized.creditDueDays = Math.round(Number(updateData.creditDueDays));
         } else if (key === 'fontScale') {
           sanitized.fontScale = sanitizeFontScale(updateData.fontScale);
         } else if (key === 'logoUrl' || key === 'faviconUrl') {

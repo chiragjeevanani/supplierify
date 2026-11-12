@@ -83,7 +83,7 @@ const paymentSchema = new mongoose.Schema(
   {
     method: {
       type: String,
-      enum: ['COD', 'UPI', 'CARD', 'NETBANKING'],
+      enum: ['COD', 'UPI', 'CARD', 'NETBANKING', 'CREDIT'],
       default: 'COD'
     },
     status: {
@@ -92,7 +92,11 @@ const paymentSchema = new mongoose.Schema(
       default: 'PENDING'
     },
     transactionId: { type: String, default: '' },
-    upiApp: { type: String, default: '' }
+    upiApp: { type: String, default: '' },
+    // Pay-on-credit orders: when payment is due, and when the admin recorded it as paid
+    creditDueDate: { type: Date, default: null },
+    paidAt: { type: Date, default: null },
+    paymentNote: { type: String, default: '', trim: true }
   },
   { _id: false }
 );
@@ -281,6 +285,7 @@ const orderSchema = new mongoose.Schema(
 
 // Indexes
 orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ user: 1, 'payment.method': 1, 'payment.status': 1 });
 
 export const Order = mongoose.model('Order', orderSchema);
 export default Order;

@@ -21,7 +21,11 @@ const DEFAULTS = {
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
-  fontScale: DEFAULT_FONT_SCALE
+  fontScale: DEFAULT_FONT_SCALE,
+  creditEnabled: false,
+  creditEligibilityAmount: 0,
+  creditLimit: 0,
+  creditDueDays: 30
 };
 
 let cache = null;

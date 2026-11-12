@@ -13,6 +13,7 @@ import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
 import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
 import HelpSupportPage from '../pages/HelpSupportPage';
+import CreditPage from '../pages/CreditPage';
 import UserLayout from '../components/UserLayout';
 import RequireAuth from '../components/RequireAuth';
 
@@ -35,6 +36,7 @@ export default function UserRoutes() {
         <Route path="/order-tracking" element={<OrderTrackingPage />} />
         <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/credit" element={<RequireAuth><CreditPage /></RequireAuth>} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<Navigate to="/login" replace />} />
         {/* Catch-all to home */}
