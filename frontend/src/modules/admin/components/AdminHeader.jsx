@@ -6,6 +6,7 @@ import { adminNotificationApi, adminOrderApi } from '../../../utils/api';
 import { formatOrder } from '../../../context/AuthContext';
 import { useAdmin } from '../../../context/AdminContext';
 import useOrderAlertSound from '../../../hooks/useOrderAlertSound';
+import { isDesktop, toggleAdminSidebarCollapsed } from '../adminSidebarState';
 
 const HANDLED_IDS_KEY = 'wholesale_admin_handled_order_ids';
 const QUEUE_KEY = 'wholesale_admin_order_alert_queue';
@@ -344,9 +345,10 @@ export default function AdminHeader({ onMenuClick, title = 'Dashboard' }) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
+            onClick={() => (isDesktop() ? toggleAdminSidebarCollapsed() : onMenuClick?.())}
+            className="p-2 rounded-xl text-stone-600 hover:bg-stone-100 transition-colors"
             aria-label="Toggle menu"
+            title="Show / hide menu"
           >
             <Menu className="w-5 h-5" />
           </button>

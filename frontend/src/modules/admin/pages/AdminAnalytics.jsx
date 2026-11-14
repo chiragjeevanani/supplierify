@@ -186,7 +186,7 @@ export default function AdminAnalytics() {
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex">
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
+      <div className="flex-1 admin-main flex flex-col min-w-0">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Business Intelligence & Analytics" />
 
         <main className="p-4 sm:p-8 space-y-8 max-w-7xl">
