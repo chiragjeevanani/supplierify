@@ -208,7 +208,7 @@ export default function AdminSettings() {
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex">
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
+      <div className="flex-1 admin-main flex flex-col min-w-0">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Store Settings & Rules" />
 
         <main className="p-4 sm:p-8 space-y-6 max-w-4xl">

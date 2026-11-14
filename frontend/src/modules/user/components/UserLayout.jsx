@@ -45,7 +45,8 @@ const PAGE_TITLES = [
   ['/help-support', 'Help & Support']
 ];
 
-const SIDEBAR_KEY = 'wholesale_sidebar_hidden';
+// The desktop sidebar starts closed. If a visitor opens it with the hamburger, that is remembered.
+const SIDEBAR_KEY = 'wholesale_sidebar_open';
 
 export default function UserLayout({ children }) {
   const { lineCount, whatsappNumber, whatsappGreeting, storeName } = useCart();
@@ -57,7 +58,7 @@ export default function UserLayout({ children }) {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopHidden, setDesktopHidden] = useState(() => {
-    try { return localStorage.getItem(SIDEBAR_KEY) === '1'; } catch { return false; }
+    try { return localStorage.getItem(SIDEBAR_KEY) !== '1'; } catch { return true; }
   });
   const [query, setQuery] = useState('');
 
@@ -72,7 +73,7 @@ export default function UserLayout({ children }) {
     if (window.matchMedia('(min-width: 1024px)').matches) {
       setDesktopHidden((v) => {
         const next = !v;
-        try { localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0'); } catch { /* ignore */ }
+        try { localStorage.setItem(SIDEBAR_KEY, next ? '0' : '1'); } catch { /* ignore */ }
         return next;
       });
     } else {

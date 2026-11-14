@@ -271,6 +271,18 @@ html {
   animation: arrowBounce 1.5s ease-in-out infinite;
 }
 
+/* Admin: page content sits beside the 16rem sidebar on desktop, and takes the full width when the
+   hamburger button has collapsed it (see modules/admin/adminSidebarState.js) */
+@media (min-width: 1024px) {
+  .admin-main {
+    padding-left: 16rem;
+    transition: padding-left 0.3s;
+  }
+  html[data-admin-sidebar="collapsed"] .admin-main {
+    padding-left: 0;
+  }
+}
+
 /* Mobile-only rules (<= 767px) */
 @media (max-width: 767px) {
   footer {

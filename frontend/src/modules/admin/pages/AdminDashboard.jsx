@@ -112,7 +112,7 @@ export default function AdminDashboard() {
         }}
       />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className="flex-1 admin-main flex flex-col min-w-0 w-full">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Executive Dashboard" />
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-4.5 w-full font-sans">
