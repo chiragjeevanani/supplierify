@@ -192,7 +192,7 @@ async function main() {
   }
 
   // ---------- 4. Shipping quote ----------
-  console.log('\n▸ Shipping quote (Shiprocket)');
+  console.log('\n▸ Shipping quote (Bigship)');
   let quote = null;
   try {
     const q = await req(
@@ -358,7 +358,7 @@ async function main() {
     const fee = codOrder?.pricing?.deliveryFee;
     assert(
       fee === expectedCodFee || (expectedCodFee === 0 && fee === 0),
-      'COD deliveryFee matches Shiprocket',
+      'COD deliveryFee matches shipping quote',
       `order ₹${fee} vs quote ₹${expectedCodFee}`
     );
 
@@ -466,7 +466,7 @@ async function main() {
     const fee = prepaidOrder?.pricing?.deliveryFee;
     assert(
       fee === expectedPrepaid || (expectedPrepaid === 0 && fee === 0),
-      'Prepaid deliveryFee matches Shiprocket',
+      'Prepaid deliveryFee matches shipping quote',
       `order ₹${fee} vs quote ₹${expectedPrepaid}`
     );
 
@@ -518,18 +518,18 @@ async function main() {
     }
   }
 
-  // ---------- 9. Shiprocket presence (best-effort) ----------
-  console.log('\n▸ Shiprocket (best-effort)');
+  // ---------- 9. Bigship presence (best-effort) ----------
+  console.log('\n▸ Bigship (best-effort)');
   if (prepaidOrder || codOrder) {
     const target = prepaidOrder || codOrder;
-    const sr = target.shiprocket || {};
-    if (sr.orderId || sr.shipmentId || sr.status) {
-      ok('Shiprocket fields on order', `status=${sr.status} shipment=${sr.shipmentId || 'n/a'}`);
+    const sr = target.bigship || {};
+    if (sr.customOrderId || sr.status) {
+      ok('Bigship fields on order', `status=${sr.status} order=${sr.customOrderId || 'n/a'}`);
     } else if (sr.errorMessage) {
-      ok('Shiprocket error recorded (check credentials)', sr.errorMessage.slice(0, 120));
+      ok('Bigship error recorded (check credentials)', sr.errorMessage.slice(0, 120));
     } else {
       // Auto-create may be async / disabled
-      ok('Shiprocket auto-create not yet populated (check SHIPROCKET_AUTO_CREATE)', JSON.stringify(sr).slice(0, 80));
+      ok('Bigship auto-create not yet populated (check BIGSHIP_AUTO_CREATE)', JSON.stringify(sr).slice(0, 80));
     }
   }
 

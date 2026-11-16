@@ -7,6 +7,7 @@ import productService from './services/productService.js';
 import bestsellerService from './services/bestsellerService.js';
 import categoryService from './services/categoryService.js';
 import couponService from './services/couponService.js';
+import { startBigshipTrackingSync } from './services/bigshipTrackingSync.js';
 import User from './models/User.js';
 import Category from './models/Category.js';
 
@@ -41,6 +42,8 @@ const startServer = async () => {
       console.log(`📡 API Endpoints: http://localhost:${env.PORT}/api/v1`);
       console.log('====================================================');
     });
+
+    startBigshipTrackingSync();
 
     // Handle server listen errors (e.g. port already in use)
     server.on('error', (err) => {

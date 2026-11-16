@@ -48,7 +48,7 @@ export function checkoutPaymentMethodKey(uiMethod) {
   return 'UPI'; // online / prepaid
 }
 
-/** Rough cart weight for Shiprocket quote (kg). */
+/** Rough cart weight for the shipping quote (kg). */
 export function estimateCartWeightKg(cartItems = []) {
   const parseWeightToKg = (label) => {
     if (label == null || label === '') return null;

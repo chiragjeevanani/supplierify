@@ -548,7 +548,7 @@ export function CartProvider({ children }) {
   const freeShippingMin = effectiveSettings?.freeDeliveryThreshold ?? 499;
   const gstRate = (effectiveSettings?.gstRate ?? 5) / 100;
 
-  // Shipping is calculated live from Shiprocket at checkout (pincode + payment method)
+  // Shipping is calculated live from Bigship at checkout (pincode + payment method)
   const deliveryFee = null;
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const tax = Math.round(taxableAmount * gstRate);

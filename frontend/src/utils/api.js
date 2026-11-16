@@ -674,46 +674,42 @@ export const adminOrderApi = {
     method: 'PATCH',
     body: JSON.stringify({ reason })
   }),
-  // Shiprocket (admin-only; credentials stay on backend)
-  shiprocketCreate: (id, body = {}) => apiRequest(`/admin/orders/${id}/shiprocket/create`, {
+  // Bigship shipping (admin-only; credentials stay on backend)
+  shippingCreate: (id, body = {}) => apiRequest(`/admin/orders/${id}/shipping/create`, {
     method: 'POST',
     body: JSON.stringify(body)
   }),
-  shiprocketFulfill: (id, body = {}) => apiRequest(`/admin/orders/${id}/shiprocket/fulfill`, {
+  shippingFulfill: (id, body = {}) => apiRequest(`/admin/orders/${id}/shipping/fulfill`, {
     method: 'POST',
     body: JSON.stringify(body)
   }),
-  shiprocketServiceability: (id) => apiRequest(`/admin/orders/${id}/shiprocket/serviceability`, {
+  shippingServiceability: (id) => apiRequest(`/admin/orders/${id}/shipping/serviceability`, {
     method: 'GET'
   }),
-  shiprocketAwb: (id, body = {}) => apiRequest(`/admin/orders/${id}/shiprocket/awb`, {
+  shippingAwb: (id, body = {}) => apiRequest(`/admin/orders/${id}/shipping/awb`, {
     method: 'POST',
     body: JSON.stringify(body)
   }),
-  shiprocketPickup: (id) => apiRequest(`/admin/orders/${id}/shiprocket/pickup`, {
+  shippingLabel: (id) => apiRequest(`/admin/orders/${id}/shipping/label`, {
     method: 'POST',
     body: JSON.stringify({})
   }),
-  shiprocketLabel: (id) => apiRequest(`/admin/orders/${id}/shiprocket/label`, {
+  shippingInvoice: (id) => apiRequest(`/admin/orders/${id}/shipping/invoice`, {
     method: 'POST',
     body: JSON.stringify({})
   }),
-  shiprocketInvoice: (id) => apiRequest(`/admin/orders/${id}/shiprocket/invoice`, {
+  shippingManifest: (id) => apiRequest(`/admin/orders/${id}/shipping/manifest`, {
     method: 'POST',
     body: JSON.stringify({})
   }),
-  shiprocketManifest: (id) => apiRequest(`/admin/orders/${id}/shiprocket/manifest`, {
-    method: 'POST',
-    body: JSON.stringify({})
-  }),
-  shiprocketTrack: (id) => apiRequest(`/admin/orders/${id}/shiprocket/track`, {
+  shippingTrack: (id) => apiRequest(`/admin/orders/${id}/shipping/track`, {
     method: 'GET'
   }),
-  shiprocketCancel: (id, cancelOrder = false) => apiRequest(`/admin/orders/${id}/shiprocket/cancel`, {
+  shippingCancel: (id, cancelOrder = false) => apiRequest(`/admin/orders/${id}/shipping/cancel`, {
     method: 'POST',
     body: JSON.stringify({ cancelOrder: Boolean(cancelOrder) })
   }),
-  shiprocketStatus: () => apiRequest('/admin/shiprocket/status', { method: 'GET' }),
+  shippingStatus: () => apiRequest('/admin/shipping/status', { method: 'GET' }),
   getInvoiceBlob: (id) => {
     const url = `${API_BASE}/admin/orders/${id}/invoice`;
     return fetchPdfBlob(url);
@@ -729,7 +725,7 @@ export const checkoutApi = {
   getSummary: () => apiRequest('/checkout/summary', { method: 'GET' })
 };
 
-// Shipping quote (DB fee vs Shiprocket live rates)
+// Shipping quote (store fee vs Bigship live rates)
 export const shippingApi = {
   getQuote: ({ pincode, paymentMethod, subtotal, weightKg }) => {
     const query = new URLSearchParams();

@@ -165,7 +165,8 @@ export const formatOrder = (o) => {
     awbNumber: o.awbNumber || '',
     deliveryNotes: o.deliveryNotes || '',
     dispatchedAt: o.dispatchedAt || null,
-    shiprocket: o.shiprocket || null,
+    bigship: o.bigship || null,
+    shiprocket: o.shiprocket || null, // legacy orders shipped before Bigship
     estimatedDelivery: o.delivery?.estimatedDelivery || null,
     cancelReason: o.cancelReason || '',
     cancelledBy: o.cancelledBy || null,

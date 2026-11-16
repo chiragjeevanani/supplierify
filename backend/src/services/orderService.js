@@ -12,7 +12,7 @@ import notificationService from './notificationService.js';
 import { calculateOrderTotals } from '../utils/pricing.js';
 import { assertCanUseCredit } from './creditService.js';
 import { resolveMinQtyKg, minQtyMessage } from '../utils/minQty.js';
-import { resolveShiprocketDeliveryFee } from './shippingQuoteService.js';
+import { resolveShippingDeliveryFee } from './shippingQuoteService.js';
 
 /**
  * Generate a customer-facing human-readable order number
@@ -151,7 +151,7 @@ export const getCheckoutSummary = async (userId) => {
 
   let shippingQuote = null;
   if (defaultAddress?.postalCode) {
-    shippingQuote = await resolveShiprocketDeliveryFee({
+    shippingQuote = await resolveShippingDeliveryFee({
       pincode: defaultAddress.postalCode,
       paymentMethod: 'UPI',
       subtotal,
@@ -340,7 +340,7 @@ export const placeOrder = async (userId, payload) => {
     ? String(paymentMethod).toUpperCase()
     : 'COD';
 
-  const shipQuote = await resolveShiprocketDeliveryFee({
+  const shipQuote = await resolveShippingDeliveryFee({
     pincode: selectedAddress.postalCode,
     paymentMethod: normalizedPaymentMethod,
     subtotal,
@@ -525,7 +525,7 @@ export const placeOrder = async (userId, payload) => {
     }
 
     // Record COD in payment ledger only.
-    // Shiprocket push is deferred until admin sets "Ready for Dispatch" (SHIPPED).
+    // Bigship push is deferred until admin marks the order PACKED.
     if (normalizedPaymentMethod === 'COD') {
       await PaymentService.recordCodPayment(savedOrder, userId).catch(err => {
         console.warn('Could not record COD payment in ledger:', err.message);
@@ -626,7 +626,7 @@ export const normalizeStatus = (statusStr) => {
     'ACCEPTED': 'ACCEPTED',
     'ACCEPTED_BY_ADMIN': 'ACCEPTED',
     'PACKED': 'PACKED',
-    // PROCESSING is an internal legacy/Shiprocket label — keep distinct from PACKED
+    // PROCESSING is an internal legacy/Bigship label — keep distinct from PACKED
     'PROCESSING': 'PROCESSING',
     'READY_FOR_DISPATCH': 'SHIPPED',
     'DISPATCHED': 'SHIPPED',
@@ -860,19 +860,20 @@ export const updateOrderStatusAdmin = async (orderId, newStatusRaw, { updatedBy 
   updateOrderTimeline(order, newStatus, updatedBy, note);
   let updatedOrder = await order.save();
 
-  // Push to Shiprocket only when admin marks Ready for Dispatch (SHIPPED)
-  if (newStatus === 'SHIPPED') {
+  // Push to Bigship when admin marks the order PACKED: the box is ready, so weight/size are final
+  // and the courier can be booked. SHIPPED later comes from Bigship tracking (picked up) or manually.
+  if (newStatus === 'PACKED') {
     try {
-      const { default: shiprocketFulfillmentService } = await import('./shiprocketFulfillmentService.js');
-      const srResult = await shiprocketFulfillmentService.tryAutoCreate(updatedOrder._id);
-      if (srResult?.error) {
-        console.warn(`[Shiprocket] Ready-for-dispatch push failed for ${updatedOrder.orderNumber}:`, srResult.error);
+      const { default: bigshipFulfillmentService } = await import('./bigshipFulfillmentService.js');
+      const shipResult = await bigshipFulfillmentService.tryAutoCreate(updatedOrder._id);
+      if (shipResult?.error) {
+        console.warn(`[Bigship] Packed push failed for ${updatedOrder.orderNumber}:`, shipResult.error);
       } else {
         const refreshed = await Order.findById(updatedOrder._id);
         if (refreshed) updatedOrder = refreshed;
       }
     } catch (e) {
-      console.warn('[Shiprocket] Ready-for-dispatch push note:', e.message);
+      console.warn('[Bigship] Packed push note:', e.message);
     }
   }
 
@@ -1022,23 +1023,9 @@ export const dispatchOrderAdmin = async (orderId, dispatchPayload = {}) => {
   const noteMsg = `Dispatched via ${order.courierName || 'Standard Express'}${order.awbNumber ? ` (AWB: ${order.awbNumber})` : ''}`;
   updateOrderTimeline(order, 'SHIPPED', hubName, noteMsg);
 
-  let savedOrder = await order.save();
-
-  // Push to Shiprocket when dispatch advances to Ready for Dispatch / SHIPPED
-  if (becameShipped || order.status === 'SHIPPED') {
-    try {
-      const { default: shiprocketFulfillmentService } = await import('./shiprocketFulfillmentService.js');
-      const srResult = await shiprocketFulfillmentService.tryAutoCreate(savedOrder._id);
-      if (srResult?.error) {
-        console.warn(`[Shiprocket] Dispatch push failed for ${savedOrder.orderNumber}:`, srResult.error);
-      } else {
-        const refreshed = await Order.findById(savedOrder._id);
-        if (refreshed) savedOrder = refreshed;
-      }
-    } catch (e) {
-      console.warn('[Shiprocket] Dispatch push note:', e.message);
-    }
-  }
+  // Manual dispatch means the admin hands the parcel to their own courier/rider, so Bigship
+  // is NOT called here (it is called when the order is marked PACKED).
+  const savedOrder = await order.save();
 
   try {
     if (savedOrder.user) {
@@ -1227,11 +1214,11 @@ export const cancelOrder = async (orderId, options = {}) => {
 
   await lockedOrder.save();
 
-  // Best-effort: cancel matching Shiprocket shipment/AWB so dashboard stays in sync
-  if (lockedOrder.shiprocket?.orderId || lockedOrder.shiprocket?.awbCode) {
-    import('./shiprocketFulfillmentService.js')
+  // Best-effort: cancel matching Bigship shipment/AWB so dashboard stays in sync
+  if (lockedOrder.bigship?.customOrderId) {
+    import('./bigshipFulfillmentService.js')
       .then(({ default: sr }) => sr.tryCancelForOrder(lockedOrder._id))
-      .catch((e) => console.warn('[Shiprocket] Cancel-on-order-cancel note:', e.message));
+      .catch((e) => console.warn('[Bigship] Cancel-on-order-cancel note:', e.message));
   }
 
   // Trigger Notifications for Order Cancellation

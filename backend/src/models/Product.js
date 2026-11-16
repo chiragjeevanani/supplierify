@@ -86,7 +86,7 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: 0
     },
-    // Shipping / Shiprocket package data (optional — validated before shipment create)
+    // Shipping / Bigship package data (optional — validated before shipment create)
     sku: {
       type: String,
       trim: true,

@@ -197,8 +197,38 @@ const orderSchema = new mongoose.Schema(
       default: null
     },
     /**
-     * Shiprocket shipment metadata (auth tokens are NEVER stored here).
-     * Multi-seller ready: optional pickupLocation override per fulfillment source.
+     * Bigship shipment metadata (login tokens are NEVER stored here).
+     * customOrderId is Bigship's CustomGlobalOrderId — used for rates, tracking, documents and cancel.
+     */
+    bigship: {
+      customOrderId: { type: String, default: '', trim: true, index: true },
+      awbCode: { type: String, default: '', trim: true, index: true },
+      referenceNumber: { type: String, default: '', trim: true },
+      courierId: { type: Number, default: null },
+      courierName: { type: String, default: '', trim: true },
+      freight: { type: Number, default: null },
+      status: { type: String, default: '', trim: true },
+      labelUrl: { type: String, default: '' },
+      invoiceUrl: { type: String, default: '' },
+      manifestUrl: { type: String, default: '' },
+      trackingUrl: { type: String, default: '' },
+      pickupWarehouseId: { type: String, default: '', trim: true },
+      weightKg: { type: Number, default: null },
+      lengthCm: { type: Number, default: null },
+      breadthCm: { type: Number, default: null },
+      heightCm: { type: Number, default: null },
+      isRto: { type: Boolean, default: false },
+      // Courier checkpoints from Bigship track-order (newest first, capped) — shown to the customer
+      trackingHistory: [
+        { _id: false, status: { type: String, default: '' }, message: { type: String, default: '' }, at: { type: Date, default: null } }
+      ],
+      lastSyncedAt: { type: Date, default: null },
+      lastUpdatedAt: { type: Date, default: null },
+      errorMessage: { type: String, default: '' }
+    },
+    /**
+     * LEGACY: Shiprocket shipment metadata of orders shipped before the move to Bigship.
+     * Kept only so old orders still show their AWB/courier. Nothing writes to it any more.
      */
     shiprocket: {
       orderId: { type: String, default: '', trim: true, index: true },

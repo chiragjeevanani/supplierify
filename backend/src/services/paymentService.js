@@ -204,7 +204,7 @@ class PaymentService {
     const settingsService = (await import('./settingsService.js')).default;
     const couponService = (await import('./couponService.js')).default;
     const { calculateOrderTotals } = await import('../utils/pricing.js');
-    const { resolveShiprocketDeliveryFee } = await import('./shippingQuoteService.js');
+    const { resolveShippingDeliveryFee } = await import('./shippingQuoteService.js');
     const cartService = (await import('./cartService.js')).default;
 
     const selectedAddress = await Address.findOne({ _id: addressId, user: userId });
@@ -282,7 +282,7 @@ class PaymentService {
     }
 
     const settings = await settingsService.getSettings();
-    const shipQuote = await resolveShiprocketDeliveryFee({
+    const shipQuote = await resolveShippingDeliveryFee({
       pincode: selectedAddress.postalCode,
       paymentMethod: normalizedPaymentMethod,
       subtotal,
@@ -612,7 +612,7 @@ class PaymentService {
     }
     await order.save();
 
-    // Shiprocket is NOT pushed on payment — admin pushes on "Ready for Dispatch".
+    // Bigship is NOT pushed on payment — admin marks the order PACKED.
 
     // 9. Clear customer's cart
     await Cart.findOneAndUpdate(
@@ -733,7 +733,7 @@ class PaymentService {
             }
           }
 
-          // Shiprocket deferred until admin "Ready for Dispatch"
+          // Bigship deferred until admin marks the order PACKED
         }
         break;
       }

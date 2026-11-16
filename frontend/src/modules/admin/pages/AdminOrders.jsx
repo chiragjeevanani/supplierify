@@ -40,8 +40,8 @@ export default function AdminOrders() {
   const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null);
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null);
-  const [shiprocketBusy, setShiprocketBusy] = useState('');
-  const [shiprocketMsg, setShiprocketMsg] = useState('');
+  const [shippingBusy, setShippingBusy] = useState('');
+  const [shippingMsg, setShippingMsg] = useState('');
 
   // Lock background scrolling when either modal is open
   useEffect(() => {
@@ -175,45 +175,54 @@ export default function AdminOrders() {
     } catch (_) { /* keep current detail */ }
   };
 
-  const handleShiprocketAction = async (action) => {
+  const handleShippingAction = async (action) => {
     if (!selectedOrderForDetail) return;
     const orderId = selectedOrderForDetail._id || selectedOrderForDetail.id;
-    setShiprocketBusy(action);
-    setShiprocketMsg('');
+    // These two spend money from the Bigship wallet — ask first.
+    if ((action === 'awb' || action === 'fulfill') &&
+      !window.confirm('This books the cheapest available courier and charges your Bigship wallet. Continue?')) {
+      return;
+    }
+    if (action === 'cancel' && !window.confirm('Cancel this shipment on Bigship?')) return;
+    setShippingBusy(action);
+    setShippingMsg('');
     try {
       let res;
-      if (action === 'create') res = await adminOrderApi.shiprocketCreate(orderId);
-      else if (action === 'fulfill') res = await adminOrderApi.shiprocketFulfill(orderId);
-      else if (action === 'serviceability') res = await adminOrderApi.shiprocketServiceability(orderId);
-      else if (action === 'awb') res = await adminOrderApi.shiprocketAwb(orderId);
-      else if (action === 'pickup') res = await adminOrderApi.shiprocketPickup(orderId);
-      else if (action === 'label') res = await adminOrderApi.shiprocketLabel(orderId);
-      else if (action === 'invoice') res = await adminOrderApi.shiprocketInvoice(orderId);
-      else if (action === 'manifest') res = await adminOrderApi.shiprocketManifest(orderId);
-      else if (action === 'track') res = await adminOrderApi.shiprocketTrack(orderId);
-      else if (action === 'cancel') res = await adminOrderApi.shiprocketCancel(orderId, false);
+      if (action === 'create') res = await adminOrderApi.shippingCreate(orderId);
+      else if (action === 'fulfill') res = await adminOrderApi.shippingFulfill(orderId);
+      else if (action === 'serviceability') res = await adminOrderApi.shippingServiceability(orderId);
+      else if (action === 'awb') res = await adminOrderApi.shippingAwb(orderId);
+      else if (action === 'label') res = await adminOrderApi.shippingLabel(orderId);
+      else if (action === 'invoice') res = await adminOrderApi.shippingInvoice(orderId);
+      else if (action === 'manifest') res = await adminOrderApi.shippingManifest(orderId);
+      else if (action === 'track') res = await adminOrderApi.shippingTrack(orderId);
+      else if (action === 'cancel') res = await adminOrderApi.shippingCancel(orderId, false);
 
-      const msg = res?.message || 'Shiprocket action completed.';
+      const msg = res?.message || 'Shipping action completed.';
       if (action === 'serviceability') {
-        const n = res?.data?.couriers?.length ?? 0;
-        setShiprocketMsg(`${msg} ${n} courier(s) available.`);
+        const list = res?.data?.couriers || [];
+        setShippingMsg(
+          list.length
+            ? `${list.length} courier(s): ${list.slice(0, 5).map((c) => `${c.courierName}${c.freight != null ? ` ₹${c.freight}` : ''}`).join(' · ')}`
+            : 'No courier available for this pincode.'
+        );
       } else if (action === 'track') {
-        setShiprocketMsg(
-          `${msg} SR: ${res?.data?.status || '—'} → Order: ${res?.data?.orderStatus || '—'}`
+        setShippingMsg(
+          `${msg} Bigship: ${res?.data?.status || '—'} → Order: ${res?.data?.orderStatus || '—'}`
         );
       } else if (action === 'fulfill' && res?.data?.errors?.length) {
-        setShiprocketMsg(
+        setShippingMsg(
           `${msg} Partial: ${res.data.errors.map((e) => e.step).join(', ')} failed.`
         );
       } else {
-        setShiprocketMsg(msg);
+        setShippingMsg(msg);
       }
       await refreshDetailOrder(orderId);
       fetchOrders();
     } catch (err) {
-      setShiprocketMsg(err.message || 'Shiprocket action failed.');
+      setShippingMsg(err.message || 'Shipping action failed.');
     } finally {
-      setShiprocketBusy('');
+      setShippingBusy('');
     }
   };
 
@@ -661,107 +670,99 @@ export default function AdminOrders() {
                 </div>
               )}
 
-              {/* Shiprocket Shipment (existing design language — no layout redesign) */}
+              {/* Bigship Shipment (existing design language — no layout redesign) */}
               {(() => {
-                const sr = selectedOrderForDetail.shiprocket || {};
-                const hasShipment = Boolean(sr.orderId || sr.shipmentId);
-                const hasAwb = Boolean(sr.awbCode || selectedOrderForDetail.awbNumber);
+                const bg = selectedOrderForDetail.bigship || {};
+                const legacy = selectedOrderForDetail.shiprocket || {}; // orders shipped before Bigship
+                const hasLegacy = !bg.customOrderId && Boolean(legacy.awbCode || legacy.orderId);
+                const hasShipment = Boolean(bg.customOrderId);
+                const hasAwb = Boolean(bg.awbCode);
+                const awbShown = bg.awbCode || selectedOrderForDetail.awbNumber;
                 const isTerminal = ['Cancelled', 'Delivered'].includes(selectedOrderForDetail.status);
                 const btn = (key, label, enabled) => (
                   <button
                     key={key}
                     type="button"
-                    disabled={!enabled || Boolean(shiprocketBusy)}
-                    onClick={() => handleShiprocketAction(key)}
+                    disabled={!enabled || Boolean(shippingBusy)}
+                    onClick={() => handleShippingAction(key)}
                     className="px-2.5 py-1.5 rounded-md border border-stone-300 bg-white text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {shiprocketBusy === key ? '...' : label}
+                    {shippingBusy === key ? '...' : label}
                   </button>
                 );
+                const docLink = (label, url) =>
+                  url ? (
+                    <span className="sm:col-span-2">
+                      {label}:{' '}
+                      <a href={url} target="_blank" rel="noreferrer" className="text-[color:var(--brand-primary)] font-semibold underline">
+                        Download
+                      </a>
+                    </span>
+                  ) : null;
                 return (
                   <div className="p-3.5 rounded-xl bg-white border border-[color:var(--brand-border)] space-y-2.5 text-xs">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Shiprocket Shipment</span>
+                      <span className="text-stone-400 block text-[length:calc(10px*var(--fs))] font-bold uppercase">Bigship Shipment</span>
                       <span className="text-[length:calc(10px*var(--fs))] font-semibold text-stone-500">
-                        {sr.status || (hasShipment ? 'Created' : 'Not created')}
+                        {bg.status || (hasShipment ? 'Created' : 'Not created')}
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-stone-700">
-                      <span>SR Order ID: <strong className="text-stone-900 font-mono">{sr.orderId || '—'}</strong></span>
-                      <span>Shipment ID: <strong className="text-stone-900 font-mono">{sr.shipmentId || '—'}</strong></span>
-                      <span>AWB: <strong className="text-stone-900 font-mono">{sr.awbCode || selectedOrderForDetail.awbNumber || '—'}</strong></span>
-                      <span>Courier: <strong className="text-stone-900">{sr.courierName || selectedOrderForDetail.courierName || '—'}</strong></span>
-                      <span>Pickup: <strong className="text-stone-900">{sr.pickupScheduled ? 'Scheduled' : 'Not scheduled'}</strong></span>
-                      <span>
-                        Tracking:{' '}
-                        {sr.trackingUrl || sr.awbCode ? (
-                          <a
-                            href={sr.trackingUrl || `https://shiprocket.co/tracking/${sr.awbCode || selectedOrderForDetail.awbNumber}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[color:var(--brand-primary)] font-semibold underline"
-                          >
-                            Open
-                          </a>
-                        ) : (
-                          <strong className="text-stone-900">—</strong>
+                    {hasLegacy ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-stone-700">
+                        <span className="sm:col-span-2 text-stone-500">Shipped earlier with Shiprocket (read-only)</span>
+                        <span>AWB: <strong className="text-stone-900 font-mono">{legacy.awbCode || '—'}</strong></span>
+                        <span>Courier: <strong className="text-stone-900">{legacy.courierName || '—'}</strong></span>
+                        {docLink('Label', legacy.labelUrl)}
+                        {docLink('Invoice', legacy.invoiceUrl)}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-stone-700">
+                        <span>Bigship Order ID: <strong className="text-stone-900 font-mono">{bg.customOrderId || '—'}</strong></span>
+                        <span>AWB: <strong className="text-stone-900 font-mono">{awbShown || '—'}</strong></span>
+                        <span>Courier: <strong className="text-stone-900">{bg.courierName || selectedOrderForDetail.courierName || '—'}</strong></span>
+                        <span>Freight: <strong className="text-stone-900">{bg.freight != null ? `₹${bg.freight}` : '—'}</strong></span>
+                        {bg.trackingUrl && (
+                          <span>
+                            Tracking:{' '}
+                            <a href={bg.trackingUrl} target="_blank" rel="noreferrer" className="text-[color:var(--brand-primary)] font-semibold underline">
+                              Open
+                            </a>
+                          </span>
                         )}
-                      </span>
-                      {sr.labelUrl && (
-                        <span className="sm:col-span-2">
-                          Label:{' '}
-                          <a href={sr.labelUrl} target="_blank" rel="noreferrer" className="text-[color:var(--brand-primary)] font-semibold underline">
-                            Download
-                          </a>
-                        </span>
-                      )}
-                      {sr.invoiceUrl && (
-                        <span className="sm:col-span-2">
-                          Invoice:{' '}
-                          <a href={sr.invoiceUrl} target="_blank" rel="noreferrer" className="text-[color:var(--brand-primary)] font-semibold underline">
-                            Download
-                          </a>
-                        </span>
-                      )}
-                      {sr.manifestUrl && (
-                        <span className="sm:col-span-2">
-                          Manifest:{' '}
-                          <a href={sr.manifestUrl} target="_blank" rel="noreferrer" className="text-[color:var(--brand-primary)] font-semibold underline">
-                            Download
-                          </a>
-                        </span>
-                      )}
-                      {sr.isRto && (
-                        <span className="sm:col-span-2 text-amber-800 font-semibold">RTO / return in progress or completed</span>
-                      )}
-                      {sr.errorMessage && (
-                        <span className="sm:col-span-2 text-rose-700">{sr.errorMessage}</span>
-                      )}
-                    </div>
-                    {!isTerminal && (
+                        {docLink('Label', bg.labelUrl)}
+                        {docLink('Invoice', bg.invoiceUrl)}
+                        {docLink('Manifest', bg.manifestUrl)}
+                        {bg.isRto && (
+                          <span className="sm:col-span-2 text-amber-800 font-semibold">RTO / return in progress or completed</span>
+                        )}
+                        {bg.errorMessage && (
+                          <span className="sm:col-span-2 text-rose-700">{bg.errorMessage}</span>
+                        )}
+                      </div>
+                    )}
+                    {!hasLegacy && !isTerminal && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {btn('create', 'Create Shipment', !hasShipment)}
-                        {btn('serviceability', 'Check Couriers', true)}
-                        {btn('awb', 'Generate AWB', hasShipment && !hasAwb)}
-                        {btn('pickup', 'Schedule Pickup', hasAwb && !sr.pickupScheduled)}
-                        {btn('label', 'Generate Label', hasAwb)}
+                        {btn('serviceability', 'Check Couriers', hasShipment && !hasAwb)}
+                        {btn('awb', 'Assign Courier & AWB', hasShipment && !hasAwb)}
+                        {btn('label', 'Label', hasAwb)}
                         {btn('invoice', 'Invoice', hasShipment)}
                         {btn('manifest', 'Manifest', hasAwb)}
-                        {btn('track', 'Sync Status', hasShipment)}
+                        {btn('track', 'Sync Status', hasAwb)}
                         {btn('fulfill', 'Full Fulfill', !hasAwb)}
-                        {btn('cancel', 'Cancel Shipment', hasShipment && !isTerminal)}
+                        {btn('cancel', 'Cancel Shipment', hasShipment)}
                       </div>
                     )}
-                    {isTerminal && hasShipment && (
+                    {!hasLegacy && isTerminal && hasShipment && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {btn('track', 'Sync Status', true)}
-                        {sr.labelUrl ? null : btn('label', 'Generate Label', hasAwb)}
-                        {sr.invoiceUrl ? null : btn('invoice', 'Invoice', hasShipment)}
+                        {btn('track', 'Sync Status', hasAwb)}
+                        {bg.labelUrl ? null : btn('label', 'Label', hasAwb)}
+                        {bg.invoiceUrl ? null : btn('invoice', 'Invoice', hasShipment)}
                       </div>
                     )}
-                    {shiprocketMsg && (
+                    {shippingMsg && (
                       <p className="text-[length:calc(11px*var(--fs))] text-stone-600 bg-stone-50 border border-stone-200 rounded-md px-2 py-1.5">
-                        {shiprocketMsg}
+                        {shippingMsg}
                       </p>
                     )}
                   </div>

@@ -288,22 +288,24 @@ export default function OrderTrackingPage() {
                   <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-600">{[order.address?.street, order.address?.city].filter(Boolean).join(', ')}{order.address?.pincode ? ` - ${order.address.pincode}` : ''}</p>
                 </div>
 
-                {/* Shipment tracking (from backend / Shiprocket — no direct Shiprocket calls) */}
-                {(order.awbNumber || order.courierName || order.shiprocket?.awbCode) && (
+                {/* Shipment tracking (from backend / Bigship — no direct courier-API calls from the browser) */}
+                {(() => {
+                  const ship = order.bigship?.awbCode ? order.bigship : order.shiprocket || {}; // shiprocket = legacy orders
+                  return (order.awbNumber || order.courierName || ship.awbCode) && (
                   <div className="space-y-1 text-xs text-stone-600 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-stone-200 mt-3">
                     <p className="font-bold text-[color:var(--brand-primary)] text-[length:calc(10px*var(--fs))] uppercase tracking-wider mb-1">Shipment Tracking</p>
                     <p>Status: <strong className="text-stone-900">{order.status}</strong>
-                      {order.shiprocket?.status ? ` · ${order.shiprocket.status}` : ''}
+                      {ship.status ? ` · ${ship.status}` : ''}
                     </p>
-                    {(order.courierName || order.shiprocket?.courierName) && (
-                      <p>Courier: <strong className="text-stone-900">{order.shiprocket?.courierName || order.courierName}</strong></p>
+                    {(order.courierName || ship.courierName) && (
+                      <p>Courier: <strong className="text-stone-900">{ship.courierName || order.courierName}</strong></p>
                     )}
-                    {(order.awbNumber || order.shiprocket?.awbCode) && (
-                      <p>AWB: <strong className="text-stone-900 font-mono">{order.shiprocket?.awbCode || order.awbNumber}</strong></p>
+                    {(order.awbNumber || ship.awbCode) && (
+                      <p>AWB: <strong className="text-stone-900 font-mono">{ship.awbCode || order.awbNumber}</strong></p>
                     )}
-                    {(order.shiprocket?.trackingUrl || order.awbNumber || order.shiprocket?.awbCode) && (
+                    {ship.trackingUrl && (
                       <a
-                        href={order.shiprocket?.trackingUrl || `https://shiprocket.co/tracking/${order.shiprocket?.awbCode || order.awbNumber}`}
+                        href={ship.trackingUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex text-[color:var(--brand-primary)] font-bold underline mt-1"
@@ -311,8 +313,29 @@ export default function OrderTrackingPage() {
                         Track package
                       </a>
                     )}
-                    {order.shiprocket?.isRto && (
+                    {ship.isRto && (
                       <p className="text-amber-800 font-semibold mt-1">Return to origin (RTO) update received</p>
+                    )}
+                    {Array.isArray(ship.trackingHistory) && ship.trackingHistory.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-stone-100">
+                        <p className="font-bold text-stone-500 text-[length:calc(10px*var(--fs))] uppercase tracking-wider mb-1.5">Courier updates</p>
+                        <ul className="space-y-1.5">
+                          {ship.trackingHistory.slice(0, 8).map((h, i) => (
+                            <li key={`${h.at}-${i}`} className="flex gap-2">
+                              <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${i === 0 ? 'bg-emerald-600' : 'bg-stone-300'}`} />
+                              <span>
+                                <strong className="text-stone-900">{h.status || h.message}</strong>
+                                {h.status && h.message && h.message !== h.status ? <span className="text-stone-600"> — {h.message}</span> : null}
+                                {h.at ? (
+                                  <span className="block text-stone-400 text-[length:calc(10px*var(--fs))]">
+                                    {new Date(h.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                     {order.expectedDelivery && (
                       <p className="text-stone-500 mt-1">
@@ -320,7 +343,8 @@ export default function OrderTrackingPage() {
                       </p>
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Contact Actions — real rider only */}

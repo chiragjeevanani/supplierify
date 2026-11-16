@@ -743,10 +743,10 @@ export default function AccountPage() {
                           {ord.expectedDelivery && (
                             <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">{ord.expectedDelivery.label}: <strong className="text-stone-900">{ord.expectedDelivery.value}</strong></p>
                           )}
-                          {(ord.awbNumber || ord.shiprocket?.awbCode || ord.courierName || ord.shiprocket?.courierName) && (
+                          {(ord.awbNumber || ord.courierName) && (
                             <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5 break-words">
-                              {ord.shiprocket?.courierName || ord.courierName ? `Courier: ${ord.shiprocket?.courierName || ord.courierName}` : ''}
-                              {(ord.awbNumber || ord.shiprocket?.awbCode) ? ` • AWB: ${ord.shiprocket?.awbCode || ord.awbNumber}` : ''}
+                              {ord.courierName ? `Courier: ${ord.courierName}` : ''}
+                              {ord.awbNumber ? ` • AWB: ${ord.awbNumber}` : ''}
                             </p>
                           )}
                         </div>

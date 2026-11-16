@@ -424,7 +424,7 @@ export default function AdminSettings() {
                     onChange={(e) => setField('standardDeliveryFee', e.target.value === '' ? '' : Number(e.target.value))}
                     className={inputClass}
                   />
-                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Used when live Shiprocket rates are off</span>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Used when live shipping rates are off</span>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="codDeliveryFee">
@@ -464,7 +464,7 @@ export default function AdminSettings() {
               <p className="text-[length:calc(11px*var(--fs))] text-stone-500 flex items-start gap-2 p-3 rounded-xl bg-white border border-stone-200">
                 <Truck className="w-4 h-4 text-[color:var(--brand-accent-dark)] shrink-0 mt-0.5" />
                 <span>
-                  When Shiprocket checkout quotes are enabled, courier rates come from Shiprocket.
+                  When live checkout quotes are enabled, courier rates come from Bigship.
                   Otherwise prepaid / COD fees above are used at checkout.
                 </span>
               </p>

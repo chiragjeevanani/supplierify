@@ -37,7 +37,7 @@ const sections = [
     title: '4. Sharing With Trusted Partners',
     body: [
       'We do not sell your personal data.',
-      'We may share limited information with trusted service providers only as needed to run the store—for example payment gateways (such as Razorpay), logistics partners (such as Shiprocket / courier companies), SMS/OTP providers, and cloud hosting.',
+      'We may share limited information with trusted service providers only as needed to run the store—for example payment gateways (such as Razorpay), logistics partners (such as Bigship / courier companies), SMS/OTP providers, and cloud hosting.',
       'These partners are required to use your data only for the services they provide to Dry Fruit Wholesale and to protect it appropriately.'
     ]
   },

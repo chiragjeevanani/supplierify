@@ -118,12 +118,13 @@ export default function CheckoutPage() {
   const cartWeightKg = useMemo(() => estimateCartWeightKg(cartItems), [cartItems]);
   const isCodPayment = paymentMethod === 'cod';
   const pinReady = deliveryPincode.length === 6;
-  // TEMP testing: set VITE_SHIPROCKET_CHECKOUT_ENABLED=false to hide live rates + use store fees
-  const shiprocketCheckoutEnabled =
-    String(import.meta.env.VITE_SHIPROCKET_CHECKOUT_ENABLED ?? 'true').toLowerCase() !== 'false';
+  // Live Bigship delivery quotes at checkout are OFF unless VITE_SHIPPING_CHECKOUT_ENABLED=true is set at build time.
+  // Off = the delivery fee comes from the store settings.
+  const shippingCheckoutEnabled =
+    String(import.meta.env.VITE_SHIPPING_CHECKOUT_ENABLED ?? 'false').toLowerCase() === 'true';
 
   // One API call returns both prepaid + COD — pick fee locally when payment changes
-  const shiprocketDeliveryFee = !shiprocketCheckoutEnabled
+  const liveDeliveryFee = !shippingCheckoutEnabled
     ? undefined
     : !pinReady
     ? 0
@@ -134,7 +135,7 @@ export default function CheckoutPage() {
     : shippingQuote?.prepaid?.fee;
 
   const checkoutPricing = useMemo(() => {
-    if (!shiprocketCheckoutEnabled) {
+    if (!shippingCheckoutEnabled) {
       return calculateCheckoutTotals({
         subtotal,
         discountAmount,
@@ -147,9 +148,9 @@ export default function CheckoutPage() {
       discountAmount,
       paymentMethod: checkoutPaymentMethodKey(paymentMethod),
       settings: shippingSettings || {},
-      deliveryFee: shiprocketDeliveryFee ?? 0
+      deliveryFee: liveDeliveryFee ?? 0
     });
-  }, [subtotal, discountAmount, paymentMethod, shippingSettings, shiprocketDeliveryFee, shiprocketCheckoutEnabled]);
+  }, [subtotal, discountAmount, paymentMethod, shippingSettings, liveDeliveryFee, shippingCheckoutEnabled]);
 
   const { deliveryFee, tax, total } = checkoutPricing;
 
@@ -177,20 +178,20 @@ export default function CheckoutPage() {
   });
   // Allow checkout when quote failed — settings fees still apply (matches backend fallback)
   const shippingReady =
-    !shiprocketCheckoutEnabled ||
+    !shippingCheckoutEnabled ||
     !pinReady ||
     (!shippingQuoteLoading &&
       (shippingQuote == null || !shippingQuote.error || shippingQuote.source === 'settings'));
   const shippingLabel =
-    !shiprocketCheckoutEnabled
+    !shippingCheckoutEnabled
       ? isCodPayment
         ? 'Shipping (COD)'
         : 'Shipping (Prepaid)'
       : deliveryFee === 0 && shippingQuote?.freeDeliveryApplied
       ? 'Shipping / Delivery'
       : isCodPayment
-      ? 'Shiprocket Shipping (COD)'
-      : 'Shiprocket Shipping (Prepaid)';
+      ? 'Shipping (COD)'
+      : 'Shipping (Prepaid)';
 
   // Address Modal State
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -211,9 +212,9 @@ export default function CheckoutPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
-  // Fetch Shiprocket rates only when enabled + pincode / weight / subtotal change (not on payment toggle)
+  // Fetch live shipping rates only when enabled + pincode / weight / subtotal change (not on payment toggle)
   useEffect(() => {
-    if (!shiprocketCheckoutEnabled) {
+    if (!shippingCheckoutEnabled) {
       setShippingQuote(null);
       setShippingQuoteLoading(false);
       lastShippingKeyRef.current = '';
@@ -267,7 +268,7 @@ export default function CheckoutPage() {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- shippingQuote intentionally omitted to avoid loop
-  }, [deliveryPincode, cartWeightKg, subtotal, shiprocketCheckoutEnabled]);
+  }, [deliveryPincode, cartWeightKg, subtotal, shippingCheckoutEnabled]);
 
   // Block background scroll when address modal is open
   useEffect(() => {
@@ -413,13 +414,13 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (shiprocketCheckoutEnabled && shippingQuoteLoading) {
+    if (shippingCheckoutEnabled && shippingQuoteLoading) {
       setOrderError('Please wait while shipping rates load.');
       return;
     }
 
     if (
-      shiprocketCheckoutEnabled &&
+      shippingCheckoutEnabled &&
       shippingQuote?.error &&
       shippingQuote.source !== 'settings'
     ) {
@@ -968,9 +969,9 @@ export default function CheckoutPage() {
                             <span className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">Online Payment</span>
                             <p className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">
                               UPI, Cards & Net Banking via Razorpay
-                              {shiprocketCheckoutEnabled && shippingQuote?.prepaid?.fee != null
+                              {shippingCheckoutEnabled && shippingQuote?.prepaid?.fee != null
                                 ? ` · ₹${shippingQuote.prepaid.fee}`
-                                : !shiprocketCheckoutEnabled
+                                : !shippingCheckoutEnabled
                                 ? ` · ₹${settingsPrepaidFee}`
                                 : ''}
                             </p>
@@ -1189,7 +1190,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-stone-600">
                   <span>{shippingLabel}</span>
                   <span className="font-sans">
-                    {shiprocketCheckoutEnabled && shippingQuoteLoading && pinReady ? (
+                    {shippingCheckoutEnabled && shippingQuoteLoading && pinReady ? (
                       'Loading…'
                     ) : deliveryFee === 0 ? (
                       <strong className="text-emerald-700">FREE</strong>
@@ -1198,12 +1199,12 @@ export default function CheckoutPage() {
                     )}
                   </span>
                 </div>
-                {/* TEMP: hide Live Shiprocket rates while VITE_SHIPROCKET_CHECKOUT_ENABLED=false */}
-                {shiprocketCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length === 6 && (
+                {/* TEMP: hide Live shipping rates while VITE_SHIPPING_CHECKOUT_ENABLED=false */}
+                {shippingCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length === 6 && (
                   <div className="rounded-lg border border-stone-100 bg-stone-50/80 px-2.5 py-2 text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-600 space-y-1">
                     <div className="flex items-center gap-1.5 font-semibold text-[color:var(--brand-primary)]">
                       <Truck className="w-3.5 h-3.5 text-[color:var(--brand-accent-dark)] shrink-0" />
-                      <span>Live Shiprocket rates</span>
+                      <span>Live shipping rates</span>
                     </div>
                     {shippingQuoteLoading ? (
                       <p className="text-stone-500">Fetching courier rates for your pincode…</p>
@@ -1232,8 +1233,8 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 )}
-                {shiprocketCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length !== 6 && (
-                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500">Add a delivery address to see Shiprocket shipping rates</p>
+                {shippingCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length !== 6 && (
+                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500">Add a delivery address to see shipping rates</p>
                 )}
 
                 <div className="flex justify-between text-stone-600">
