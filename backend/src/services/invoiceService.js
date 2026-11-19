@@ -10,6 +10,16 @@ const SELLER_LEGAL = {
   address: 'Navin Sheva, Uran, Navi Mumbai'
 };
 
+// A real phone number has at least 10 digits and is not the "+91 00000 00000" placeholder
+const isRealPhone = (v) => {
+  const d = String(v || '').replace(/\D/g, '');
+  return d.length >= 10 && !/^0+$/.test(d.slice(-10));
+};
+const formatPhone = (digits) => {
+  const d = String(digits || '').replace(/\D/g, '');
+  return d.length === 12 && d.startsWith('91') ? `+91 ${d.slice(2, 7)} ${d.slice(7)}` : (d.length === 10 ? `+91 ${d.slice(0, 5)} ${d.slice(5)}` : `+${d}`);
+};
+
 class InvoiceService {
   /**
    * Format Date to standard DD MMM YYYY string (e.g. 16 Sep 2026)
@@ -187,7 +197,7 @@ class InvoiceService {
 
     // Seller Box (Left)
     doc
-      .rect(40, addressY, colWidth, 116)
+      .rect(40, addressY, colWidth, 104)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -203,9 +213,10 @@ class InvoiceService {
       .text('SOLD BY / DISPATCH HUB', 48, addressY + 5);
 
     const storeName = settings.storeName || 'Dry Fruit Wholesale';
-    const hubAddr = settings.hubAddress || settings.warehouseAddress || 'Warehouse Address, Mumbai, MP - 452015';
-    const storeEmail = settings.storeEmail || settings.supportEmail || 'support@example.com';
-    const storePhone = settings.storePhone || settings.supportPhone || '+91 00000 00000';
+    const storeEmail = settings.storeEmail || settings.supportEmail || '';
+    // Phone: the number the admin saved in Settings; until then the store's WhatsApp number
+    const storePhone = [settings.storePhone, settings.supportPhone].find(isRealPhone)
+      || (settings.whatsappNumber ? formatPhone(settings.whatsappNumber) : '');
 
     doc
       .fillColor(textDark)
@@ -218,13 +229,13 @@ class InvoiceService {
       .text(`GSTIN: ${SELLER_LEGAL.gstin}`, 48, addressY + 47, { width: colWidth - 16 })
       .fillColor(textMuted)
       .text(`Address: ${SELLER_LEGAL.address}`, 48, addressY + 58, { width: colWidth - 16 })
-      .text(hubAddr, 48, addressY + 72, { width: colWidth - 16, lineGap: 1 })
-      .text(`Email: ${storeEmail}  •  Phone: ${storePhone}`, 48, addressY + 98, { width: colWidth - 16 });
+      .text(storeEmail ? `Email: ${storeEmail}` : '', 48, addressY + 76, { width: colWidth - 16 })
+      .text(storePhone ? `Phone: ${storePhone}` : '', 48, addressY + 88, { width: colWidth - 16 });
 
     // Buyer Box (Right)
     const rightColX = 307;
     doc
-      .rect(rightColX, addressY, colWidth, 116)
+      .rect(rightColX, addressY, colWidth, 104)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -259,7 +270,7 @@ class InvoiceService {
     // =========================================================================
     // 4. ITEMS TABLE
     // =========================================================================
-    const tableTop = 282;
+    const tableTop = 270;
 
     // Table Header
     doc
@@ -426,8 +437,8 @@ class InvoiceService {
       .text('DECLARATION & TERMS:', 40, footerY + 8)
       .text(
         '1. This is a computer-generated invoice and does not require a physical signature.\n' +
-        '2. All disputes are subject to the exclusive jurisdiction of courts in Mumbai, Madhya Pradesh.\n' +
-        '3. For returns, refund status, or corporate gifting inquiries, please write to support@example.com.',
+        '2. All disputes are subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra.\n' +
+        '3. For returns, refund status, or corporate gifting inquiries, please write to ' + (storeEmail || 'our support team') + '.',
         40,
         footerY + 18,
         { width: 360, lineGap: 2 }
@@ -444,7 +455,7 @@ class InvoiceService {
       .fillColor(primaryColor)
       .fontSize(7)
       .font('Helvetica-Bold')
-      .text('FOR DRY FRUIT WHOLESALE FOODS PVT LTD', 425, footerY + 12, { width: 125, align: 'center' });
+      .text(`FOR ${SELLER_LEGAL.name.toUpperCase()}`, 425, footerY + 12, { width: 125, align: 'center' });
 
     doc
       .fillColor(goldColor)

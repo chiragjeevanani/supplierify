@@ -265,6 +265,24 @@ export default function AdminSettings() {
                     className={inputClass}
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1" htmlFor="storePhone">
+                    Store Phone (shown on invoices &amp; Help page)
+                  </label>
+                  <input
+                    id="storePhone"
+                    name="storePhone"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="e.g. +91 98765 43210"
+                    value={/^[+\s0]*$/.test(formData.helpSupport?.phone || '') ? '' : (formData.helpSupport?.phone || '')}
+                    onChange={(e) => setHelpField('phone', e.target.value)}
+                    className={inputClass}
+                  />
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
+                    Leave empty to show the WhatsApp number on invoices until you add one.
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[color:var(--brand-accent)]/10 border border-[color:var(--brand-accent)]/40">
