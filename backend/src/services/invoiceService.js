@@ -114,26 +114,26 @@ class InvoiceService {
           .fillColor(primaryColor)
           .fontSize(22)
           .font('Helvetica-Bold')
-          .text('DRY FRUIT WHOLESALE', 55, headerY + 14);
+          .text((settings.storeName || 'Supplierfy').toUpperCase(), 55, headerY + 14);
 
         doc
           .fillColor(goldColor)
           .fontSize(8.5)
           .font('Helvetica-Bold')
-          .text('PURE ROASTED SUPERFOODS & SNACKS', 55, headerY + 40, { characterSpacing: 1 });
+          .text(SELLER_LEGAL.name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
       }
     } else {
       doc
         .fillColor(primaryColor)
         .fontSize(22)
         .font('Helvetica-Bold')
-        .text('DRY FRUIT WHOLESALE', 55, headerY + 14);
+        .text((settings.storeName || 'Supplierfy').toUpperCase(), 55, headerY + 14);
 
       doc
         .fillColor(goldColor)
         .fontSize(8.5)
         .font('Helvetica-Bold')
-        .text('PURE ROASTED SUPERFOODS & SNACKS', 55, headerY + 40, { characterSpacing: 1 });
+        .text(SELLER_LEGAL.name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
     }
 
     // Document Header Right (Tax Invoice, Invoice No, Date on White)
