@@ -48,7 +48,8 @@ export default function ProductCard({ product, priority = false }) {
 
   return (
     <div className="group bg-white rounded-xl border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden text-left">
-      <div className="relative w-full aspect-[4/3] sm:aspect-square overflow-hidden bg-[color:var(--brand-surface)]">
+      <div className="p-2.5 sm:p-3 pb-0">
+      <div className="relative w-full aspect-[4/3] sm:aspect-square overflow-hidden bg-[color:var(--brand-surface)] border border-stone-200/70">
         <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
           {product.badge ? (
             <span className="text-[length:calc(10px*var(--fs))] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider bg-[color:var(--brand-accent-dark)] text-white shadow-sm">
@@ -77,6 +78,7 @@ export default function ProductCard({ product, priority = false }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         </Link>
+      </div>
       </div>
 
       <div className="p-3 sm:p-4 flex flex-col flex-1">

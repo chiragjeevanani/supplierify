@@ -9,14 +9,16 @@ import { BRAND } from '../../../config/brand';
 import { useAdmin } from '../../../context/AdminContext';
 import { useStoreRules } from '../../../hooks/useStoreRules';
 import { buildGeneralEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
-import { resolveOptimizedProductImage } from '../../../utils/productImage';
 
-function SectionHeader({ title, to, linkLabel = 'View All' }) {
+function SectionHeader({ title, subtitle, to, linkLabel = 'View All' }) {
   return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="font-serif text-xl sm:text-2xl font-bold text-[color:var(--brand-primary)]">{title}</h2>
+    <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="min-w-0">
+        <h2 className="font-serif text-xl sm:text-2xl font-bold text-[color:var(--brand-primary)]">{title}</h2>
+        {subtitle && <p className="text-xs sm:text-sm text-stone-500 mt-0.5 line-clamp-1">{subtitle}</p>}
+      </div>
       {to && (
-        <Link to={to} className="text-sm font-bold text-[color:var(--brand-accent-darker)] hover:text-[color:var(--brand-primary)] inline-flex items-center gap-1">
+        <Link to={to} className="shrink-0 text-sm font-bold text-[color:var(--brand-accent-darker)] hover:text-[color:var(--brand-primary)] inline-flex items-center gap-1">
           {linkLabel} <ArrowRight className="w-4 h-4" />
         </Link>
       )}
@@ -39,6 +41,21 @@ export default function HomePage() {
       .filter((c) => !c.status || String(c.status).toLowerCase() === 'active')
       .sort((a, b) => rank(a) - rank(b));
   }, [rawCategories]);
+
+  // One section per category, with that category's products underneath (empty categories are skipped)
+  const categorySections = useMemo(() => {
+    return categories
+      .map((c) => {
+        const slug = String(c.slug || '').toLowerCase();
+        const name = String(c.name || '').toLowerCase();
+        const items = products.filter((p) => {
+          const pc = String(p.category || '').toLowerCase();
+          return pc && (pc === slug || pc === name);
+        });
+        return { category: c, items };
+      })
+      .filter((s) => s.items.length > 0);
+  }, [categories, products]);
 
   const featured = useMemo(() => {
     const picked = products.filter((p) => p.isFeatured);
@@ -115,34 +132,35 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* Categories */}
-      {categories.length > 0 && (
-        <section aria-label="Categories">
-          <SectionHeader title="Explore by Categories" to="/shop?tab=categories" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-            {categories.map((c) => (
-              <Link
-                key={c._id || c.id || c.slug}
-                to={`/shop?category=${c.slug}`}
-                className="group rounded-xl overflow-hidden bg-white border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] hover:shadow-md transition-all"
-              >
-                <div className="aspect-[4/3] bg-[color:var(--brand-surface)] overflow-hidden">
-                  <img
-                    src={resolveOptimizedProductImage(c.image, { width: 360 })}
-                    alt={c.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-3">
-                  <h3 className="font-bold text-sm text-[color:var(--brand-primary)] line-clamp-1">{c.name}</h3>
-                  {c.subtext && <p className="text-[length:calc(11px*var(--fs))] text-stone-500 line-clamp-1">{c.subtext}</p>}
-                </div>
-              </Link>
+      {/* One section per category, products underneath */}
+      {categorySections.map(({ category: c, items }) => (
+        <section
+          key={c._id || c.id || c.slug}
+          aria-label={c.name}
+          className="rounded-2xl border border-[color:var(--brand-border)] bg-[color:var(--brand-accent)]/10 p-3 sm:p-5 lg:p-6"
+        >
+          <div className="flex items-center justify-between gap-3 mb-4 sm:mb-5">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-1.5 h-9 sm:h-10 rounded-sm bg-[color:var(--brand-accent)] shrink-0" aria-hidden="true" />
+              <div className="min-w-0">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[color:var(--brand-primary)] leading-tight">{c.name}</h2>
+                {c.subtext && <p className="text-xs sm:text-sm text-stone-500 mt-0.5 line-clamp-1">{c.subtext}</p>}
+              </div>
+            </div>
+            <Link
+              to={`/shop?category=${c.slug}`}
+              className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white border border-[color:var(--brand-border)] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] hover:border-[color:var(--brand-accent)] hover:shadow-sm transition-all"
+            >
+              {items.length > 4 ? `View all ${items.length}` : 'View all'} <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            {items.slice(0, 4).map((p) => (
+              <ProductCard key={p._id || p.id || p.slug} product={p} />
             ))}
           </div>
         </section>
-      )}
+      ))}
 
       {/* Featured */}
       {featured.length > 0 && (

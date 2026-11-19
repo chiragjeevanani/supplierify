@@ -3,6 +3,13 @@ import path from 'path';
 import PDFDocument from 'pdfkit';
 import settingsService from './settingsService.js';
 
+// Legal entity that issues the invoice (printed just below the store name)
+const SELLER_LEGAL = {
+  name: 'Bhavana Enterprises LLP',
+  gstin: '27ABGFB3485P1ZT',
+  address: 'Navin Sheva, Uran, Navi Mumbai'
+};
+
 class InvoiceService {
   /**
    * Format Date to standard DD MMM YYYY string (e.g. 16 Sep 2026)
@@ -180,7 +187,7 @@ class InvoiceService {
 
     // Seller Box (Left)
     doc
-      .rect(40, addressY, colWidth, 92)
+      .rect(40, addressY, colWidth, 116)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -205,15 +212,19 @@ class InvoiceService {
       .fontSize(8)
       .font('Helvetica-Bold')
       .text(storeName, 48, addressY + 24, { width: colWidth - 16 })
+      .text(SELLER_LEGAL.name, 48, addressY + 36, { width: colWidth - 16 })
       .font('Helvetica')
+      .fillColor(textDark)
+      .text(`GSTIN: ${SELLER_LEGAL.gstin}`, 48, addressY + 47, { width: colWidth - 16 })
       .fillColor(textMuted)
-      .text(hubAddr, 48, addressY + 36, { width: colWidth - 16, lineGap: 1 })
-      .text(`Email: ${storeEmail}  •  Phone: ${storePhone}`, 48, addressY + 68, { width: colWidth - 16 });
+      .text(`Address: ${SELLER_LEGAL.address}`, 48, addressY + 58, { width: colWidth - 16 })
+      .text(hubAddr, 48, addressY + 72, { width: colWidth - 16, lineGap: 1 })
+      .text(`Email: ${storeEmail}  •  Phone: ${storePhone}`, 48, addressY + 98, { width: colWidth - 16 });
 
     // Buyer Box (Right)
     const rightColX = 307;
     doc
-      .rect(rightColX, addressY, colWidth, 92)
+      .rect(rightColX, addressY, colWidth, 116)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -248,7 +259,7 @@ class InvoiceService {
     // =========================================================================
     // 4. ITEMS TABLE
     // =========================================================================
-    const tableTop = 258;
+    const tableTop = 282;
 
     // Table Header
     doc
