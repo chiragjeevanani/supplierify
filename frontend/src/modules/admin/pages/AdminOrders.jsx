@@ -453,10 +453,25 @@ export default function AdminOrders() {
                                 ? 'bg-purple-100 text-purple-800'
                                 : 'bg-amber-100 text-amber-800'
                             }`}>
-                              {ord.paymentStatus || 'PENDING'}
+                              {String(ord.paymentStatus || 'PENDING').replace(/_/g, ' ')}
                             </span>
                             <span className={`text-[length:calc(10px*var(--fs))] font-medium ${isCreditOrder(ord) ? 'text-sky-700 font-bold' : 'text-stone-400'}`}>({paymentMethodLabel(ord.paymentMethod || 'COD')})</span>
                           </div>
+                          {String(ord.paymentMethod).toUpperCase() === 'PARTIAL_COD' && ord.status !== 'Cancelled' && (
+                            <div className="mt-1 space-y-1">
+                              <div className="text-[length:calc(10px*var(--fs))] font-semibold text-amber-800">
+                                Paid online ₹{ord.advancePaid}
+                                {ord.paymentStatus === 'PAID' ? ' · balance collected' : ` · ₹${ord.balanceDue} to collect on delivery`}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handlePaymentToggle(ord)}
+                                className={`text-[length:calc(10px*var(--fs))] font-bold px-2 py-0.5 rounded border ${ord.paymentStatus === 'PAID' ? 'border-stone-300 text-stone-500 hover:bg-stone-100' : 'border-emerald-600 text-emerald-700 hover:bg-emerald-50'}`}
+                              >
+                                {ord.paymentStatus === 'PAID' ? 'Undo balance collected' : 'Balance collected'}
+                              </button>
+                            </div>
+                          )}
                           {isCreditOrder(ord) && ord.status !== 'Cancelled' && (
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               {ord.paymentStatus !== 'PAID' && ord.creditDueDate && (

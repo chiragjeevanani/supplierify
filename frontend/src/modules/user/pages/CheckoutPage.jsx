@@ -17,6 +17,7 @@ import { useStoreRules } from '../../../hooks/useStoreRules';
 import {
   calculateCheckoutTotals,
   checkoutPaymentMethodKey,
+  computePartialCod,
   estimateCartWeightKg,
   resolveDeliveryFee
 } from '../../../utils/checkoutPricing';
@@ -75,7 +76,7 @@ export default function CheckoutPage() {
 
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('online'); // 'online' (Razorpay) or 'credit' (pay later)
-  const { creditEnabled } = useStoreRules();
+  const { creditEnabled, partialCodEnabled, partialCodPercent } = useStoreRules();
   const [credit, setCredit] = useState(null);
 
   // Pay-on-credit details for eligible customers
@@ -116,7 +117,8 @@ export default function CheckoutPage() {
   ).replace(/\D/g, '').slice(0, 6);
 
   const cartWeightKg = useMemo(() => estimateCartWeightKg(cartItems), [cartItems]);
-  const isCodPayment = paymentMethod === 'cod';
+  // A partial COD order ships as cash-on-delivery, so it uses the COD delivery fee
+  const isCodPayment = paymentMethod === 'cod' || paymentMethod === 'partial_cod';
   const pinReady = deliveryPincode.length === 6;
   // Live Bigship delivery quotes at checkout are OFF unless VITE_SHIPPING_CHECKOUT_ENABLED=true is set at build time.
   // Off = the delivery fee comes from the store settings.
@@ -153,6 +155,13 @@ export default function CheckoutPage() {
   }, [subtotal, discountAmount, paymentMethod, shippingSettings, liveDeliveryFee, shippingCheckoutEnabled]);
 
   const { deliveryFee, tax, total } = checkoutPricing;
+
+  // Partial COD: pay a part online now, the rest on delivery (percentage is set by the admin)
+  const partialSplit = partialCodEnabled ? computePartialCod(total, partialCodPercent) : null;
+  const isPartialCod = paymentMethod === 'partial_cod' && Boolean(partialSplit);
+  useEffect(() => {
+    if (paymentMethod === 'partial_cod' && !partialSplit) setPaymentMethod('online');
+  }, [paymentMethod, partialSplit]);
 
   const inrFmt = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
   const creditBlockReason = !credit?.eligible
@@ -432,7 +441,7 @@ export default function CheckoutPage() {
     setIsOrderPlacing(true);
 
     try {
-      const isOnline = ONLINE_PAYMENTS_ENABLED && paymentMethod === 'online';
+      const isOnline = ONLINE_PAYMENTS_ENABLED && (paymentMethod === 'online' || (paymentMethod === 'partial_cod' && Boolean(partialSplit)));
 
       // Pay on credit: order is created now and paid later (the server re-checks the credit limit)
       if (paymentMethod === 'credit') {
@@ -507,7 +516,7 @@ export default function CheckoutPage() {
 
       const session = await paymentApi.createCheckoutSession({
         addressId: String(addressId),
-        paymentMethod: 'UPI',
+        paymentMethod: paymentMethod === 'partial_cod' ? 'PARTIAL_COD' : 'UPI',
         couponCode: appliedCoupon?.code || undefined,
         guestId: guestId || undefined,
         items: cartItems
@@ -533,7 +542,7 @@ export default function CheckoutPage() {
         amount,
         currency,
         name: 'Dry Fruit Wholesale',
-        description: 'Online payment',
+        description: paymentMethod === 'partial_cod' ? `Advance payment (${partialCodPercent}%) - balance on delivery` : 'Online payment',
         order_id: razorpayOrderId,
         prefill: {
           name: selectedAddress?.name || user?.name || '',
@@ -991,6 +1000,47 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {partialSplit && (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setPaymentMethod('partial_cod')}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPaymentMethod('partial_cod'); } }}
+                        className={`p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                          paymentMethod === 'partial_cod'
+                            ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-surface)] shadow-xs'
+                            : 'border-stone-200 hover:border-stone-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 sm:gap-3.5">
+                            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                              <Truck className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            </div>
+                            <div>
+                              <span className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">
+                                Pay {partialCodPercent}% now, rest on delivery
+                              </span>
+                              <p className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">
+                                Pay {inrFmt(partialSplit.advance)} online now · {inrFmt(partialSplit.balance)} cash/UPI to the courier on delivery
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              paymentMethod === 'partial_cod'
+                                ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]'
+                                : 'border-stone-300'
+                            }`}
+                          >
+                            {paymentMethod === 'partial_cod' && (
+                              <Check className="w-2.5 h-2.5 text-[color:var(--brand-accent)] stroke-[3]" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {creditEnabled && credit && !credit.blocked && (
                       credit.eligible ? (
                         <div
@@ -1077,7 +1127,7 @@ export default function CheckoutPage() {
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 fill-[color:var(--brand-primary)]" />
-                          <span className="font-sans">{paymentMethod === 'credit' ? `PLACE ORDER ON CREDIT ₹${total}` : `CONFIRM & PAY ₹${total}`}</span>
+                          <span className="font-sans">{paymentMethod === 'credit' ? `PLACE ORDER ON CREDIT ₹${total}` : isPartialCod ? `PAY ₹${partialSplit.advance} NOW` : `CONFIRM & PAY ₹${total}`}</span>
                         </>
                       )}
                     </button>
@@ -1246,6 +1296,18 @@ export default function CheckoutPage() {
                   <span className="text-xs sm:text-base font-serif">Total Payable</span>
                   <span className="font-sans text-lg sm:text-2xl font-extrabold text-[color:var(--brand-primary)]">₹{total}</span>
                 </div>
+                {isPartialCod && (
+                  <div className="mt-1 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs space-y-1">
+                    <div className="flex justify-between font-bold text-amber-900">
+                      <span>Pay now ({partialCodPercent}%)</span>
+                      <span className="font-sans">₹{partialSplit.advance}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-800">
+                      <span>Pay on delivery</span>
+                      <span className="font-sans">₹{partialSplit.balance}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Trust Badges */}

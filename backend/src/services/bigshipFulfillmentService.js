@@ -222,8 +222,9 @@ export async function applyBigshipStatusToOrder(order, {
     if (mapped === 'DELIVERED') {
       order.delivery = order.delivery || {};
       order.delivery.status = 'Delivered';
-      if (order.payment?.method === 'COD' && order.payment.status !== 'PAID') {
+      if (['COD', 'PARTIAL_COD'].includes(order.payment?.method) && order.payment.status !== 'PAID') {
         order.payment.status = 'PAID';
+        if (order.payment.method === 'PARTIAL_COD') order.payment.balanceDue = 0;
       }
     }
     if (mapped === 'CANCELLED' && prev !== 'CANCELLED') {
@@ -372,7 +373,12 @@ class BigshipFulfillmentService {
       )
     };
 
-    const isCod = String(order.payment?.method || '').toUpperCase() === 'COD';
+    const payMethod = String(order.payment?.method || '').toUpperCase();
+    // Partial COD ships as a COD parcel where the courier collects only the balance
+    const codToCollect = payMethod === 'PARTIAL_COD'
+      ? Math.max(0, Math.round(Number(order.payment?.balanceDue) || 0))
+      : Math.round(Number(order.pricing?.total || 0));
+    const isCod = payMethod === 'COD' || (payMethod === 'PARTIAL_COD' && codToCollect > 0);
     const warehouseId = await this.resolveWarehouseId(options.pickupWarehouseId || bg.pickupWarehouseId);
     const { pincode: pickupPincode } = await this.getPickupContext();
 
@@ -384,7 +390,7 @@ class BigshipFulfillmentService {
           destPincode: String(addr.postalCode).trim(),
           invoiceValue: Number(order.pricing?.subtotal || order.pricing?.total || 1),
           cod: isCod,
-          codAmount: Number(order.pricing?.total || 0),
+          codAmount: codToCollect,
           weightKg: dims.weightKg,
           lengthCm: dims.length,
           breadthCm: dims.breadth,
@@ -413,7 +419,16 @@ class BigshipFulfillmentService {
       categoryId: '1'
     }));
     const invoiceAmount = products_.reduce((sum, p) => sum + p.totalAmount, 0);
-    if (isCod) {
+    if (isCod && payMethod === 'PARTIAL_COD') {
+      // Partial COD: only the balance is collected. Fill the lines in order; any extra (delivery fee, tax) goes on the first.
+      let remaining = codToCollect;
+      products_.forEach((p) => {
+        const c = Math.min(p.totalAmount, remaining);
+        p.collectableAmount = c;
+        remaining -= c;
+      });
+      if (remaining > 0) products_[0].collectableAmount += remaining;
+    } else if (isCod) {
       // What the courier collects: order total (incl. delivery, less discount), spread onto the first line.
       products_.forEach((p) => { p.collectableAmount = p.totalAmount; });
       const diff = Math.round(Number(order.pricing?.total || invoiceAmount)) - invoiceAmount;

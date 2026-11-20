@@ -39,6 +39,8 @@ export const DEFAULT_SETTINGS = {
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
   fontScale: 100,
+  partialCodEnabled: false,
+  partialCodPercent: 30,
   creditEnabled: false,
   creditEligibilityAmount: 50000,
   creditLimit: 25000,
@@ -199,6 +201,8 @@ class SettingsService {
       faviconUrl: cleanImageUrl(settings.faviconUrl) || '',
       theme: sanitizeTheme(settings.theme),
       fontScale: sanitizeFontScale(settings.fontScale),
+      partialCodEnabled: settings.partialCodEnabled === true,
+      partialCodPercent: Number(settings.partialCodPercent) >= 1 && Number(settings.partialCodPercent) <= 99 ? Math.round(Number(settings.partialCodPercent)) : DEFAULT_SETTINGS.partialCodPercent,
       creditEnabled: settings.creditEnabled === true,
       creditEligibilityAmount: Number(settings.creditEligibilityAmount) >= 0 ? Number(settings.creditEligibilityAmount) : DEFAULT_SETTINGS.creditEligibilityAmount,
       creditLimit: Number(settings.creditLimit) >= 0 ? Number(settings.creditLimit) : DEFAULT_SETTINGS.creditLimit,
@@ -236,6 +240,10 @@ class SettingsService {
           sanitized[key] = Number(updateData[key]);
         } else if (key === 'theme') {
           sanitized.theme = sanitizeTheme(updateData.theme);
+        } else if (key === 'partialCodEnabled') {
+          sanitized.partialCodEnabled = updateData.partialCodEnabled === true || updateData.partialCodEnabled === 'true';
+        } else if (key === 'partialCodPercent') {
+          sanitized.partialCodPercent = Math.round(Number(updateData.partialCodPercent));
         } else if (key === 'creditEnabled') {
           sanitized.creditEnabled = updateData.creditEnabled === true || updateData.creditEnabled === 'true';
         } else if (key === 'creditDueDays') {

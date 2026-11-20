@@ -73,7 +73,11 @@ class InvoiceService {
     const invoiceNumber = `INV-${order.orderNumber}`;
     const orderDate = this._formatDate(order.createdAt);
     const invoiceDate = this._formatDate(order.payment?.paidAt || order.createdAt);
-    const paymentMethod = order.payment?.method || 'COD';
+    const rawMethod = order.payment?.method || 'COD';
+    const isPartialCod = rawMethod === 'PARTIAL_COD';
+    const paymentMethod = isPartialCod ? 'Part online + COD' : rawMethod;
+    const advancePaid = Number(order.payment?.advancePaid) || 0;
+    const balanceDue = Number(order.payment?.balanceDue) || 0;
     const isCancelled = String(order.status || '').toUpperCase() === 'CANCELLED';
     // A cancelled order must read CANCELLED on the invoice, whatever its payment status was
     const paymentStatus = isCancelled ? 'CANCELLED' : (order.payment?.status || 'PENDING').toUpperCase();
@@ -187,7 +191,7 @@ class InvoiceService {
       .text(`Status: `, { continued: true })
       .font('Helvetica-Bold')
       .fillColor(isCancelled ? '#DC2626' : paymentStatus === 'PAID' ? '#059669' : '#D97706')
-      .text(paymentStatus);
+      .text(paymentStatus.replace(/_/g, ' '));
 
     // =========================================================================
     // 3. SELLER & BUYER DETAILS (TWO COLUMNS)
@@ -358,7 +362,13 @@ class InvoiceService {
       .fillColor(textMuted)
       .fontSize(7.5)
       .font('Helvetica')
-      .text(`Fulfillment Channel: Standard Express Courier`, 50, summaryY + 22)
+      .text(
+        isPartialCod
+          ? `Paid online: ${this._formatCurrency(advancePaid)}  |  ${balanceDue > 0 ? 'Balance on delivery' : 'Balance paid'}: ${this._formatCurrency(balanceDue > 0 ? balanceDue : Math.max(0, (order.pricing?.total || 0) - advancePaid))}`
+          : `Fulfillment Channel: Standard Express Courier`,
+        50,
+        summaryY + 22
+      )
       .text(`Courier Partner: ${order.courierName || 'Delhivery Express Network'}`, 50, summaryY + 34)
       .text(`AWB Tracking Number: ${order.awbNumber || 'Generating / Local Dispatch'}`, 50, summaryY + 46)
       .text(`Transaction Ref: ${transactionId || 'Internal Order Gateway Ref'}`, 50, summaryY + 58)

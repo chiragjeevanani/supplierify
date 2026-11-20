@@ -83,14 +83,17 @@ const paymentSchema = new mongoose.Schema(
   {
     method: {
       type: String,
-      enum: ['COD', 'UPI', 'CARD', 'NETBANKING', 'CREDIT'],
+      enum: ['COD', 'UPI', 'CARD', 'NETBANKING', 'CREDIT', 'PARTIAL_COD'],
       default: 'COD'
     },
     status: {
       type: String,
-      enum: ['PENDING', 'AUTHORIZED', 'PAID', 'FAILED', 'REFUND_PENDING', 'PARTIALLY_REFUNDED', 'REFUNDED'],
+      enum: ['PENDING', 'AUTHORIZED', 'PARTIALLY_PAID', 'PAID', 'FAILED', 'REFUND_PENDING', 'PARTIALLY_REFUNDED', 'REFUNDED'],
       default: 'PENDING'
     },
+    // Partial COD: part paid online up front (₹), and the balance the courier collects on delivery (₹)
+    advancePaid: { type: Number, default: 0, min: 0 },
+    balanceDue: { type: Number, default: 0, min: 0 },
     transactionId: { type: String, default: '' },
     upiApp: { type: String, default: '' },
     // Pay-on-credit orders: when payment is due, and when the admin recorded it as paid

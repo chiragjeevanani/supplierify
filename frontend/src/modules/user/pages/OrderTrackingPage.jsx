@@ -189,8 +189,13 @@ export default function OrderTrackingPage() {
 
             <div className="text-left sm:text-right pt-1 sm:pt-0 border-t sm:border-t-0 border-stone-100 flex flex-col sm:items-end gap-1.5">
               <div>
-                <span className="text-[length:calc(10.5px*var(--fs))] sm:text-xs text-stone-500 block">Total Paid Amount</span>
+                <span className="text-[length:calc(10.5px*var(--fs))] sm:text-xs text-stone-500 block">{String(order.paymentMethod).toUpperCase() === 'PARTIAL_COD' ? 'Order Total' : 'Total Paid Amount'}</span>
                 <p className="font-sans text-base sm:text-xl font-bold text-[color:var(--brand-primary)]">₹{order.total}</p>
+                {String(order.paymentMethod).toUpperCase() === 'PARTIAL_COD' && order.status !== 'Cancelled' && (
+                  <p className="text-[length:calc(10.5px*var(--fs))] sm:text-xs font-semibold text-amber-800 mt-0.5">
+                    ₹{order.advancePaid} paid online · {order.paymentStatus === 'PAID' ? 'balance paid on delivery' : `₹${order.balanceDue} to pay on delivery`}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setIsInvoicePreviewOpen(true)}

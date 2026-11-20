@@ -201,7 +201,8 @@ export const placeOrder = async (userId, payload) => {
     idempotencyKey = null,
     guestId = null,
     items: clientItems = null,
-    paymentStatus = null
+    paymentStatus = null,
+    advanceAmount = 0
   } = payload;
 
   // 1. Idempotency Check
@@ -336,13 +337,22 @@ export const placeOrder = async (userId, payload) => {
   }
 
   const settings = await settingsService.getSettings();
-  const normalizedPaymentMethod = ['UPI', 'CARD', 'NETBANKING', 'CREDIT'].includes(String(paymentMethod).toUpperCase())
+  // PARTIAL_COD is only ever created by the server after a verified Razorpay advance payment
+  const isPartialCod =
+    String(paymentMethod).toUpperCase() === 'PARTIAL_COD' &&
+    String(paymentStatus || '').toUpperCase() === 'PAID' &&
+    Number(advanceAmount) > 0;
+  const normalizedPaymentMethod = isPartialCod
+    ? 'PARTIAL_COD'
+    : ['UPI', 'CARD', 'NETBANKING', 'CREDIT'].includes(String(paymentMethod).toUpperCase())
     ? String(paymentMethod).toUpperCase()
     : 'COD';
+  // Fees, shipping and COD handling treat a partial COD order like a COD order
+  const feeMethod = normalizedPaymentMethod === 'PARTIAL_COD' ? 'COD' : normalizedPaymentMethod;
 
   const shipQuote = await resolveShippingDeliveryFee({
     pincode: selectedAddress.postalCode,
-    paymentMethod: normalizedPaymentMethod,
+    paymentMethod: feeMethod,
     subtotal,
     items: orderItems,
     productMap
@@ -363,11 +373,15 @@ export const placeOrder = async (userId, payload) => {
   const pricing = calculateOrderTotals({
     subtotal,
     discount,
-    paymentMethod: normalizedPaymentMethod,
+    paymentMethod: feeMethod,
     settings,
     deliveryFee: shipQuote.error ? undefined : shipQuote.deliveryFee
   });
   const { deliveryFee, tax, total } = pricing;
+
+  // Partial COD: what was paid online, and what the courier still has to collect
+  const advancePaid = normalizedPaymentMethod === 'PARTIAL_COD' ? Math.min(Math.round(Number(advanceAmount)), total) : 0;
+  const balanceDue = normalizedPaymentMethod === 'PARTIAL_COD' ? Math.max(0, total - advancePaid) : 0;
 
   // Pay on credit: only eligible customers, within their available credit, nothing overdue
   let creditDueDate = null;
@@ -461,7 +475,14 @@ export const placeOrder = async (userId, payload) => {
       },
       payment: {
         method: normalizedPaymentMethod,
-        status: normalizedPaymentMethod === 'CREDIT' ? 'PENDING' : initialPaymentStatus,
+        status:
+          normalizedPaymentMethod === 'CREDIT'
+            ? 'PENDING'
+            : normalizedPaymentMethod === 'PARTIAL_COD'
+            ? (balanceDue > 0 ? 'PARTIALLY_PAID' : 'PAID')
+            : initialPaymentStatus,
+        advancePaid,
+        balanceDue,
         creditDueDate,
         transactionId: paymentDetails.transactionId || '',
         upiApp: paymentDetails.upiApp || ''
@@ -842,6 +863,8 @@ export const updateOrderStatusAdmin = async (orderId, newStatusRaw, { updatedBy 
     if (order.payment.method !== 'CREDIT') {
       order.payment.status = 'PAID';
       order.payment.paidAt = order.payment.paidAt || new Date();
+      // Partial COD: the courier collected the balance at the door
+      if (order.payment.method === 'PARTIAL_COD') order.payment.balanceDue = 0;
       await Payment.findOneAndUpdate(
         { order: order._id },
         { $set: { status: 'PAID', paidAt: new Date() } }
@@ -1073,7 +1096,7 @@ export const updatePaymentStatusAdmin = async (orderId, { status, note = '', upd
     err.statusCode = 404;
     throw err;
   }
-  if (!['CREDIT', 'COD'].includes(order.payment.method)) {
+  if (!['CREDIT', 'COD', 'PARTIAL_COD'].includes(order.payment.method)) {
     const err = new Error('Only credit and cash orders can be marked paid by hand. Online payments update automatically.');
     err.statusCode = 400;
     throw err;
@@ -1082,6 +1105,16 @@ export const updatePaymentStatusAdmin = async (orderId, { status, note = '', upd
     const err = new Error('This order is cancelled.');
     err.statusCode = 400;
     throw err;
+  }
+  if (order.payment.method === 'PARTIAL_COD') {
+    // "Paid" = the balance was collected; undoing it goes back to "partially paid". The online advance record is not touched.
+    const balance = Math.max(0, Math.round((order.pricing?.total || 0) - (order.payment.advancePaid || 0)));
+    order.payment.status = target === 'PAID' ? 'PAID' : 'PARTIALLY_PAID';
+    order.payment.balanceDue = target === 'PAID' ? 0 : balance;
+    order.payment.paidAt = target === 'PAID' ? new Date() : null;
+    order.payment.paymentNote = String(note || '').trim().slice(0, 300);
+    await order.save();
+    return order;
   }
   order.payment.status = target;
   order.payment.paidAt = target === 'PAID' ? new Date() : null;

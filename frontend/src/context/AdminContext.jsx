@@ -96,6 +96,8 @@ const SETTINGS_UPDATE_KEYS = [
   'faviconUrl',
   'theme',
   'fontScale',
+  'partialCodEnabled',
+  'partialCodPercent',
   'creditEnabled',
   'creditEligibilityAmount',
   'creditLimit',

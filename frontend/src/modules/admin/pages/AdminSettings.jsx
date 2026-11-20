@@ -14,6 +14,8 @@ const EMPTY_FORM = {
   supportEmail: '',
   supportPhone: '',
   minOrderQtyKg: 5,
+  partialCodEnabled: false,
+  partialCodPercent: 30,
   creditEnabled: false,
   creditEligibilityAmount: 50000,
   creditLimit: 25000,
@@ -155,6 +157,8 @@ export default function AdminSettings() {
         theme: normalizeTheme(formData.theme),
         fontScale: normalizeFontScale(formData.fontScale),
         minOrderQtyKg: Math.max(1, Number(formData.minOrderQtyKg) || 5),
+        partialCodEnabled: formData.partialCodEnabled === true,
+        partialCodPercent: Math.min(99, Math.max(1, Math.round(Number(formData.partialCodPercent) || 30))),
         creditEnabled: formData.creditEnabled === true,
         creditEligibilityAmount: Math.max(0, Number(formData.creditEligibilityAmount) || 0),
         creditLimit: Math.max(0, Number(formData.creditLimit) || 0),
@@ -383,6 +387,46 @@ export default function AdminSettings() {
                     onChange={(e) => setField('facebookUrl', e.target.value)}
                     className={inputClass}
                   />
+                </div>
+              </div>
+
+              {/* Partial COD: pay a percentage online now, the rest on delivery */}
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-stone-900">Part payment (pay some now, rest on delivery)</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-600 mt-0.5 max-w-xl">
+                      Customers pay this percentage online at checkout. The courier collects the rest in cash/UPI when the parcel is delivered. The balance is passed to the courier automatically; after delivery the order shows as fully paid.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.partialCodEnabled === true}
+                      onChange={(e) => setField('partialCodEnabled', e.target.checked)}
+                      className="w-5 h-5 accent-[color:var(--brand-primary)]"
+                    />
+                    <span className="text-xs font-bold text-stone-800">{formData.partialCodEnabled ? 'On' : 'Off'}</span>
+                  </label>
+                </div>
+                <div className={`max-w-xs ${formData.partialCodEnabled ? '' : 'opacity-60'}`}>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="partialCodPercent">
+                    Pay now (% of the order total)
+                  </label>
+                  <input
+                    id="partialCodPercent"
+                    name="partialCodPercent"
+                    type="number"
+                    min={1}
+                    max={99}
+                    step={1}
+                    value={formData.partialCodPercent ?? 30}
+                    onChange={(e) => setField('partialCodPercent', e.target.value === '' ? '' : Number(e.target.value))}
+                    className={inputClass}
+                  />
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
+                    Between 1 and 99. Example: with {Number(formData.partialCodPercent) || 30}%, an order of ₹10,000 means ₹{Math.round(10000 * (Number(formData.partialCodPercent) || 30) / 100).toLocaleString('en-IN')} online now and ₹{(10000 - Math.round(10000 * (Number(formData.partialCodPercent) || 30) / 100)).toLocaleString('en-IN')} on delivery.
+                  </span>
                 </div>
               </div>
 

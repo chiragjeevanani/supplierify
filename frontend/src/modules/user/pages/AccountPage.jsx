@@ -739,7 +739,7 @@ export default function AccountPage() {
                             <span className="font-bold text-sm text-[color:var(--brand-primary)]">Order #{ord.id}</span>
                             <span className="text-xs text-stone-500">• {ord.date}</span>
                           </div>
-                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">Payment: {paymentMethodLabel(ord.paymentMethod)}{isCreditOrder(ord) && ord.paymentStatus !== 'PAID' && ord.status !== 'Cancelled' && ord.creditDueDate ? ` (due ${formatDueDate(ord.creditDueDate)})` : ''} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
+                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">Payment: {paymentMethodLabel(ord.paymentMethod)}{isCreditOrder(ord) && ord.paymentStatus !== 'PAID' && ord.status !== 'Cancelled' && ord.creditDueDate ? ` (due ${formatDueDate(ord.creditDueDate)})` : ''}{String(ord.paymentMethod).toUpperCase() === 'PARTIAL_COD' && ord.status !== 'Cancelled' ? (ord.paymentStatus === 'PAID' ? ` (₹${ord.advancePaid} online + balance paid on delivery)` : ` (₹${ord.advancePaid} paid, ₹${ord.balanceDue} to pay on delivery)`) : ''} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
                           {ord.expectedDelivery && (
                             <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">{ord.expectedDelivery.label}: <strong className="text-stone-900">{ord.expectedDelivery.value}</strong></p>
                           )}

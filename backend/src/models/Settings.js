@@ -77,6 +77,10 @@ const settingsSchema = new mongoose.Schema(
     // Days a customer has to pay for a credit order
     creditDueDays: { type: Number, default: 30, min: [1, 'Due days must be at least 1'], max: [365, 'Due days cannot exceed 365'] },
 
+    // 1e. Partial COD: pay a percentage online now, the rest in cash on delivery
+    partialCodEnabled: { type: Boolean, default: false },
+    partialCodPercent: { type: Number, default: 30, min: [1, 'Advance must be at least 1%'], max: [99, 'Advance cannot exceed 99%'] },
+
     // 2. Delivery Configuration
     standardDeliveryFee: {
       type: Number,

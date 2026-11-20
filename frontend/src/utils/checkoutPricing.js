@@ -43,8 +43,17 @@ export function calculateCheckoutTotals({
   return { deliveryFee, tax, total, taxableAmount };
 }
 
+/** Mirror of the server rule: pay `percent`% online now, the rest on delivery. */
+export function computePartialCod(total, percent) {
+  const t = Math.round(Number(total) || 0);
+  const pct = Number(percent);
+  if (t < 2 || !Number.isFinite(pct) || pct < 1 || pct > 99) return null;
+  const advance = Math.min(t - 1, Math.max(1, Math.round((t * pct) / 100)));
+  return { advance, balance: t - advance };
+}
+
 export function checkoutPaymentMethodKey(uiMethod) {
-  if (uiMethod === 'cod') return 'COD';
+  if (uiMethod === 'cod' || uiMethod === 'partial_cod') return 'COD';
   return 'UPI'; // online / prepaid
 }
 

@@ -155,6 +155,8 @@ export const formatOrder = (o) => {
     total: o.pricing?.total ?? o.total ?? 0,
     paymentMethod: o.payment?.method || o.paymentMethod || 'COD',
     paymentStatus: o.payment?.status || 'PENDING',
+    advancePaid: Number(o.payment?.advancePaid) || 0,
+    balanceDue: Number(o.payment?.balanceDue) || 0,
     creditDueDate: o.payment?.creditDueDate || null,
     paidAt: o.payment?.paidAt || null,
     transactionId: o.payment?.transactionId || '',

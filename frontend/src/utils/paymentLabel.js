@@ -3,6 +3,7 @@ export function paymentMethodLabel(method) {
   const m = String(method || '').toUpperCase();
   if (m === 'CREDIT') return 'Pay on credit';
   if (m === 'COD') return 'Cash on delivery';
+  if (m === 'PARTIAL_COD') return 'Part online + COD';
   if (['UPI', 'CARD', 'NETBANKING'].includes(m)) return 'Online (Razorpay)';
   return method || '—';
 }

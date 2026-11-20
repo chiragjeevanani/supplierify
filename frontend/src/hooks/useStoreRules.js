@@ -24,6 +24,8 @@ const DEFAULTS = {
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
   fontScale: DEFAULT_FONT_SCALE,
+  partialCodEnabled: false,
+  partialCodPercent: 30,
   creditEnabled: false,
   creditEligibilityAmount: 0,
   creditLimit: 0,

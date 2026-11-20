@@ -16,6 +16,8 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'faviconUrl',
   'theme',
   'fontScale',
+  'partialCodEnabled',
+  'partialCodPercent',
   'creditEnabled',
   'creditEligibilityAmount',
   'creditLimit',
@@ -112,6 +114,13 @@ export const validateUpdateSettings = (req, res, next) => {
   if (body.creditDueDays !== undefined) {
     const d = Number(body.creditDueDays);
     if (!Number.isFinite(d) || d < 1 || d > 365) errors.push({ field: 'creditDueDays', message: 'Payment due days must be between 1 and 365' });
+  }
+  if (body.partialCodPercent !== undefined) {
+    const pc = Number(body.partialCodPercent);
+    if (!Number.isFinite(pc) || pc < 1 || pc > 99) errors.push({ field: 'partialCodPercent', message: 'Advance payment must be between 1% and 99%' });
+  }
+  if (body.partialCodEnabled !== undefined && typeof body.partialCodEnabled !== 'boolean') {
+    errors.push({ field: 'partialCodEnabled', message: 'Partial COD on/off must be true or false' });
   }
   if (body.creditEnabled !== undefined && typeof body.creditEnabled !== 'boolean') {
     errors.push({ field: 'creditEnabled', message: 'Credit on/off must be true or false' });
