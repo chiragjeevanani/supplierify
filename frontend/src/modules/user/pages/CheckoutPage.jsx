@@ -14,6 +14,7 @@ import { resolveProductImage } from '../../../utils/productImage';
 import { getThemeHex } from '../../../utils/theme';
 import { paymentApi, shippingApi, addressApi, cartApi, creditApi } from '../../../utils/api';
 import { useStoreRules } from '../../../hooks/useStoreRules';
+import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
 import {
   calculateCheckoutTotals,
   checkoutPaymentMethodKey,
@@ -1167,7 +1168,7 @@ export default function CheckoutPage() {
                       />
                       <div className="min-w-0">
                         <p className="font-bold text-[color:var(--brand-primary)] truncate text-xs">{item.name}</p>
-                        <p className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                        <p className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-500">{qtyWithUnit(item.qty, unitOf(item))} × ₹{item.price}{perUnit(unitOf(item)).replace('/ ', '/')}</p>
                       </div>
                     </div>
                     <span className="font-sans font-bold text-[color:var(--brand-primary)] shrink-0 ml-2 text-xs">₹{item.price * item.qty}</span>

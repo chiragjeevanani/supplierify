@@ -14,7 +14,7 @@ export default function AboutPage() {
 
   const points = [
     { icon: BadgeCheck, title: 'Quality graded stock', text: 'Every lot is sorted and graded before it is packed, so what you order is what you receive.' },
-    { icon: Boxes, title: 'Bulk, by the kilo', text: `Wholesale rates per kg with a minimum order of ${rules.minOrderQtyKg} kg per product.` },
+    { icon: Boxes, title: 'Bulk wholesale', text: `Wholesale rates by the kilo, piece or set, with a minimum order of ${rules.minOrderQtyKg} kg on kg products.` },
     { icon: Truck, title: 'Packed and shipped', text: 'Sealed bulk packing, shipped across India with tracking.' },
     { icon: ShieldCheck, title: 'Simple, safe payment', text: 'Pay securely online with Razorpay, or settle terms with us directly on WhatsApp.' }
   ];
@@ -47,7 +47,7 @@ export default function AboutPage() {
       <section className="bg-white rounded-xl border border-[color:var(--brand-border)] p-6">
         <h3 className="font-serif text-xl font-bold text-[color:var(--brand-primary)] mb-3">How ordering works</h3>
         <ol className="list-decimal pl-5 space-y-2 text-sm text-stone-700 leading-relaxed">
-          <li>Browse the catalogue and choose a quantity in kg (minimum {rules.minOrderQtyKg} kg per product).</li>
+          <li>Browse the catalogue and choose a quantity (kg products have a minimum of {rules.minOrderQtyKg} kg).</li>
           <li>Add to cart and pay online through Razorpay, <strong>or</strong> tap the WhatsApp button to send us your selection.</li>
           <li>For WhatsApp enquiries, your product and quantity are already typed in. Just press send and we will confirm the price and delivery.</li>
           <li>We pack and dispatch your order and share the tracking details.</li>

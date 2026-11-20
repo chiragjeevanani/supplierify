@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
 import { 
   CheckCircle2, Phone, MapPin, 
   ChevronRight, MessageSquare, FileText, Wifi
@@ -396,7 +397,7 @@ export default function OrderTrackingPage() {
                   <img src={item.image} alt={item.name} className="w-11 h-11 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl object-cover bg-white p-0.5 sm:p-1 border border-stone-200 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-serif text-xs font-bold text-[color:var(--brand-primary)] truncate">{item.name}</h4>
-                    <p className="text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                    <p className="text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">{qtyWithUnit(item.qty, unitOf(item))} × ₹{item.price}{perUnit(unitOf(item)).replace('/ ', '/')}</p>
                     <p className="text-[length:calc(11px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)] mt-0.5">₹{item.price * item.qty}</p>
                     <RateReviewButton order={order} item={item} className="mt-1.5" />
                   </div>

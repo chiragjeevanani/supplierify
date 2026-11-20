@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
+import { CATEGORY_GROUPS, groupOf, productInCategory } from '../../../utils/categoryGroups';
 
 import ProductCard from '../components/ProductCard';
 import { useAdmin } from '../../../context/AdminContext';
@@ -22,6 +23,7 @@ export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const activeCategory = searchParams.get('category') || 'all';
+  const activeGroupParam = searchParams.get('group') || '';
   const searchQuery = (searchParams.get('search') || '').trim();
   const showCategories = searchParams.get('tab') === 'categories';
 
@@ -45,11 +47,25 @@ export default function ShopPage() {
       .sort((a, b) => rank(a) - rank(b) || String(a.name || '').localeCompare(String(b.name || '')));
   }, [rawCategories]);
 
+  // Which section is selected: the ?group= link, or the section of the selected category
+  const activeGroup = useMemo(() => {
+    if (CATEGORY_GROUPS.some((g) => g.id === activeGroupParam)) return activeGroupParam;
+    const cat = categories.find((c) => c.slug === activeCategory);
+    return cat ? groupOf(cat) : '';
+  }, [activeGroupParam, activeCategory, categories]);
+  const visibleCategories = useMemo(
+    () => (activeGroup ? categories.filter((c) => groupOf(c) === activeGroup) : categories),
+    [categories, activeGroup]
+  );
+
   const results = useMemo(() => {
     const q = searchQuery.toLowerCase();
     const cat = categories.find((c) => c.slug === activeCategory || String(c._id || c.id) === activeCategory);
 
     const list = products.filter((p) => {
+      if (activeCategory === 'all' && activeGroup) {
+        if (!categories.some((c) => groupOf(c) === activeGroup && productInCategory(p, c))) return false;
+      }
       if (activeCategory !== 'all') {
         const pc = String(p.category || '').toLowerCase();
         const matches =
@@ -70,18 +86,27 @@ export default function ShopPage() {
     else if (sortBy === 'name') sorted.sort((a, b) => String(a.name).localeCompare(String(b.name)));
     else sorted.sort((a, b) => Number(Boolean(b.isFeatured || b.isBestseller)) - Number(Boolean(a.isFeatured || a.isBestseller)));
     return sorted;
-  }, [products, categories, activeCategory, searchQuery, sortBy]);
+  }, [products, categories, activeCategory, activeGroup, searchQuery, sortBy]);
+
+  const selectGroup = (id) => {
+    const next = {};
+    if (id) next.group = id;
+    if (searchQuery) next.search = searchQuery;
+    setSearchParams(next);
+  };
 
   const selectCategory = (slug) => {
     const next = {};
     if (slug !== 'all') next.category = slug;
+    else if (activeGroup) next.group = activeGroup;
     if (searchQuery) next.search = searchQuery;
     setSearchParams(next);
   };
 
   const clearFilters = () => setSearchParams({});
 
-  const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name;
+  const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name
+    || (activeCategory === 'all' && activeGroup ? CATEGORY_GROUPS.find((g) => g.id === activeGroup)?.label : '');
 
   // Categories directory view
   if (showCategories) {
@@ -123,7 +148,7 @@ export default function ShopPage() {
             {activeCategoryName || (searchQuery ? 'Search results' : 'All Products')}
           </h2>
           <p className="text-sm text-stone-600 mt-0.5">
-            Priced per kg. Minimum order {rules.minOrderQtyKg} kg per product.
+            Wholesale prices. The unit and minimum order are shown on each product.
           </p>
         </div>
 
@@ -141,9 +166,31 @@ export default function ShopPage() {
         </label>
       </div>
 
-      {/* Category pills */}
+      {/* Section tabs: Dry Fruits / Metals / Garments / Household Furniture */}
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 mb-2" role="tablist" aria-label="Sections">
+        {[{ id: '', label: 'All' }, ...CATEGORY_GROUPS].map((g) => {
+          const on = (activeGroup || '') === g.id;
+          return (
+            <button
+              key={g.id || 'all'}
+              role="tab"
+              aria-selected={on}
+              onClick={() => selectGroup(g.id)}
+              className={`shrink-0 rounded-lg px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                on
+                  ? 'bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] border-[color:var(--brand-primary)]'
+                  : 'bg-white text-[color:var(--brand-primary)] border-transparent hover:bg-[color:var(--brand-accent)]/30'
+              }`}
+            >
+              {g.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Category pills (of the selected section) */}
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 mb-3" role="tablist" aria-label="Categories">
-        {[{ slug: 'all', name: 'All' }, ...categories].map((c) => {
+        {[{ slug: 'all', name: 'All' }, ...visibleCategories].map((c) => {
           const on = activeCategory === c.slug;
           return (
             <button

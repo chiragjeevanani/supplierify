@@ -12,6 +12,7 @@ import OrderDistance from '../components/OrderDistance';
 import InvoicePreviewModal from '../../user/components/InvoicePreviewModal';
 import { useAuth, formatOrder } from '../../../context/AuthContext';
 import { paymentMethodLabel, isCreditOrder, formatDueDate } from '../../../utils/paymentLabel';
+import { unitOf, qtyWithUnit } from '../../../utils/units';
 import { adminOrderApi } from '../../../utils/api';
 import { getStatusOptions, isTerminalStatus, friendlyStatusError } from '../../../utils/orderStatusFlow';
 
@@ -794,7 +795,7 @@ export default function AdminOrders() {
                         <img src={it.image} alt="" className="w-11 h-11 rounded-lg object-cover border border-stone-200 bg-stone-50" />
                         <div>
                           <div className="font-semibold text-stone-900">{it.name}</div>
-                          <span className="text-xs text-stone-400 font-normal">{it.qty} kg</span>
+                          <span className="text-xs text-stone-400 font-normal">{qtyWithUnit(it.qty, unitOf(it))}</span>
                         </div>
                       </div>
                       <div className="font-bold text-stone-900">₹{(it.price || 0) * (it.qty || 1)}</div>

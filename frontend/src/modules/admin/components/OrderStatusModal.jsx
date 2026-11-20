@@ -1,3 +1,4 @@
+import { unitOf, unitText, qtyWithUnit } from '../../../utils/units';
 import React, { useState, useEffect } from 'react';
 import { X, Check, MapPin, User, Package, ShieldCheck } from 'lucide-react';
 import { getStatusOptions } from '../../../utils/orderStatusFlow';
@@ -228,7 +229,7 @@ export default function OrderStatusModal({ isOpen, onClose, order, onUpdateStatu
                       <img src={it.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150'} alt="" className="w-11 h-11 rounded-lg object-cover border border-stone-200 bg-stone-50 shrink-0" />
                       <div>
                         <div className="font-semibold text-stone-900">{it.name}</div>
-                        <span className="text-xs text-stone-400 font-normal"><strong className="text-stone-700">{it.qty || 1} kg</strong> • ₹{it.price || 0} per kg</span>
+                        <span className="text-xs text-stone-400 font-normal"><strong className="text-stone-700">{qtyWithUnit(it.qty || 1, unitOf(it))}</strong> • ₹{it.price || 0} per {unitText(1, unitOf(it))}</span>
                       </div>
                     </div>
                     <div className="font-bold text-stone-900 text-sm">₹{(it.price || 0) * (it.qty || 1)}</div>

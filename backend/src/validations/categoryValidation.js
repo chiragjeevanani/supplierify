@@ -3,6 +3,7 @@ import { HTTP_STATUS } from '../constants/status.js';
 import Category from '../models/Category.js';
 import mongoose from 'mongoose';
 import { INITIAL_CATEGORIES_SEED } from '../services/categoryService.js';
+import { normalizeCategoryGroup } from '../constants/categoryGroups.js';
 
 /**
  * Validate Create Category Payload
@@ -29,6 +30,10 @@ export const validateCreateCategory = async (req, res, next) => {
   const orderVal = sortOrder !== undefined ? sortOrder : order;
   if (orderVal !== undefined && isNaN(Number(orderVal))) {
     errors.push({ field: 'sortOrder', message: 'sortOrder must be a valid number' });
+  }
+
+  if (req.body.group !== undefined && req.body.group !== null && req.body.group !== '' && !normalizeCategoryGroup(req.body.group)) {
+    errors.push({ field: 'group', message: 'Section must be one of: Dry Fruits, Metals, Garments, Household Furniture' });
   }
 
   if (errors.length > 0) {
@@ -87,6 +92,10 @@ export const validateUpdateCategory = async (req, res, next) => {
   const orderVal = sortOrder !== undefined ? sortOrder : order;
   if (orderVal !== undefined && isNaN(Number(orderVal))) {
     errors.push({ field: 'sortOrder', message: 'sortOrder must be a valid number' });
+  }
+
+  if (req.body.group !== undefined && req.body.group !== null && req.body.group !== '' && !normalizeCategoryGroup(req.body.group)) {
+    errors.push({ field: 'group', message: 'Section must be one of: Dry Fruits, Metals, Garments, Household Furniture' });
   }
 
   if (errors.length > 0) {

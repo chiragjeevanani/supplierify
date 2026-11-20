@@ -296,7 +296,7 @@ export default function AdminSettings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[color:var(--brand-accent)]/10 border border-[color:var(--brand-accent)]/40">
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="minOrderQtyKg">
-                    Minimum Order Quantity (kg)
+                    Minimum Order Quantity (kg products)
                   </label>
                   <input
                     id="minOrderQtyKg"
@@ -309,7 +309,7 @@ export default function AdminSettings() {
                     className={inputClass}
                   />
                   <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
-                    Applies to every product line. A single product can override this in its own settings.
+                    Applies to every product sold by the kg. Products sold by piece, pair, set or meter start at 1. A single product can override this in its own settings.
                   </span>
                 </div>
                 <div>

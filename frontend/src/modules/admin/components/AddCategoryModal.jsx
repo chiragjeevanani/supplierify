@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { CATEGORY_GROUPS, groupOf } from '../../../utils/categoryGroups';
 import { X, Check, UploadCloud, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { uploadApi } from '../../../utils/api';
 import { compressImageFile } from '../../../utils/compressImage';
@@ -34,6 +35,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
           image: initialData.image || '',
           subtext: initialData.subtext || '',
           badge: initialData.badge || 'Popular',
+          group: groupOf(initialData),
           popular: initialData.popular !== false
         });
         setShowUrlInput(!!initialData.image && !initialData.image.startsWith('data:'));
@@ -47,6 +49,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
           image: '',
           subtext: '',
           badge: 'Popular',
+          group: 'dry-fruits',
           popular: true
         });
         setShowUrlInput(false);
@@ -242,6 +245,21 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Section on the storefront */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">Section *</label>
+            <select
+              value={formData.group || 'dry-fruits'}
+              onChange={(e) => setFormData({ ...formData, group: e.target.value })}
+              className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)] cursor-pointer"
+            >
+              {CATEGORY_GROUPS.map((g) => (
+                <option key={g.id} value={g.id}>{g.label}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-stone-500 mt-1">Products of this category show under this heading on the home page.</p>
           </div>
 
           {/* Status & Display Order */}

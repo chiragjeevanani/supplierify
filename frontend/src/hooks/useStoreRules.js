@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { settingsApi } from '../utils/api';
 import { BRAND } from '../config/brand';
+import { unitOf } from '../utils/units';
 import { DEFAULT_THEME, normalizeTheme, DEFAULT_FONT_SCALE, normalizeFontScale } from '../utils/theme';
 
 /**
@@ -72,6 +73,8 @@ export const refreshStoreRules = () => load();
 export function getMinQty(product, rules = DEFAULTS) {
   const perProduct = Number(product?.minOrderQty) || 0;
   if (perProduct > 0) return perProduct;
+  // Pieces, pairs, sets and metres have no store-wide minimum (only kg products do)
+  if (unitOf(product) !== 'kg') return 1;
   return Number(rules?.minOrderQtyKg) > 0 ? Number(rules.minOrderQtyKg) : BRAND.defaultMinOrderQtyKg;
 }
 

@@ -88,7 +88,7 @@ export const getCheckoutSummary = async (userId) => {
 
     const minQtyKg = resolveMinQtyKg(liveProduct, minQtySettings);
     if (item.qty < minQtyKg) {
-      stockWarnings.push(minQtyMessage(liveProduct.name, minQtyKg));
+      stockWarnings.push(minQtyMessage(liveProduct.name, minQtyKg, liveProduct.unit));
     }
 
     if (isOutOfStock) {
@@ -275,7 +275,7 @@ export const placeOrder = async (userId, payload) => {
 
     const minQtyKg = resolveMinQtyKg(liveProduct, minQtySettings);
     if (item.qty < minQtyKg) {
-      const err = new Error(minQtyMessage(liveProduct.name, minQtyKg));
+      const err = new Error(minQtyMessage(liveProduct.name, minQtyKg, liveProduct.unit));
       err.statusCode = 400;
       throw err;
     }

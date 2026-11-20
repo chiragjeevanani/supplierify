@@ -1,3 +1,4 @@
+import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
 import React, { useState, useMemo, useEffect } from 'react';
 import usePagination from '../../../hooks/usePagination';
 import AdminPagination from '../components/AdminPagination';
@@ -334,7 +335,7 @@ export default function AdminProducts() {
                               <span className="md:hidden capitalize">
                                 {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
                               </span>
-                              <span className={`font-semibold ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-600'}`}>{p.stockCount ?? 0} kg in stock</span>
+                              <span className={`font-semibold ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-600'}`}>{qtyWithUnit(p.stockCount ?? 0, unitOf(p))} in stock</span>
                             </div>
                             <button
                               onClick={() => handleToggle(p)}
@@ -353,11 +354,11 @@ export default function AdminProducts() {
                             {p.oldPrice && (
                               <span className="hidden sm:inline text-xs text-stone-400 line-through ml-1.5">₹{p.oldPrice}</span>
                             )}
-                            <span className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal"> /kg</span>
+                            <span className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal"> {perUnit(unitOf(p)).replace('/ ', '/')}</span>
                           </td>
                           <td className="hidden lg:table-cell py-3.5 px-5">
                             <span className={`font-semibold text-xs sm:text-sm ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-700'}`}>
-                              {p.stockCount ?? 0} kg
+                              {qtyWithUnit(p.stockCount ?? 0, unitOf(p))}
                             </span>
                           </td>
                           <td className="hidden sm:table-cell py-3.5 px-5">

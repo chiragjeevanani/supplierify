@@ -80,7 +80,13 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: '1 kg'
     },
-    // Wholesale: minimum kg per order line for THIS product (0 = use the store-wide minimum from Settings)
+    // What one unit is: kilogram (default), piece, pair, set or meter. Prices, stock and quantities are in this unit.
+    unit: {
+      type: String,
+      enum: ['kg', 'piece', 'pair', 'set', 'meter'],
+      default: 'kg'
+    },
+    // Minimum quantity per order line for THIS product, in its unit (0 = kg products use the store-wide minimum from Settings, other units use 1)
     minOrderQty: {
       type: Number,
       default: 0,

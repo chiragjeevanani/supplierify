@@ -1,3 +1,4 @@
+import { groupOf, groupLabel } from '../../../utils/categoryGroups';
 import React, { useState } from 'react';
 import { 
   Plus, 
@@ -319,6 +320,9 @@ export default function AdminCategories() {
                             <h3 className="font-sans font-bold text-sm sm:text-base text-[color:var(--brand-primary)] truncate">
                               {cat.name}
                             </h3>
+                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider">
+                              {groupLabel(groupOf(cat))}
+                            </span>
                             {cat.badge && (
                               <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)] border border-[color:var(--brand-primary)]/15 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider">
                                 {cat.badge}

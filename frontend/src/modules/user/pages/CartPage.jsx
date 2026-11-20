@@ -11,6 +11,7 @@ import { useStoreRules, getMinQty } from '../../../hooks/useStoreRules';
 import { resolveProductImage } from '../../../utils/productImage';
 import { buildCartEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
 import KgStepper from '../components/KgStepper';
+import { unitOf, unitText, perUnit, qtyWithUnit, itemsSummary } from '../../../utils/units';
 
 const inr = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 
@@ -55,7 +56,7 @@ export default function CartPage() {
           </div>
           <h2 className="font-serif text-2xl font-bold text-[color:var(--brand-primary)]">Your cart is empty</h2>
           <p className="text-sm text-stone-600">
-            Add products by the kilo. Minimum order is {rules.minOrderQtyKg} kg per product.
+            Add products to your cart. Minimum orders are shown on each product.
           </p>
           <Link
             to="/shop"
@@ -72,7 +73,7 @@ export default function CartPage() {
     <div className="px-4 sm:px-6 py-5 sm:py-6 max-w-7xl mx-auto pb-24 lg:pb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-2xl font-bold text-[color:var(--brand-primary)]">
-          My Cart <span className="text-base font-semibold text-stone-500">({itemCount} kg)</span>
+          My Cart <span className="text-base font-semibold text-stone-500">({itemsSummary(cartItems)})</span>
         </h2>
         <button
           onClick={clearCart}
@@ -87,7 +88,7 @@ export default function CartPage() {
         <div className="lg:col-span-8 space-y-3">
           <div className="flex items-start gap-2 rounded-xl bg-[color:var(--brand-accent)]/15 border border-[color:var(--brand-accent)]/40 px-4 py-3 text-sm text-[color:var(--brand-accent-darker)]">
             <Info className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>Wholesale: minimum {rules.minOrderQtyKg} kg per product (some products may need more). Shipping is calculated at checkout.</span>
+            <span>Wholesale: dry fruits and other kg products have a minimum of {rules.minOrderQtyKg} kg per product; other items show their own minimum. Shipping is calculated at checkout.</span>
           </div>
 
           <div className="bg-white rounded-2xl border border-[color:var(--brand-border)] divide-y divide-stone-100">
@@ -112,20 +113,21 @@ export default function CartPage() {
                         {item.name}
                       </Link>
                       <p className="text-sm text-stone-600 mt-0.5">
-                        {inr(item.price)} <span className="text-xs">/ kg</span>
+                        {inr(item.price)} <span className="text-xs">{perUnit(unitOf(item))}</span>
                       </p>
-                      <p className="text-[length:calc(11px*var(--fs))] text-stone-500">Min. {min} kg</p>
+                      <p className="text-[length:calc(11px*var(--fs))] text-stone-500">Min. {qtyWithUnit(min, unitOf(item))}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
                     <KgStepper
+                      unit={unitOf(item)}
                       value={Number(item.qty) || 0}
                       min={min}
                       max={canAddMore ? max : Number(item.qty) || min}
                       onChange={(n) => setItemQty(itemId, item.weight, n)}
                     />
-                    <span className="text-xs text-stone-500 -ml-2">kg</span>
+                    <span className="text-xs text-stone-500 -ml-2">{unitText(item.qty, unitOf(item))}</span>
                     <div className="text-right min-w-[84px]">
                       <span className="font-extrabold text-[color:var(--brand-primary)]">{inr(item.price * item.qty)}</span>
                     </div>
@@ -157,7 +159,7 @@ export default function CartPage() {
 
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between text-stone-600">
-                <dt>Subtotal ({itemCount} kg)</dt>
+                <dt>Subtotal ({itemsSummary(cartItems)})</dt>
                 <dd className="font-bold text-stone-900">{inr(subtotal)}</dd>
               </div>
               {discountAmount > 0 && (

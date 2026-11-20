@@ -287,7 +287,7 @@ class InvoiceService {
       .font('Helvetica-Bold')
       .text('#', 46, tableTop + 6, { width: 20 })
       .text('ITEM DESCRIPTION', 68, tableTop + 6, { width: 230 })
-      .text('WEIGHT', 300, tableTop + 6, { width: 60, align: 'center' })
+      .text('UNIT', 300, tableTop + 6, { width: 60, align: 'center' })
       .text('UNIT PRICE', 365, tableTop + 6, { width: 65, align: 'right' })
       .text('QTY', 435, tableTop + 6, { width: 35, align: 'center' })
       .text('TOTAL', 475, tableTop + 6, { width: 72, align: 'right' });

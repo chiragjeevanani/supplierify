@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Check, UploadCloud, Image as ImageIcon, Trash2, Plus, RefreshCw, Star, Loader2, Cloud, Sparkles, Layers } from 'lucide-react';
 
 import { CATEGORIES } from '../../../data/categories';
+import { CATEGORY_GROUPS, groupOf } from '../../../utils/categoryGroups';
+import { UNITS, unitOf, unitText } from '../../../utils/units';
 import { useAdmin } from '../../../context/AdminContext';
 import { uploadApi } from '../../../utils/api';
 import { resolveProductImage } from '../../../utils/productImage';
@@ -17,6 +19,11 @@ const EMPTY_PRODUCT = {
   discountPercent: 9,
   stockCount: 500,
   minOrderQty: 0,
+  unit: 'kg',
+  shippingWeightKg: '',
+  lengthCm: '',
+  breadthCm: '',
+  heightCm: '',
   badge: 'BESTSELLER',
   image: '',
   gallery: [],
@@ -96,6 +103,11 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
           price: initialData.price !== undefined ? initialData.price : 500,
           oldPrice: initialData.oldPrice !== undefined ? initialData.oldPrice : 0,
           minOrderQty: initialData.minOrderQty || 0,
+          unit: unitOf(initialData),
+          shippingWeightKg: initialData.shippingWeightKg ?? '',
+          lengthCm: initialData.lengthCm ?? '',
+          breadthCm: initialData.breadthCm ?? '',
+          heightCm: initialData.heightCm ?? '',
           discountPercent: initialData.discountPercent || 0,
           stockCount: initialData.stockCount !== undefined ? initialData.stockCount : 500,
           badge: initialData.badge || '',
@@ -368,6 +380,11 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         oldPrice: Number(formData.oldPrice || Math.round(priceNum * 1.2)),
         stockCount: Number(formData.stockCount || 0),
         minOrderQty: Math.max(0, Number(formData.minOrderQty) || 0),
+        unit: formData.unit || 'kg',
+        shippingWeightKg: formData.shippingWeightKg !== '' && formData.shippingWeightKg != null ? Number(formData.shippingWeightKg) : null,
+        lengthCm: formData.lengthCm !== '' && formData.lengthCm != null ? Number(formData.lengthCm) : null,
+        breadthCm: formData.breadthCm !== '' && formData.breadthCm != null ? Number(formData.breadthCm) : null,
+        heightCm: formData.heightCm !== '' && formData.heightCm != null ? Number(formData.heightCm) : null,
         isBestseller: Boolean(formData.isBestseller),
         badge: formData.badge || (formData.isBestseller ? 'BESTSELLER' : ''),
         image: primaryImg,
@@ -375,16 +392,16 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         description: formData.description || '',
         details: formData.productDetails || formData.details || '',
         productDetails: formData.productDetails || formData.details || '',
-        // Wholesale: always one sellable unit, "1 kg", priced per kg
-        weight: '1 kg',
+        // Wholesale: one sellable unit ("1 kg", "1 piece"...), priced per that unit
+        weight: `1 ${formData.unit || 'kg'}`,
         weightOptions: [
-          { weight: '1 kg', price: priceNum, oldPrice: Number(formData.oldPrice || 0), isDefault: true }
+          { weight: `1 ${formData.unit || 'kg'}`, price: priceNum, oldPrice: Number(formData.oldPrice || 0), isDefault: true }
         ],
         variants: [
           {
             id: 'v1',
-            name: 'Per kg',
-            weight: '1 kg',
+            name: `Per ${formData.unit || 'kg'}`,
+            weight: `1 ${formData.unit || 'kg'}`,
             price: priceNum,
             oldPrice: Number(formData.oldPrice || 0),
             stock: Number(formData.stockCount || 0)
@@ -434,7 +451,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         {/* Modal Form Tabs */}
         <div className="flex border-b border-stone-200 px-4 sm:px-6 bg-[color:var(--brand-surface)] gap-4 sm:gap-6 shrink-0">
           {[
-            { id: 'basic', label: 'Product Details & Pricing (per kg)' }
+            { id: 'basic', label: `Product Details & Pricing (per ${formData.unit || 'kg'})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -488,13 +505,34 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     }}
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white cursor-pointer"
                   >
-                    {allCategories.map(c => {
-                      const catVal = c.slug || c.id || c._id;
+                    {CATEGORY_GROUPS.map((g) => {
+                      const inGroup = allCategories.filter((c) => groupOf(c) === g.id);
+                      if (inGroup.length === 0) return null;
                       return (
-                        <option key={c.id || c.slug || c._id} value={catVal}>{c.name}</option>
+                        <optgroup key={g.id} label={g.label}>
+                          {inGroup.map((c) => {
+                            const catVal = c.slug || c.id || c._id;
+                            return <option key={c.id || c.slug || c._id} value={catVal}>{c.name}</option>;
+                          })}
+                        </optgroup>
                       );
                     })}
                   </select>
+                </div>
+
+                {/* Sold by (unit) */}
+                <div>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">Sold by *</label>
+                  <select
+                    value={formData.unit || 'kg'}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white cursor-pointer"
+                  >
+                    {UNITS.map((u) => (
+                      <option key={u.id} value={u.id}>{u.label}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">Price, stock and the customer's quantity are all counted in this unit.</p>
                 </div>
 
                 {/* Pricing & Stock Row */}
@@ -506,7 +544,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Selling Price (₹ per kg) *
+                        Selling Price (₹ per {formData.unit || 'kg'}) *
                       </label>
                       <input
                         type="number"
@@ -520,7 +558,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     </div>
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Original Price (₹ per kg)
+                        Original Price (₹ per {formData.unit || 'kg'})
                       </label>
                       <input
                         type="number"
@@ -542,7 +580,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     </div>
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Stock (kg)
+                        Stock ({unitText(2, formData.unit)})
                       </label>
                       <input
                         type="number"
@@ -555,7 +593,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     </div>
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Min. Order (kg)
+                        Min. Order ({unitText(2, formData.unit)})
                       </label>
                       <input
                         type="number"
@@ -565,10 +603,39 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         placeholder="0 = store default"
                         className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
                       />
-                      <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">0 uses the store-wide minimum from Settings.</p>
+                      <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">Leave 0 for the default ({(formData.unit || 'kg') === 'kg' ? 'store-wide minimum from Settings' : '1'}).</p>
                     </div>
                   </div>
                 </div>
+
+                {(formData.unit || 'kg') !== 'kg' && (
+                  <div className="p-3.5 bg-[color:var(--brand-surface)] rounded-xl border border-stone-200 space-y-3">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">
+                      Courier details (needed to ship)
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        ['shippingWeightKg', `Weight of 1 ${formData.unit} (kg)`],
+                        ['lengthCm', 'Length (cm)'],
+                        ['breadthCm', 'Width (cm)'],
+                        ['heightCm', 'Height (cm)']
+                      ].map(([key, label]) => (
+                        <div key={key}>
+                          <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">{label}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={formData[key] ?? ''}
+                            onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[length:calc(10.5px*var(--fs))] text-stone-500">The courier needs the weight to book the shipment. Size is optional (a standard box is used if left empty).</p>
+                  </div>
+                )}
 
                 {/* Homepage Best Sellers Inclusion Option */}
                 <div className={`p-4 rounded-xl border transition-all ${

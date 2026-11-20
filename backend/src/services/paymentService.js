@@ -247,7 +247,7 @@ class PaymentService {
       }
       const minQtyKg = resolveMinQtyKg(liveProduct, minQtySettings);
       if (item.qty < minQtyKg) {
-        const err = new Error(minQtyMessage(liveProduct.name, minQtyKg));
+        const err = new Error(minQtyMessage(liveProduct.name, minQtyKg, liveProduct.unit));
         err.statusCode = 400;
         throw err;
       }

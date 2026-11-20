@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { cartApi, settingsApi } from '../utils/api';
 import { resolveProductImage } from '../utils/productImage';
 import { useStoreRules, getMinQty } from '../hooks/useStoreRules';
+import { unitOf, unitWeightLabel, qtyWithUnit } from '../utils/units';
 
 const CartContext = createContext();
 
@@ -215,11 +216,12 @@ export function CartProvider({ children }) {
    * Add to Cart from any section (Homepage bestsellers, Shop, Details, Wishlist)
    * Standardizes product ID, weight, image and price snapshot
    */
-  const addToCart = async (product, weight = '1 kg', qty = 1, openDrawer = false) => {
+  const addToCart = async (product, weight = null, qty = 1, openDrawer = false) => {
     if (!product) return;
 
     const prodId = (product._id || product.id || product.slug)?.toString();
-    const cleanWeight = weight || product.weight || '1 kg';
+    const cleanWeight = weight || unitWeightLabel(product);
+    const unit = unitOf(product);
     let cleanQty = Math.max(1, Number(qty) || 1);
 
     // Wholesale minimum: the cart line for this product must reach the minimum kg
@@ -227,7 +229,7 @@ export function CartProvider({ children }) {
     const alreadyInCart = getCartQtyForProduct(prodId);
     if (alreadyInCart + cleanQty < minQty) {
       cleanQty = minQty - alreadyInCart;
-      showStockNotice(`Minimum order for ${product.name || 'this product'} is ${minQty} kg. Quantity set to ${minQty} kg.`);
+      showStockNotice(`Minimum order for ${product.name || 'this product'} is ${qtyWithUnit(minQty, unit)}. Quantity set to ${qtyWithUnit(minQty, unit)}.`);
     }
 
     // Stock guard: never add more than what is available
@@ -239,11 +241,11 @@ export function CartProvider({ children }) {
         return false;
       }
       if (remaining <= 0) {
-        showStockNotice(`You already have all ${stockLimit} kg available in your cart.`);
+        showStockNotice(`You already have all ${qtyWithUnit(stockLimit, unit)} available in your cart.`);
         return false;
       }
       if (cleanQty > remaining) {
-        showStockNotice(`Only ${stockLimit} kg available. Added ${remaining} kg.`);
+        showStockNotice(`Only ${qtyWithUnit(stockLimit, unit)} available. Added ${qtyWithUnit(remaining, unit)}.`);
         cleanQty = remaining;
       }
     }
@@ -358,7 +360,7 @@ export function CartProvider({ children }) {
       if (line) {
         const minQty = getMinQty(findCatalogProduct(targetId) || line, rules);
         if ((Number(line.qty) || 0) + delta < minQty) {
-          showStockNotice(`Minimum order is ${minQty} kg. Remove the item to take it out of your cart.`);
+          showStockNotice(`Minimum order is ${qtyWithUnit(minQty, unitOf(line))}. Remove the item to take it out of your cart.`);
           return;
         }
       }
@@ -369,7 +371,7 @@ export function CartProvider({ children }) {
       const remaining = getRemainingStock(targetId);
       if (remaining < delta) {
         const limit = getStockLimit(targetId);
-        showStockNotice(limit !== null && limit <= 0 ? 'This product is out of stock.' : `Only ${limit} kg available in stock.`);
+        showStockNotice(limit !== null && limit <= 0 ? 'This product is out of stock.' : `Only ${qtyWithUnit(limit, unitOf(findCatalogProduct(targetId)))} available in stock.`);
         return;
       }
     }
@@ -417,7 +419,7 @@ export function CartProvider({ children }) {
     const finalQty = Math.max(next, minQty);
     const limit = getStockLimit(targetId);
     if (limit !== null && finalQty > limit) {
-      showStockNotice(`Only ${limit} kg available in stock.`);
+      showStockNotice(`Only ${qtyWithUnit(limit, unitOf(findCatalogProduct(targetId)))} available in stock.`);
       return;
     }
 

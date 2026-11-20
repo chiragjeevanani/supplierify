@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
+import { unitText } from '../../../utils/units';
 
 /**
  * Quantity stepper for wholesale kg quantities.
@@ -7,7 +8,8 @@ import { Minus, Plus } from 'lucide-react';
  *   below it snaps back up to `min` as soon as the field loses focus / Enter is pressed.
  * - `onChange` is only ever called with a whole number between `min` and `max`.
  */
-export default function KgStepper({ value, min, max = 100000, onChange, size = 'md', className = '' }) {
+export default function KgStepper({ value, min, max = 100000, onChange, size = 'md', className = '', unit = 'kg' }) {
+  const u = unitText(2, unit);
   const [draft, setDraft] = useState(null);
 
   const clamp = (n) => {
@@ -33,8 +35,8 @@ export default function KgStepper({ value, min, max = 100000, onChange, size = '
         onClick={() => { setDraft(null); onChange(clamp(value - 1)); }}
         disabled={value <= min}
         className={`${btn} flex items-center justify-center text-[color:var(--brand-primary)] hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed`}
-        aria-label="Decrease kg"
-        title={value <= min ? `Minimum order is ${min} kg` : undefined}
+        aria-label={`Decrease ${u}`}
+        title={value <= min ? `Minimum order is ${min} ${unitText(min, unit)}` : undefined}
       >
         <Minus className="w-4 h-4" />
       </button>
@@ -49,14 +51,14 @@ export default function KgStepper({ value, min, max = 100000, onChange, size = '
         onBlur={commit}
         onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
         className={`${field} text-center text-sm font-bold outline-none border-x border-[color:var(--brand-border-strong)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`}
-        aria-label="Quantity in kg"
+        aria-label={`Quantity in ${u}`}
       />
       <button
         type="button"
         onClick={() => { setDraft(null); onChange(clamp(value + 1)); }}
         disabled={value >= max}
         className={`${btn} flex items-center justify-center text-[color:var(--brand-primary)] hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed`}
-        aria-label="Increase kg"
+        aria-label={`Increase ${u}`}
       >
         <Plus className="w-4 h-4" />
       </button>

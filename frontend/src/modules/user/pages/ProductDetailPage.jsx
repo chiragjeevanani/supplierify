@@ -18,6 +18,7 @@ import { reviewApi } from '../../../utils/api';
 import { useStoreRules, getMinQty } from '../../../hooks/useStoreRules';
 import { buildProductEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
 import KgStepper from '../components/KgStepper';
+import { unitOf, unitWeightLabel, unitText, perUnit, qtyWithUnit } from '../../../utils/units';
 
 export default function ProductDetailPage() {
   const { id, slug } = useParams();
@@ -56,8 +57,9 @@ export default function ProductDetailPage() {
   }, [product, targetKey, navigate]);
 
   const [selectedImage, setSelectedImage] = useState(product?.image);
-  // Wholesale: always sold per kg, quantity = number of kg
-  const selectedWeight = '1 kg';
+  // Sold per unit (kg by default; piece, pair, set or meter for other products); quantity = number of units
+  const unit = unitOf(product);
+  const selectedWeight = unitWeightLabel(product);
   const [quantity, setQuantity] = useState(() => getMinQty(product, rules));
   const [activeTab, setActiveTab] = useState('description');
   const [isAdded, setIsAdded] = useState(false);
@@ -342,11 +344,11 @@ export default function ProductDetailPage() {
                   </span>
                 ) : stockLimit !== null && stockLimit <= 10 ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full">
-                    Only {stockLimit} kg left
+                    Only {qtyWithUnit(stockLimit, unit)} left
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                    <Check className="w-3.5 h-3.5" /> In Stock{stockLimit !== null ? ` (${stockLimit} kg)` : ''}
+                    <Check className="w-3.5 h-3.5" /> In Stock{stockLimit !== null ? ` (${qtyWithUnit(stockLimit, unit)})` : ''}
                   </span>
                 )}
               </div>
@@ -380,7 +382,7 @@ export default function ProductDetailPage() {
                 <span className="text-3xl font-extrabold text-[color:var(--brand-primary)]">
                   ₹{currentPrice}
                 </span>
-                <span className="text-sm font-semibold text-stone-500">/ kg</span>
+                <span className="text-sm font-semibold text-stone-500">{perUnit(unit)}</span>
                 {currentOldPrice && (
                   <span className="text-base text-stone-400 line-through">
                     ₹{currentOldPrice}
@@ -400,16 +402,16 @@ export default function ProductDetailPage() {
 
               {/* Wholesale minimum notice */}
               <div className="rounded-xl bg-[color:var(--brand-accent)]/15 border border-[color:var(--brand-accent)]/40 px-4 py-3 text-sm text-[color:var(--brand-accent-darker)] font-semibold">
-                Wholesale only: minimum order {minQty} kg. Priced per kg.
+                Wholesale only: minimum order {qtyWithUnit(minQty, unit)}. Priced {unit === 'kg' ? 'per kg' : 'per ' + unit}.
               </div>
 
-              {/* Quantity (kg) */}
+              {/* Quantity */}
               <div className="space-y-2 pt-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-700">
-                  Quantity (kg):
+                  Quantity ({unitText(2, unit)}):
                 </label>
                 <div className="flex flex-wrap items-center gap-4">
-                  <KgStepper value={quantity} min={minQty} max={isOutOfStock ? minQty : maxQty} onChange={setQuantity} />
+                  <KgStepper unit={unit} value={quantity} min={minQty} max={isOutOfStock ? minQty : maxQty} onChange={setQuantity} />
                   <div className="text-sm text-stone-600">
                     Estimated total:{' '}
                     <span className="text-lg font-extrabold text-[color:var(--brand-primary)]">

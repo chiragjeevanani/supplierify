@@ -21,6 +21,7 @@ import { useWishlist } from '../../../context/WishlistContext';
 import { useAdmin } from '../../../context/AdminContext';
 import { resolveHelpSupport } from '../../../utils/helpSupport';
 import { paymentMethodLabel, isCreditOrder, formatDueDate } from '../../../utils/paymentLabel';
+import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
 
 export default function AccountPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -805,7 +806,7 @@ export default function AccountPage() {
                             <img src={item.image} alt="" className="w-9 h-9 rounded-lg object-cover" />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-stone-900 truncate">{item.name}</p>
-                              <p className="text-[length:calc(10px*var(--fs))] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                              <p className="text-[length:calc(10px*var(--fs))] text-stone-500">{qtyWithUnit(item.qty, unitOf(item))} × ₹{item.price}{perUnit(unitOf(item)).replace('/ ', '/')}</p>
                               <RateReviewButton order={ord} item={item} className="mt-1" />
                             </div>
                           </div>
