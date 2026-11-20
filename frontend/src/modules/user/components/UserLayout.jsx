@@ -269,6 +269,12 @@ export default function UserLayout({ children }) {
           © {new Date().getFullYear()} {storeName || BRAND.name}. Wholesale orders only.{' '}
           <Link to="/privacy-policy" className="underline hover:text-[color:var(--brand-primary)]">Privacy</Link>
         </footer>
+        {/* The footer is hidden on phones (index.css), so phones get the follow icons in their own row */}
+        {!hideFab && (
+          <div className="md:hidden border-t border-[color:var(--brand-border)] bg-white px-4 py-4">
+            <SocialLinks variant="dark" showLabel className="justify-center" />
+          </div>
+        )}
       </div>
 
       {!hideFab && waUrl && (
