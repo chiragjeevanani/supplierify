@@ -16,6 +16,8 @@ const DEFAULTS = {
   whatsappGreeting: BRAND.defaultWhatsappGreeting,
   supportPhone: '',
   supportEmail: '',
+  instagramUrl: '',
+  facebookUrl: '',
   storeAddress: '',
   gstRate: 5,
   logoUrl: '',

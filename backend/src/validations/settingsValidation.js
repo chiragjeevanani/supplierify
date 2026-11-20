@@ -1,6 +1,6 @@
 import { sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
-import { HEX_COLOR, cleanImageUrl } from '../utils/safeUrl.js';
+import { HEX_COLOR, cleanImageUrl, cleanSocialUrl, SOCIAL_HOSTS } from '../utils/safeUrl.js';
 
 const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
 const pincodeRegex = /^[1-9][0-9]{5}$/;
@@ -10,6 +10,8 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'minOrderQtyKg',
   'whatsappNumber',
   'whatsappGreeting',
+  'instagramUrl',
+  'facebookUrl',
   'logoUrl',
   'faviconUrl',
   'theme',
@@ -125,6 +127,12 @@ export const validateUpdateSettings = (req, res, next) => {
   for (const key of ['logoUrl', 'faviconUrl']) {
     if (body[key] !== undefined && body[key] !== '' && !cleanImageUrl(body[key])) {
       errors.push({ field: key, message: 'Please upload an image or use a valid https:// image address' });
+    }
+  }
+
+  for (const [key, site, label] of [['instagramUrl', 'instagram', 'Instagram'], ['facebookUrl', 'facebook', 'Facebook']]) {
+    if (body[key] !== undefined && body[key] !== '' && cleanSocialUrl(body[key], SOCIAL_HOSTS[site]) === null) {
+      errors.push({ field: key, message: `${label} link must be a valid https:// address on ${SOCIAL_HOSTS[site][0]}` });
     }
   }
 

@@ -8,6 +8,7 @@ import { useStoreRules } from '../../../hooks/useStoreRules';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import Logo from './Logo';
+import SocialLinks from './SocialLinks';
 import { BRAND } from '../../../config/brand';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -164,6 +165,7 @@ export default function UserLayout({ children }) {
             Chat on WhatsApp
           </a>
         )}
+        <SocialLinks variant="light" showLabel className="justify-center mt-3" />
         <p className="text-[length:calc(11px*var(--fs))] text-white/50 text-center mt-2">Wholesale orders only</p>
       </div>
     </div>
@@ -263,6 +265,7 @@ export default function UserLayout({ children }) {
         <main className="flex-1 min-w-0">{children}</main>
 
         <footer className="border-t border-[color:var(--brand-border)] bg-white px-4 sm:px-6 py-4 text-center text-xs text-stone-500">
+          <SocialLinks variant="dark" showLabel className="justify-center mb-3" />
           © {new Date().getFullYear()} {storeName || BRAND.name}. Wholesale orders only.{' '}
           <Link to="/privacy-policy" className="underline hover:text-[color:var(--brand-primary)]">Privacy</Link>
         </footer>

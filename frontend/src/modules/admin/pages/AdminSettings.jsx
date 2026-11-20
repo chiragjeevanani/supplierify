@@ -20,6 +20,8 @@ const EMPTY_FORM = {
   creditDueDays: 30,
   whatsappNumber: '',
   whatsappGreeting: '',
+  instagramUrl: '',
+  facebookUrl: '',
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
@@ -159,6 +161,8 @@ export default function AdminSettings() {
         creditDueDays: Math.min(365, Math.max(1, Math.round(Number(formData.creditDueDays) || 30))),
         whatsappNumber: String(formData.whatsappNumber || '').replace(/\D/g, ''),
         whatsappGreeting: String(formData.whatsappGreeting || '').trim(),
+        instagramUrl: String(formData.instagramUrl || '').trim(),
+        facebookUrl: String(formData.facebookUrl || '').trim(),
         freeDeliveryThreshold: Number(formData.freeDeliveryThreshold) || 0,
         standardDeliveryFee: Number(formData.standardDeliveryFee) || 0,
         codDeliveryFee: Number(formData.codDeliveryFee) || 0,
@@ -275,7 +279,7 @@ export default function AdminSettings() {
                     type="tel"
                     autoComplete="tel"
                     placeholder="e.g. +91 98765 43210"
-                    value={/^[+\s0]*$/.test(formData.helpSupport?.phone || '') ? '' : (formData.helpSupport?.phone || '')}
+                    value={/^0+$/.test(String(formData.helpSupport?.phone || '').replace(/\D/g, '').slice(-10)) ? '' : (formData.helpSupport?.phone || '')}
                     onChange={(e) => setHelpField('phone', e.target.value)}
                     className={inputClass}
                   />
@@ -339,6 +343,46 @@ export default function AdminSettings() {
                   <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
                     First words of every WhatsApp message, e.g. &quot;{(formData.whatsappGreeting || 'Hello Supplierfy').trim()}, I would like to enquire about a wholesale order…&quot;. Leave empty to use &quot;Hello Supplierfy&quot;.
                   </span>
+                </div>
+              </div>
+
+              {/* Social media links */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)]">
+                <div className="sm:col-span-2">
+                  <h3 className="text-sm font-bold text-stone-800">Social media links</h3>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 block">
+                    Shown as icons in the menu and at the bottom of every page. Leave a box empty to hide that icon.
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="instagramUrl">
+                    Instagram link
+                  </label>
+                  <input
+                    id="instagramUrl"
+                    name="instagramUrl"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://www.instagram.com/yourpage/"
+                    value={formData.instagramUrl || ''}
+                    onChange={(e) => setField('instagramUrl', e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="facebookUrl">
+                    Facebook link
+                  </label>
+                  <input
+                    id="facebookUrl"
+                    name="facebookUrl"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://www.facebook.com/yourpage"
+                    value={formData.facebookUrl || ''}
+                    onChange={(e) => setField('facebookUrl', e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
               </div>
 

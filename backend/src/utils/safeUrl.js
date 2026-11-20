@@ -23,6 +23,33 @@ export const cleanLink = (value) => {
   return HTTP_URL.test(v) ? v : null;
 };
 
+/**
+ * Social profile link: must be an https link on one of the allowed sites (e.g. instagram.com).
+ * Returns the normalised URL, '' when the value is empty (clears the link), or null when it is not acceptable.
+ */
+export const cleanSocialUrl = (value, allowedHosts = []) => {
+  let v = String(value ?? '').trim();
+  if (!v) return '';
+  if (!v.includes('://')) v = 'https://' + v;
+  let parsed;
+  try {
+    parsed = new URL(v);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'https:') return null;
+  let host = parsed.hostname.toLowerCase();
+  if (host.startsWith('www.')) host = host.slice(4);
+  if (host.startsWith('m.')) host = host.slice(2);
+  if (!allowedHosts.includes(host)) return null;
+  return parsed.toString();
+};
+
+export const SOCIAL_HOSTS = {
+  instagram: ['instagram.com'],
+  facebook: ['facebook.com', 'fb.com']
+};
+
 export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
-export default { cleanImageUrl, cleanLink, HEX_COLOR };
+export default { cleanImageUrl, cleanLink, cleanSocialUrl, SOCIAL_HOSTS, HEX_COLOR };

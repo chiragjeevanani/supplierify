@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Settings from '../models/Settings.js';
 import { ALLOWED_SETTINGS_FIELDS } from '../validations/settingsValidation.js';
-import { HEX_COLOR, cleanImageUrl } from '../utils/safeUrl.js';
+import { HEX_COLOR, cleanImageUrl, cleanSocialUrl, SOCIAL_HOSTS } from '../utils/safeUrl.js';
 
 export const DEFAULT_THEME = Object.freeze({
   primary: '#0E2A1B',
@@ -33,6 +33,8 @@ export const DEFAULT_SETTINGS = {
   minOrderQtyKg: 5,
   whatsappNumber: '',
   whatsappGreeting: 'Hello Supplierfy',
+  instagramUrl: '',
+  facebookUrl: '',
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
@@ -191,6 +193,8 @@ class SettingsService {
       minOrderQtyKg: Number(settings.minOrderQtyKg) > 0 ? Number(settings.minOrderQtyKg) : DEFAULT_SETTINGS.minOrderQtyKg,
       whatsappNumber: String(settings.whatsappNumber || '').replace(/\D/g, ''),
       whatsappGreeting: String(settings.whatsappGreeting || '').trim() || DEFAULT_SETTINGS.whatsappGreeting,
+      instagramUrl: cleanSocialUrl(settings.instagramUrl, SOCIAL_HOSTS.instagram) || '',
+      facebookUrl: cleanSocialUrl(settings.facebookUrl, SOCIAL_HOSTS.facebook) || '',
       logoUrl: cleanImageUrl(settings.logoUrl) || '',
       faviconUrl: cleanImageUrl(settings.faviconUrl) || '',
       theme: sanitizeTheme(settings.theme),
@@ -240,6 +244,8 @@ class SettingsService {
           sanitized.fontScale = sanitizeFontScale(updateData.fontScale);
         } else if (key === 'logoUrl' || key === 'faviconUrl') {
           sanitized[key] = cleanImageUrl(updateData[key]) || '';
+        } else if (key === 'instagramUrl' || key === 'facebookUrl') {
+          sanitized[key] = cleanSocialUrl(updateData[key], SOCIAL_HOSTS[key === 'instagramUrl' ? 'instagram' : 'facebook']) || '';
         } else if (key === 'whatsappNumber') {
           sanitized[key] = String(updateData[key] || '').replace(/\D/g, '');
         } else if (key === 'helpSupport') {

@@ -90,6 +90,8 @@ const SETTINGS_UPDATE_KEYS = [
   'minOrderQtyKg',
   'whatsappNumber',
   'whatsappGreeting',
+  'instagramUrl',
+  'facebookUrl',
   'logoUrl',
   'faviconUrl',
   'theme',

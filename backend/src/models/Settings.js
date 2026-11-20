@@ -37,6 +37,20 @@ const settingsSchema = new mongoose.Schema(
       default: 'Hello Supplierfy'
     },
 
+    // Social media profile links shown on the storefront (empty = not shown)
+    instagramUrl: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Instagram link is too long'],
+      default: ''
+    },
+    facebookUrl: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Facebook link is too long'],
+      default: ''
+    },
+
     // 1c. Storefront branding (managed by the admin)
     logoUrl: { type: String, trim: true, default: '' },
     faviconUrl: { type: String, trim: true, default: '' },
