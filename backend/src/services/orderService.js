@@ -12,6 +12,9 @@ import notificationService from './notificationService.js';
 import { calculateOrderTotals } from '../utils/pricing.js';
 import { assertCanUseCredit } from './creditService.js';
 import { resolveMinQtyKg, minQtyMessage } from '../utils/minQty.js';
+import { assertFoodSalesAllowed } from './foodRules.js';
+import { normalizeGstin } from '../utils/gst.js';
+import { hsnFor } from '../utils/hsn.js';
 import { resolveShippingDeliveryFee } from './shippingQuoteService.js';
 
 /**
@@ -202,7 +205,10 @@ export const placeOrder = async (userId, payload) => {
     guestId = null,
     items: clientItems = null,
     paymentStatus = null,
-    advanceAmount = 0
+    advanceAmount = 0,
+    acceptedTerms = false,
+    buyerGstin = '',
+    buyerCompany = ''
   } = payload;
 
   // 1. Idempotency Check
@@ -211,6 +217,19 @@ export const placeOrder = async (userId, payload) => {
     if (existingOrder) {
       return existingOrder;
     }
+  }
+
+  // 1b. The buyer must accept the Terms & Conditions and Privacy Policy; GSTIN (optional) must be well formed
+  if (acceptedTerms !== true) {
+    const err = new Error('Please accept the Terms & Conditions and Privacy Policy to place your order.');
+    err.statusCode = 400;
+    throw err;
+  }
+  const cleanBuyerGstin = normalizeGstin(buyerGstin);
+  if (cleanBuyerGstin === null) {
+    const err = new Error('The buyer GSTIN you entered is not valid. It has 15 characters, for example 27ABCDE1234F1Z5.');
+    err.statusCode = 400;
+    throw err;
   }
 
   // 2. Validate Address
@@ -252,6 +271,7 @@ export const placeOrder = async (userId, payload) => {
   // 4. Fetch live products from DB and validate
   const productIds = cart.items.map(item => item.product);
   const products = await Product.find({ _id: { $in: productIds } });
+  await assertFoodSalesAllowed(products);
   const productMap = new Map(products.map(p => [p._id.toString(), p]));
 
   const orderItems = [];
@@ -308,6 +328,7 @@ export const placeOrder = async (userId, payload) => {
       name: liveProduct.name,
       image: liveProduct.image || item.image,
       weight: item.weight,
+      hsnCode: hsnFor(liveProduct),
       price: unitPrice,
       oldPrice: unitOldPrice,
       qty: item.qty,
@@ -473,6 +494,8 @@ export const placeOrder = async (userId, payload) => {
         total,
         couponDetails: couponDetailsSnapshot
       },
+      buyer: { gstin: cleanBuyerGstin || '', companyName: String(buyerCompany || '').trim().slice(0, 150) },
+      termsAcceptedAt: new Date(),
       payment: {
         method: normalizedPaymentMethod,
         status:
@@ -924,7 +947,7 @@ export const updateOrderStatusAdmin = async (orderId, newStatusRaw, { updatedBy 
       notifType = 'ORDER_OUT_FOR_DELIVERY';
     } else if (newStatus === 'DELIVERED') {
       userTitle = 'Order Delivered!';
-      userMessage = `Your order #${order.orderNumber} was delivered successfully. Enjoy your Dry Fruit Wholesale snacks!`;
+      userMessage = `Your order #${order.orderNumber} was delivered successfully. Thank you for ordering with Supplierfy.`;
       notifType = 'ORDER_DELIVERED';
 
       // Notify Admin as well on delivery completion
@@ -1042,7 +1065,7 @@ export const dispatchOrderAdmin = async (orderId, dispatchPayload = {}) => {
   }
 
   const settings = await settingsService.getSettings();
-  const hubName = settings.warehouseName || 'DRY FRUIT WHOLESALE Central Fulfillment Hub';
+  const hubName = settings.warehouseName || 'Supplierfy Dispatch Hub';
   const noteMsg = `Dispatched via ${order.courierName || 'Standard Express'}${order.awbNumber ? ` (AWB: ${order.awbNumber})` : ''}`;
   updateOrderTimeline(order, 'SHIPPED', hubName, noteMsg);
 

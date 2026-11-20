@@ -5,6 +5,7 @@ import { cartApi, settingsApi } from '../utils/api';
 import { resolveProductImage } from '../utils/productImage';
 import { useStoreRules, getMinQty } from '../hooks/useStoreRules';
 import { unitOf, unitWeightLabel, qtyWithUnit } from '../utils/units';
+import { isFoodProduct } from '../utils/categoryGroups';
 
 const CartContext = createContext();
 
@@ -22,7 +23,7 @@ const getOrCreateGuestId = () => {
 };
 
 export function CartProvider({ children }) {
-  const { coupons, settings, products } = useAdmin();
+  const { coupons, settings, products, categories: catalogCategories } = useAdmin();
   const { token, isAuthenticated } = useAuth();
   const [liveSettings, setLiveSettings] = useState(null);
   const [guestId] = useState(getOrCreateGuestId);
@@ -223,6 +224,12 @@ export function CartProvider({ children }) {
     const cleanWeight = weight || unitWeightLabel(product);
     const unit = unitOf(product);
     let cleanQty = Math.max(1, Number(qty) || 1);
+
+    // Food sales paused by the admin (FSSAI licence pending)
+    if (rules.foodSalesPaused && isFoodProduct(product, catalogCategories)) {
+      showStockNotice(`${product.name || 'This product'} is coming soon. We are not taking orders for food items right now.`);
+      return false;
+    }
 
     // Wholesale minimum: the cart line for this product must reach the minimum kg
     const minQty = getMinQty(product, rules);

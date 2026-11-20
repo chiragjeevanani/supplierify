@@ -1,3 +1,5 @@
+import { assertFoodSalesAllowed } from './foodRules.js';
+import { normalizeGstin } from '../utils/gst.js';
 import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
 import Order from '../models/Order.js';
@@ -152,7 +154,7 @@ class PaymentService {
   }
 
   /**
-   * Prepaid checkout: create Razorpay session WITHOUT placing an Dry Fruit Wholesale order.
+   * Prepaid checkout: create Razorpay session WITHOUT placing an Supplierfy order.
    * Order is created only after payment verification succeeds.
    */
   static async createCheckoutSession(userId, payload = {}) {
@@ -161,8 +163,23 @@ class PaymentService {
       paymentMethod = 'UPI',
       couponCode = null,
       guestId = null,
-      items: clientItems = null
+      items: clientItems = null,
+      acceptedTerms = false,
+      buyerGstin = '',
+      buyerCompany = ''
     } = payload;
+
+    if (acceptedTerms !== true) {
+      const err = new Error('Please accept the Terms & Conditions and Privacy Policy to continue.');
+      err.statusCode = 400;
+      throw err;
+    }
+    const cleanBuyerGstin = normalizeGstin(buyerGstin);
+    if (cleanBuyerGstin === null) {
+      const err = new Error('The buyer GSTIN you entered is not valid. It has 15 characters, for example 27ABCDE1234F1Z5.');
+      err.statusCode = 400;
+      throw err;
+    }
 
     if (!addressId) {
       const err = new Error('Delivery address is required to start online payment.');
@@ -233,6 +250,7 @@ class PaymentService {
 
     const productIds = cart.items.map((item) => item.product);
     const products = await Product.find({ _id: { $in: productIds } });
+    await assertFoodSalesAllowed(products);
     const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
     let subtotal = 0;
@@ -378,6 +396,9 @@ class PaymentService {
           items: draftItems,
           expectedTotal: pricing.total,
           deliveryFee: pricing.deliveryFee,
+          acceptedTerms: true,
+          buyerGstin: cleanBuyerGstin || '',
+          buyerCompany: String(buyerCompany || '').trim().slice(0, 150),
           ...(partialSplit
             ? { partialCod: { advance: partialSplit.advance, balance: partialSplit.balance, percent: settings.partialCodPercent ?? 30 } }
             : {})
@@ -405,7 +426,7 @@ class PaymentService {
   }
 
   /**
-   * After Razorpay success: verify signature, THEN create Dry Fruit Wholesale order (prepaid only).
+   * After Razorpay success: verify signature, THEN create Supplierfy order (prepaid only).
    */
   static async verifyAndPlacePrepaidOrder(
     userId,
@@ -483,6 +504,10 @@ class PaymentService {
         paymentMethod: intent.paymentMethod || payment.paymentMethod || 'UPI',
         paymentStatus: 'PAID',
         advanceAmount: intent.partialCod?.advance || 0,
+        // sessions created before this rule existed carry no flag; new sessions only exist after acceptance
+        acceptedTerms: intent.acceptedTerms !== false,
+        buyerGstin: intent.buyerGstin || '',
+        buyerCompany: intent.buyerCompany || '',
         paymentDetails: {
           transactionId: razorpayPaymentId,
           upiApp: ''
@@ -726,7 +751,7 @@ class PaymentService {
             );
           } else if (payment.user && payment.metadata?.checkoutIntent?.addressId) {
             // Prepaid-before-order: customer paid but closed tab before /verify —
-            // create the Dry Fruit Wholesale order from the stored checkout intent (idempotent).
+            // create the Supplierfy order from the stored checkout intent (idempotent).
             try {
               const intent = payment.metadata.checkoutIntent;
               const { placeOrder } = await import('./orderService.js');
@@ -735,6 +760,9 @@ class PaymentService {
                 paymentMethod: intent.paymentMethod || payment.paymentMethod || 'UPI',
                 paymentStatus: 'PAID',
                 advanceAmount: intent.partialCod?.advance || 0,
+                acceptedTerms: intent.acceptedTerms !== false,
+                buyerGstin: intent.buyerGstin || '',
+                buyerCompany: intent.buyerCompany || '',
                 paymentDetails: {
                   transactionId: gatewayPaymentId,
                   upiApp: ''

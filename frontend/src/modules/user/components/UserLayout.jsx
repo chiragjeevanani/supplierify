@@ -8,6 +8,7 @@ import { useStoreRules } from '../../../hooks/useStoreRules';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import Logo from './Logo';
+import SiteFooter from './SiteFooter';
 import SocialLinks from './SocialLinks';
 import { BRAND } from '../../../config/brand';
 import { useCart } from '../../../context/CartContext';
@@ -27,7 +28,8 @@ const NAV_ITEMS = [
   { label: 'Help & Support', to: '/help-support', icon: LifeBuoy },
   { label: 'About Us', to: '/about', icon: Info },
   { label: 'Contact', to: '/contact', icon: Phone },
-  { label: 'Privacy Policy', to: '/privacy-policy', icon: Shield }
+  { label: 'Privacy Policy', to: '/privacy-policy', icon: Shield },
+  { label: 'Terms & Conditions', to: '/terms-and-conditions', icon: Shield }
 ];
 
 const PAGE_TITLES = [
@@ -264,17 +266,7 @@ export default function UserLayout({ children }) {
 
         <main className="flex-1 min-w-0">{children}</main>
 
-        <footer className="border-t border-[color:var(--brand-border)] bg-white px-4 sm:px-6 py-4 text-center text-xs text-stone-500">
-          <SocialLinks variant="dark" showLabel className="justify-center mb-3" />
-          © {new Date().getFullYear()} {storeName || BRAND.name}. Wholesale orders only.{' '}
-          <Link to="/privacy-policy" className="underline hover:text-[color:var(--brand-primary)]">Privacy</Link>
-        </footer>
-        {/* The footer is hidden on phones (index.css), so phones get the follow icons in their own row */}
-        {!hideFab && (
-          <div className="md:hidden border-t border-[color:var(--brand-border)] bg-white px-4 py-4">
-            <SocialLinks variant="dark" showLabel className="justify-center" />
-          </div>
-        )}
+        <SiteFooter className={hideFab ? 'pb-24 md:pb-5' : 'pb-20 md:pb-5'} />
       </div>
 
       {!hideFab && waUrl && (

@@ -20,6 +20,7 @@ const orderItemSchema = new mongoose.Schema(
       type: String,
       default: '150g'
     },
+    hsnCode: { type: String, default: '' },
     price: {
       type: Number,
       required: true,
@@ -176,6 +177,12 @@ const orderSchema = new mongoose.Schema(
       type: paymentSchema,
       default: () => ({})
     },
+    // B2B buyer details for the GST invoice (optional) and proof that the buyer accepted the terms
+    buyer: {
+      gstin: { type: String, default: '', trim: true, uppercase: true },
+      companyName: { type: String, default: '', trim: true }
+    },
+    termsAcceptedAt: { type: Date, default: null },
     delivery: {
       type: deliverySchema,
       default: () => ({})

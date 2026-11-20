@@ -25,6 +25,18 @@ const DEFAULTS = {
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
   fontScale: DEFAULT_FONT_SCALE,
+  companyName: 'Bhavana Enterprises LLP',
+  companyGstin: '',
+  companyAddress: '',
+  dispatchAddress: '',
+  fssaiNumber: '',
+  showTrademark: false,
+  grievanceName: '',
+  grievanceDesignation: '',
+  grievanceEmail: '',
+  grievancePhone: '',
+  grievanceTimeline: 'We acknowledge every complaint within 48 hours and resolve it within 15 days of receiving it.',
+  foodSalesPaused: false,
   partialCodEnabled: false,
   partialCodPercent: 30,
   creditEnabled: false,
@@ -32,6 +44,9 @@ const DEFAULTS = {
   creditLimit: 0,
   creditDueDays: 30
 };
+
+/** The old "+91 00000 00000" placeholder: the last 10 digits are all zeros (or there are none). */
+const isPlaceholderPhone = (v) => /^0*$/.test(String(v || '').replace(/\D/g, '').slice(-10));
 
 let cache = null;
 let inflight = null;
@@ -49,6 +64,9 @@ const load = () => {
         minOrderQtyKg: Number(s.minOrderQtyKg) > 0 ? Number(s.minOrderQtyKg) : DEFAULTS.minOrderQtyKg,
         whatsappNumber: String(s.whatsappNumber || '').replace(/\D/g, '') || BRAND.defaultWhatsappNumber,
         whatsappGreeting: String(s.whatsappGreeting || '').trim() || BRAND.defaultWhatsappGreeting,
+        // never show the old "+91 00000 00000" placeholder
+        supportPhone: isPlaceholderPhone(s.supportPhone) ? '' : s.supportPhone,
+        storePhone: isPlaceholderPhone(s.storePhone) ? '' : s.storePhone,
         theme: normalizeTheme(s.theme),
         fontScale: normalizeFontScale(s.fontScale),
         loaded: true

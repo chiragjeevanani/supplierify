@@ -15,6 +15,8 @@ import { getThemeHex } from '../../../utils/theme';
 import { paymentApi, shippingApi, addressApi, cartApi, creditApi } from '../../../utils/api';
 import { useStoreRules } from '../../../hooks/useStoreRules';
 import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
+import { useAdmin } from '../../../context/AdminContext';
+import { isFoodProduct } from '../../../utils/categoryGroups';
 import {
   calculateCheckoutTotals,
   checkoutPaymentMethodKey,
@@ -77,7 +79,14 @@ export default function CheckoutPage() {
 
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('online'); // 'online' (Razorpay) or 'credit' (pay later)
-  const { creditEnabled, partialCodEnabled, partialCodPercent } = useStoreRules();
+  const { creditEnabled, partialCodEnabled, partialCodPercent, foodSalesPaused, storeName } = useStoreRules();
+  const { categories: catalogCategories = [] } = useAdmin();
+  // Terms acceptance (required) and optional business details for the GST invoice
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [buyerGstin, setBuyerGstin] = useState(() => { try { return localStorage.getItem('wholesale_buyer_gstin') || ''; } catch { return ''; } });
+  const [buyerCompany, setBuyerCompany] = useState(() => { try { return localStorage.getItem('wholesale_buyer_company') || ''; } catch { return ''; } });
+  const gstinClean = buyerGstin.trim().toUpperCase();
+  const gstinInvalid = gstinClean !== '' && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstinClean);
   const [credit, setCredit] = useState(null);
 
   // Pay-on-credit details for eligible customers
@@ -415,6 +424,23 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (foodSalesPaused && cartItems.some((it) => isFoodProduct(it, catalogCategories) || isFoodProduct({ category: it.category }, catalogCategories))) {
+      setOrderError('Food items are coming soon. We are not taking orders for them right now. Please remove them from your cart.');
+      return;
+    }
+    if (gstinInvalid) {
+      setOrderError('The GSTIN you entered is not valid. It has 15 characters, for example 27ABCDE1234F1Z5. Leave it empty if you do not have one.');
+      return;
+    }
+    if (!acceptTerms) {
+      setOrderError('Please accept the Terms & Conditions and Privacy Policy to place your order.');
+      return;
+    }
+    try {
+      localStorage.setItem('wholesale_buyer_gstin', gstinClean);
+      localStorage.setItem('wholesale_buyer_company', buyerCompany.trim());
+    } catch { /* storage not available */ }
+
     const pin = String(
       selectedAddress.pincode || selectedAddress.postalCode || ''
     ).replace(/\D/g, '');
@@ -455,6 +481,9 @@ export default function CheckoutPage() {
           items: cartItems,
           couponApplied: appliedCoupon?.code,
           paymentMethod: 'CREDIT',
+          acceptedTerms: true,
+          buyerGstin: gstinClean,
+          buyerCompany: buyerCompany.trim(),
           address: selectedAddress
         });
         clearCart();
@@ -474,6 +503,9 @@ export default function CheckoutPage() {
           tax,
           total,
           paymentMethod: 'COD',
+          acceptedTerms: true,
+          buyerGstin: gstinClean,
+          buyerCompany: buyerCompany.trim(),
           deliveryType: 'Standard Express Courier',
           address: selectedAddress
         };
@@ -484,7 +516,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Prepaid: Razorpay first — Dry Fruit Wholesale order only after payment success
+      // Prepaid: Razorpay first — Supplierfy order only after payment success
       let addressId = selectedAddress?._id || selectedAddress?.id;
       if (!addressId || !/^[0-9a-fA-F]{24}$/.test(String(addressId))) {
         const addrPayload = {
@@ -518,6 +550,9 @@ export default function CheckoutPage() {
       const session = await paymentApi.createCheckoutSession({
         addressId: String(addressId),
         paymentMethod: paymentMethod === 'partial_cod' ? 'PARTIAL_COD' : 'UPI',
+        acceptedTerms: true,
+        buyerGstin: gstinClean || undefined,
+        buyerCompany: buyerCompany.trim() || undefined,
         couponCode: appliedCoupon?.code || undefined,
         guestId: guestId || undefined,
         items: cartItems
@@ -542,7 +577,7 @@ export default function CheckoutPage() {
         key: keyId,
         amount,
         currency,
-        name: 'Dry Fruit Wholesale',
+        name: storeName || 'Supplierfy',
         description: paymentMethod === 'partial_cod' ? `Advance payment (${partialCodPercent}%) - balance on delivery` : 'Online payment',
         order_id: razorpayOrderId,
         prefill: {
@@ -1096,6 +1131,53 @@ export default function CheckoutPage() {
 
                   </div>
 
+                  {/* GST invoice details (optional) */}
+                  <div className="rounded-xl border border-stone-200 bg-white p-3 sm:p-4 space-y-2.5">
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">GST invoice details (optional)</p>
+                      <p className="text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">Add your business GSTIN to claim input tax credit. It cannot be added after the order is placed.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <input
+                        type="text"
+                        value={buyerCompany}
+                        onChange={(e) => setBuyerCompany(e.target.value)}
+                        placeholder="Business / company name"
+                        maxLength={150}
+                        className="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)]"
+                      />
+                      <div>
+                        <input
+                          type="text"
+                          value={buyerGstin}
+                          onChange={(e) => setBuyerGstin(e.target.value.toUpperCase())}
+                          placeholder="GSTIN (15 characters)"
+                          maxLength={15}
+                          className={`w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border focus:outline-none uppercase ${gstinInvalid ? 'border-rose-400' : 'border-stone-300 focus:border-[color:var(--brand-primary)]'}`}
+                        />
+                        {gstinInvalid && <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-rose-600">This GSTIN does not look right.</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Accept terms */}
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none text-xs sm:text-sm text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-[color:var(--brand-primary)] shrink-0"
+                    />
+                    <span>
+                      I agree to the{' '}
+                      <Link to="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="font-bold underline text-[color:var(--brand-primary)]">Terms & Conditions</Link>
+                      {' '}and the{' '}
+                      <Link to="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold underline text-[color:var(--brand-primary)]">Privacy Policy</Link>
+                      {' '}(also see the{' '}
+                      <Link to="/shipping-and-return-policy" target="_blank" rel="noopener noreferrer" className="underline">Shipping & Return Policy</Link>).
+                    </span>
+                  </label>
+
                   {/* Order Error Alert */}
                   {orderError && (
                     <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2 animate-fadeIn">
@@ -1116,7 +1198,7 @@ export default function CheckoutPage() {
 
                     <button
                       type="button"
-                      disabled={isOrderPlacing || !shippingReady}
+                      disabled={isOrderPlacing || !shippingReady || !acceptTerms}
                       onClick={handlePlaceOrder}
                       className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[color:var(--brand-accent)] via-[color:var(--brand-accent-light)] to-[color:var(--brand-accent-dark)] text-[color:var(--brand-primary)] font-extrabold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 min-h-[42px] sm:min-h-[44px]"
                     >

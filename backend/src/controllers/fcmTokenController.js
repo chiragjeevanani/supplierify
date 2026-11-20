@@ -120,7 +120,7 @@ class FcmTokenController {
         if (!firebaseAdminService.getStatus().isInitialized) {
           const simulatedTokens = ['simulated_device_token_standby'];
           const payload = {
-            title: title || 'Dry Fruit Wholesale Push Notification Engine 🔔',
+            title: title || 'Supplierfy Push Notification Engine 🔔',
             body: body || `Order update simulated for ${account.name || 'Admin'}! Push notification pipeline operational.`,
             data: {
               type: 'test',
@@ -147,8 +147,8 @@ class FcmTokenController {
       }
 
       const payload = {
-        title: title || 'Dry Fruit Wholesale Test Notification 🔔',
-        body: body || `Hello ${account.name || 'there'}! This is a verified test push notification from Dry Fruit Wholesale.`,
+        title: title || 'Supplierfy Test Notification 🔔',
+        body: body || `Hello ${account.name || 'there'}! This is a verified test push notification from Supplierfy.`,
         data: {
           type: 'test',
           link: link || (userRole === 'ADMIN' ? '/admin/notifications' : '/account?tab=notifications'),

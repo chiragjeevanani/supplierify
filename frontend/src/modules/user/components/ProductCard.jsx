@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../../../context/CartContext';
 import { useWishlist } from '../../../context/WishlistContext';
 import { useStoreRules, getMinQty } from '../../../hooks/useStoreRules';
+import { useAdmin } from '../../../context/AdminContext';
+import { isFoodProduct } from '../../../utils/categoryGroups';
 import { unitOf, unitWeightLabel, unitText, perUnit, qtyWithUnit } from '../../../utils/units';
 import { resolveOptimizedProductImage } from '../../../utils/productImage';
 import { buildProductEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
@@ -16,6 +18,8 @@ export default function ProductCard({ product, priority = false }) {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const rules = useStoreRules();
+  const { categories: allCategories = [] } = useAdmin();
+  const foodPaused = Boolean(rules.foodSalesPaused) && isFoodProduct(product, allCategories);
   const minQty = getMinQty(product, rules);
 
   const [qty, setQty] = useState(minQty);
@@ -98,9 +102,9 @@ export default function ProductCard({ product, priority = false }) {
           Min. order {qtyWithUnit(minQty, unitOf(product))}
         </p>
 
-        {outOfStock ? (
+        {outOfStock || foodPaused ? (
           <div className="mt-3 rounded-lg bg-stone-200 text-stone-500 text-xs font-bold text-center py-2.5 uppercase tracking-wider">
-            Out of stock
+            {foodPaused ? 'Coming soon' : 'Out of stock'}
           </div>
         ) : (
           <>

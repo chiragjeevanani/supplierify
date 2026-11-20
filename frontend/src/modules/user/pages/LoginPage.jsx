@@ -218,7 +218,7 @@ export default function LoginPage() {
             </Link>
 
             <span className="text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-accent-dark)] bg-[color:var(--brand-bg)] px-2.5 py-1 rounded-lg border border-[color:var(--brand-accent)]/30">
-              Dry Fruit Wholesale Secure Access
+              Supplierfy Secure Access
             </span>
           </div>
 
@@ -425,7 +425,7 @@ export default function LoginPage() {
               {/* Security & Assurance Badge */}
               <div className="flex items-center justify-center gap-2 text-[length:calc(11px*var(--fs))] text-stone-500 pt-3 border-t border-stone-100">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>256-bit Encrypted • Dry Fruit Wholesale Safe Access</span>
+                <span>256-bit Encrypted • Supplierfy Safe Access</span>
               </div>
 
             </div>

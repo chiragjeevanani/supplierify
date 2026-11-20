@@ -157,6 +157,18 @@ export default function AdminSettings() {
         theme: normalizeTheme(formData.theme),
         fontScale: normalizeFontScale(formData.fontScale),
         minOrderQtyKg: Math.max(1, Number(formData.minOrderQtyKg) || 5),
+        companyName: String(formData.companyName || '').trim(),
+        companyGstin: String(formData.companyGstin || '').trim().toUpperCase(),
+        companyAddress: String(formData.companyAddress || '').trim(),
+        dispatchAddress: String(formData.dispatchAddress || '').trim(),
+        fssaiNumber: String(formData.fssaiNumber || '').replace(/\s+/g, ''),
+        showTrademark: formData.showTrademark === true,
+        grievanceName: String(formData.grievanceName || '').trim(),
+        grievanceDesignation: String(formData.grievanceDesignation || '').trim(),
+        grievanceEmail: String(formData.grievanceEmail || '').trim(),
+        grievancePhone: String(formData.grievancePhone || '').trim(),
+        grievanceTimeline: String(formData.grievanceTimeline || '').trim(),
+        foodSalesPaused: formData.foodSalesPaused === true,
         partialCodEnabled: formData.partialCodEnabled === true,
         partialCodPercent: Math.min(99, Math.max(1, Math.round(Number(formData.partialCodPercent) || 30))),
         creditEnabled: formData.creditEnabled === true,
@@ -347,6 +359,90 @@ export default function AdminSettings() {
                   <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
                     First words of every WhatsApp message, e.g. &quot;{(formData.whatsappGreeting || 'Hello Supplierfy').trim()}, I would like to enquire about a wholesale order…&quot;. Leave empty to use &quot;Hello Supplierfy&quot;.
                   </span>
+                </div>
+              </div>
+
+              {/* Company & legal details (footer, legal pages, invoices) */}
+              <div className="p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-800">Company &amp; legal details</h3>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 block">Shown in the website footer, on the legal pages and on every GST invoice.</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="companyName">Legal company name</label>
+                  <input id="companyName" name="companyName" type="text" placeholder="Bhavana Enterprises LLP" value={formData.companyName || ''} onChange={(e) => setField('companyName', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="companyGstin">Company GSTIN</label>
+                  <input id="companyGstin" name="companyGstin" type="text" placeholder="27ABGFB3485P1ZT" value={formData.companyGstin || ''} onChange={(e) => setField('companyGstin', e.target.value)} className={inputClass} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="companyAddress">Registered address</label>
+                  <input id="companyAddress" name="companyAddress" type="text" placeholder="Navin Sheva, Uran, Navi Mumbai - 400702" value={formData.companyAddress || ''} onChange={(e) => setField('companyAddress', e.target.value)} className={inputClass} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="dispatchAddress">Warehouse / dispatch address (optional)</label>
+                  <input id="dispatchAddress" name="dispatchAddress" type="text" placeholder="Leave empty if same as registered address" value={formData.dispatchAddress || ''} onChange={(e) => setField('dispatchAddress', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="fssaiNumber">FSSAI licence number (14 digits)</label>
+                  <input id="fssaiNumber" name="fssaiNumber" type="text" placeholder="Leave empty until the licence is issued" value={formData.fssaiNumber || ''} onChange={(e) => setField('fssaiNumber', e.target.value)} className={inputClass} />
+                </div>
+
+                  <div className="flex items-end pb-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-stone-800">
+                      <input type="checkbox" checked={formData.showTrademark === true} onChange={(e) => setField('showTrademark', e.target.checked)} className="w-5 h-5 accent-[color:var(--brand-primary)]" />
+                      Show the ™ mark after the brand name
+                    </label>
+                  </div>
+                </div>
+                <p className="text-[length:calc(10px*var(--fs))] text-stone-500">While the FSSAI number is empty, the footer shows "FSSAI Registration Under Process". Once you enter it, the footer shows the licence number.</p>
+              </div>
+
+              {/* Grievance officer */}
+              <div className="p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-800">Grievance officer</h3>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 block">Published on the Grievance Redressal page. Until a name is entered, the page tells customers to write to the support email.</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceName">Name</label>
+                  <input id="grievanceName" name="grievanceName" type="text" placeholder="Full name" value={formData.grievanceName || ''} onChange={(e) => setField('grievanceName', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceDesignation">Designation</label>
+                  <input id="grievanceDesignation" name="grievanceDesignation" type="text" placeholder="e.g. Partner / Manager" value={formData.grievanceDesignation || ''} onChange={(e) => setField('grievanceDesignation', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceEmail">Email</label>
+                  <input id="grievanceEmail" name="grievanceEmail" type="text" placeholder="grievance@yourdomain.com" value={formData.grievanceEmail || ''} onChange={(e) => setField('grievanceEmail', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievancePhone">Phone</label>
+                  <input id="grievancePhone" name="grievancePhone" type="text" placeholder="+91 ..." value={formData.grievancePhone || ''} onChange={(e) => setField('grievancePhone', e.target.value)} className={inputClass} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceTimeline">Complaint resolution timeline</label>
+                  <input id="grievanceTimeline" name="grievanceTimeline" type="text" placeholder="How fast complaints are answered and resolved" value={formData.grievanceTimeline || ''} onChange={(e) => setField('grievanceTimeline', e.target.value)} className={inputClass} />
+                </div>
+                </div>
+              </div>
+
+              {/* Food items on hold */}
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-2">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-stone-900">Pause sale of food items</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-600 mt-0.5 max-w-xl">
+                      Use this while the FSSAI licence is pending. Dry fruits then show "Coming soon" and cannot be added to a cart or bought. Metals, garments and furniture are not affected. Switch it off when the licence is ready.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={formData.foodSalesPaused === true} onChange={(e) => setField('foodSalesPaused', e.target.checked)} className="w-5 h-5 accent-rose-600" />
+                    <span className="text-xs font-bold text-stone-800">{formData.foodSalesPaused ? 'Food sales paused' : 'Selling normally'}</span>
+                  </label>
                 </div>
               </div>
 

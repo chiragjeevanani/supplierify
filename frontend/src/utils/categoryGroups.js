@@ -21,3 +21,12 @@ export const productInCategory = (product, category) => {
   const pc = String(product?.category || '').toLowerCase();
   return Boolean(pc) && (pc === String(category?.slug || '').toLowerCase() || pc === String(category?.name || '').toLowerCase());
 };
+
+/** Sections that sell food (they need an FSSAI licence). Keep in sync with the backend. */
+export const FOOD_GROUPS = ['dry-fruits'];
+
+/** True when the product belongs to a food category. */
+export const isFoodProduct = (product, categories = []) => {
+  const cat = (categories || []).find((c) => productInCategory(product, c));
+  return cat ? FOOD_GROUPS.includes(groupOf(cat)) : false;
+};

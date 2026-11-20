@@ -125,7 +125,7 @@ class FirebaseAdminService {
         return { successCount: 0, failureCount: 0, staleTokens: [] };
       }
 
-      const title = payload.title || 'Dry Fruit Wholesale Notification';
+      const title = payload.title || 'Supplierfy Notification';
       const body = payload.body || '';
       const dataPayload = payload.data ? Object.fromEntries(
         Object.entries(payload.data).map(([k, v]) => [k, String(v ?? '')])

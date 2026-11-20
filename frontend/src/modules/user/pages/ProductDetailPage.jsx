@@ -19,6 +19,7 @@ import { useStoreRules, getMinQty } from '../../../hooks/useStoreRules';
 import { buildProductEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
 import KgStepper from '../components/KgStepper';
 import { unitOf, unitWeightLabel, unitText, perUnit, qtyWithUnit } from '../../../utils/units';
+import { isFoodProduct } from '../../../utils/categoryGroups';
 
 export default function ProductDetailPage() {
   const { id, slug } = useParams();
@@ -232,7 +233,9 @@ export default function ProductDetailPage() {
   const productKey = product?._id || product?.id;
   const stockLimit = getStockLimit(productKey);
   const remainingStock = getRemainingStock(productKey);
-  const isOutOfStock = stockLimit !== null && stockLimit <= 0;
+  // Food items show "Coming soon" and cannot be bought while the admin has paused food sales
+  const foodPaused = Boolean(rules.foodSalesPaused) && isFoodProduct(product, ALL_CATEGORIES);
+  const isOutOfStock = (stockLimit !== null && stockLimit <= 0) || foodPaused;
   const maxQty = remainingStock === Infinity ? 100000 : Math.max(minQty, remainingStock);
 
   const waUrl = buildWhatsAppUrl(
@@ -340,7 +343,7 @@ export default function ProductDetailPage() {
                 </span>
                 {isOutOfStock ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full">
-                    Out of Stock
+                    {foodPaused ? 'Coming Soon' : 'Out of Stock'}
                   </span>
                 ) : stockLimit !== null && stockLimit <= 10 ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full">
@@ -434,7 +437,7 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   {isOutOfStock ? (
-                    <span>OUT OF STOCK</span>
+                    <span>{foodPaused ? 'COMING SOON' : 'OUT OF STOCK'}</span>
                   ) : isAdded ? (
                     <>
                       <Check className="w-4 h-4 text-[color:var(--brand-accent)]" />
@@ -658,7 +661,7 @@ export default function ProductDetailPage() {
                       <p className="text-xs text-stone-700 italic">"{r.content || r.comment}"</p>
                       {r.adminReply && (
                         <div className="mt-2 text-[length:calc(11px*var(--fs))] bg-stone-50 p-2.5 rounded-lg border-l-2 border-[color:var(--brand-primary)] text-stone-600">
-                          <strong className="text-[color:var(--brand-primary)]">Dry Fruit Wholesale Team Response:</strong> {r.adminReply}
+                          <strong className="text-[color:var(--brand-primary)]">Supplierfy Team Response:</strong> {r.adminReply}
                         </div>
                       )}
                     </div>
@@ -716,7 +719,7 @@ export default function ProductDetailPage() {
             disabled={isOutOfStock}
             className="py-2.5 px-3 rounded-xl bg-[color:var(--brand-primary)] text-white text-xs font-bold uppercase tracking-wider min-h-[40px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isOutOfStock ? 'Out of Stock' : isAdded ? 'Added!' : 'Add to Cart'}
+            {isOutOfStock ? (foodPaused ? 'Coming Soon' : 'Out of Stock') : isAdded ? 'Added!' : 'Add to Cart'}
           </button>
           <button
             onClick={handleBuyNow}

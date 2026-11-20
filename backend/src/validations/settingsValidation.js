@@ -1,6 +1,7 @@
 import { sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
 import { HEX_COLOR, cleanImageUrl, cleanSocialUrl, SOCIAL_HOSTS } from '../utils/safeUrl.js';
+import { normalizeGstin } from '../utils/gst.js';
 
 const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
 const pincodeRegex = /^[1-9][0-9]{5}$/;
@@ -16,6 +17,18 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'faviconUrl',
   'theme',
   'fontScale',
+  'companyName',
+  'companyGstin',
+  'companyAddress',
+  'dispatchAddress',
+  'fssaiNumber',
+  'showTrademark',
+  'grievanceName',
+  'grievanceDesignation',
+  'grievanceEmail',
+  'grievancePhone',
+  'grievanceTimeline',
+  'foodSalesPaused',
   'partialCodEnabled',
   'partialCodPercent',
   'creditEnabled',
@@ -114,6 +127,18 @@ export const validateUpdateSettings = (req, res, next) => {
   if (body.creditDueDays !== undefined) {
     const d = Number(body.creditDueDays);
     if (!Number.isFinite(d) || d < 1 || d > 365) errors.push({ field: 'creditDueDays', message: 'Payment due days must be between 1 and 365' });
+  }
+  for (const key of ['foodSalesPaused', 'showTrademark']) {
+    if (body[key] !== undefined && typeof body[key] !== 'boolean') errors.push({ field: key, message: 'This switch must be true or false' });
+  }
+  if (body.grievanceEmail !== undefined && body.grievanceEmail !== '' && !emailRegex.test(String(body.grievanceEmail).trim())) {
+    errors.push({ field: 'grievanceEmail', message: 'Grievance officer email must be a valid email address' });
+  }
+  if (body.companyGstin !== undefined && body.companyGstin !== '' && !normalizeGstin(body.companyGstin)) {
+    errors.push({ field: 'companyGstin', message: 'Company GSTIN is not valid (15 characters, e.g. 27ABGFB3485P1ZT)' });
+  }
+  if (body.fssaiNumber !== undefined && body.fssaiNumber !== '' && !/^[0-9]{14}$/.test(String(body.fssaiNumber).replace(/\s+/g, ''))) {
+    errors.push({ field: 'fssaiNumber', message: 'FSSAI licence number must be 14 digits' });
   }
   if (body.partialCodPercent !== undefined) {
     const pc = Number(body.partialCodPercent);

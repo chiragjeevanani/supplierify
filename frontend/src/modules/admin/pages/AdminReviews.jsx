@@ -198,7 +198,7 @@ export default function AdminReviews() {
                 {r.adminReply && (
                   <div className="bg-[color:var(--brand-primary)]/5 border-l-3 border-[color:var(--brand-primary)] p-2.5 rounded-r-lg text-xs space-y-0.5">
                     <span className="font-bold text-[color:var(--brand-primary)] flex items-center gap-1 text-[length:calc(11px*var(--fs))]">
-                      <MessageSquare className="w-3 h-3 text-[color:var(--brand-accent)]" /> Response from Dry Fruit Wholesale Team:
+                      <MessageSquare className="w-3 h-3 text-[color:var(--brand-accent)]" /> Response from Supplierfy Team:
                     </span>
                     <p className="text-stone-700 italic font-normal">{r.adminReply}</p>
                   </div>

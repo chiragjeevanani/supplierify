@@ -39,7 +39,7 @@ export const createPaymentOrder = async (req, res, next) => {
  */
 export const verifyPayment = async (req, res, next) => {
   try {
-    // Prepaid-before-order flow: no Dry Fruit Wholesale orderId yet
+    // Prepaid-before-order flow: no Supplierfy orderId yet
     const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
     const result =
       !orderId && razorpayOrderId

@@ -970,7 +970,7 @@ export default function AccountPage() {
 
                 <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-tr from-[color:var(--brand-primary)] to-[color:var(--brand-primary-light)] text-white max-w-sm border border-[color:var(--brand-accent)]/40 shadow-xl space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[length:calc(10px*var(--fs))] uppercase tracking-widest text-[color:var(--brand-accent)] font-bold">Dry Fruit Wholesale Preferred Card</span>
+                    <span className="text-[length:calc(10px*var(--fs))] uppercase tracking-widest text-[color:var(--brand-accent)] font-bold">Supplierfy Preferred Card</span>
                     <CreditCard className="w-5 h-5 text-[color:var(--brand-accent)]" />
                   </div>
                   <p className="font-mono text-base tracking-widest pt-2">•••• •••• •••• 4289</p>

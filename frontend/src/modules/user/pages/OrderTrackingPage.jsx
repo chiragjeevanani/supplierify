@@ -80,7 +80,7 @@ export default function OrderTrackingPage() {
   // Contact links for the real rider (no in-app chat exists — SMS / WhatsApp open the customer's own apps)
   const riderDigits = rider?.phone ? [...String(rider.phone)].filter((ch) => ch >= '0' && ch <= '9').join('') : '';
   const riderWhatsApp = riderDigits.length === 10 ? '91' + riderDigits : riderDigits;
-  const riderMessage = 'Hi' + (rider?.name ? ' ' + rider.name : '') + ', this is regarding my Dry Fruit Wholesale order #' + (order?.id || '') + '.';
+  const riderMessage = 'Hi' + (rider?.name ? ' ' + rider.name : '') + ', this is regarding my Supplierfy order #' + (order?.id || '') + '.';
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

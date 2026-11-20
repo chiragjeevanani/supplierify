@@ -2,23 +2,19 @@ import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 import settingsService from './settingsService.js';
+import { resolvePublicPhone } from '../utils/phone.js';
+import { splitGst } from '../utils/gst.js';
+import { hsnFor } from '../utils/hsn.js';
+import { stateCodeOf, SELLER_STATE_CODE } from '../constants/indiaStates.js';
 
-// Legal entity that issues the invoice (printed just below the store name)
-const SELLER_LEGAL = {
-  name: 'Bhavana Enterprises LLP',
-  gstin: '27ABGFB3485P1ZT',
-  address: 'Navin Sheva, Uran, Navi Mumbai'
-};
-
-// A real phone number has at least 10 digits and is not the "+91 00000 00000" placeholder
-const isRealPhone = (v) => {
-  const d = String(v || '').replace(/\D/g, '');
-  return d.length >= 10 && !/^0+$/.test(d.slice(-10));
-};
-const formatPhone = (digits) => {
-  const d = String(digits || '').replace(/\D/g, '');
-  return d.length === 12 && d.startsWith('91') ? `+91 ${d.slice(2, 7)} ${d.slice(7)}` : (d.length === 10 ? `+91 ${d.slice(0, 5)} ${d.slice(5)}` : `+${d}`);
-};
+/** Seller (legal entity) details come from Admin > Settings; these are the fallbacks. */
+const sellerFrom = (settings = {}) => ({
+  name: settings.companyName || 'Bhavana Enterprises LLP',
+  gstin: settings.companyGstin || '27ABGFB3485P1ZT',
+  address: settings.companyAddress || 'Navin Sheva, Uran, Navi Mumbai',
+  dispatchAddress: settings.dispatchAddress || '',
+  fssai: String(settings.fssaiNumber || '').trim()
+});
 
 class InvoiceService {
   /**
@@ -57,7 +53,7 @@ class InvoiceService {
       size: 'A4',
       info: {
         Title: `Invoice - ${order.orderNumber}`,
-        Author: settings.storeName || 'Dry Fruit Wholesale',
+        Author: settings.storeName || 'Supplierfy',
         Subject: `Commercial Tax Invoice for Order #${order.orderNumber}`,
         Keywords: 'invoice, wholesale, receipt, tax'
       }
@@ -124,7 +120,7 @@ class InvoiceService {
           .fillColor(goldColor)
           .fontSize(8.5)
           .font('Helvetica-Bold')
-          .text(SELLER_LEGAL.name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
+          .text(sellerFrom(settings).name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
       }
     } else {
       doc
@@ -137,7 +133,7 @@ class InvoiceService {
         .fillColor(goldColor)
         .fontSize(8.5)
         .font('Helvetica-Bold')
-        .text(SELLER_LEGAL.name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
+        .text(sellerFrom(settings).name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
     }
 
     // Document Header Right (Tax Invoice, Invoice No, Date on White)
@@ -198,83 +194,64 @@ class InvoiceService {
     // =========================================================================
     const addressY = 152;
     const colWidth = 248;
+    const boxH = 142;
+    const seller = sellerFrom(settings);
 
-    // Seller Box (Left)
-    doc
-      .rect(40, addressY, colWidth, 104)
-      .strokeColor(borderColor)
-      .lineWidth(0.5)
-      .stroke();
+    // ---- Seller box (left)
+    doc.rect(40, addressY, colWidth, boxH).strokeColor(borderColor).lineWidth(0.5).stroke();
+    doc.rect(40, addressY, colWidth, 18).fill(primaryColor);
+    doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold').text('SOLD BY', 48, addressY + 5);
 
-    doc
-      .rect(40, addressY, colWidth, 18)
-      .fill(primaryColor);
-
-    doc
-      .fillColor('#FFFFFF')
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text('SOLD BY / DISPATCH HUB', 48, addressY + 5);
-
-    const storeName = settings.storeName || 'Dry Fruit Wholesale';
+    const storeName = settings.storeName || 'Supplierfy';
     const storeEmail = settings.storeEmail || settings.supportEmail || '';
     // Phone: the number the admin saved in Settings; until then the store's WhatsApp number
-    const storePhone = [settings.storePhone, settings.supportPhone].find(isRealPhone)
-      || (settings.whatsappNumber ? formatPhone(settings.whatsappNumber) : '');
+    const storePhone = resolvePublicPhone([settings.storePhone, settings.supportPhone], settings.whatsappNumber);
 
-    doc
-      .fillColor(textDark)
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text(storeName, 48, addressY + 24, { width: colWidth - 16 })
-      .text(SELLER_LEGAL.name, 48, addressY + 36, { width: colWidth - 16 })
-      .font('Helvetica')
-      .fillColor(textDark)
-      .text(`GSTIN: ${SELLER_LEGAL.gstin}`, 48, addressY + 47, { width: colWidth - 16 })
-      .fillColor(textMuted)
-      .text(`Address: ${SELLER_LEGAL.address}`, 48, addressY + 58, { width: colWidth - 16 })
-      .text(storeEmail ? `Email: ${storeEmail}` : '', 48, addressY + 76, { width: colWidth - 16 })
-      .text(storePhone ? `Phone: ${storePhone}` : '', 48, addressY + 88, { width: colWidth - 16 });
+    let sy = addressY + 24;
+    const put = (x, width, str, { bold = false, color = textMuted } = {}) => {
+      if (!str) return;
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(8).fillColor(color).text(str, x, sy, { width });
+      sy = doc.y + 2.5;
+    };
+    put(48, colWidth - 16, storeName, { bold: true, color: textDark });
+    put(48, colWidth - 16, seller.name, { bold: true, color: textDark });
+    put(48, colWidth - 16, seller.gstin ? `GSTIN: ${seller.gstin}` : '', { color: textDark });
+    put(48, colWidth - 16, seller.address ? `Registered address: ${seller.address}` : '');
+    put(48, colWidth - 16, seller.dispatchAddress ? `Dispatch from: ${seller.dispatchAddress}` : '');
+    put(48, colWidth - 16, seller.fssai ? `FSSAI Lic. No.: ${seller.fssai}` : '');
+    put(48, colWidth - 16, storeEmail ? `Email: ${storeEmail}` : '');
+    put(48, colWidth - 16, storePhone ? `Phone: ${storePhone}` : '');
 
-    // Buyer Box (Right)
+    // ---- Buyer box (right)
     const rightColX = 307;
-    doc
-      .rect(rightColX, addressY, colWidth, 104)
-      .strokeColor(borderColor)
-      .lineWidth(0.5)
-      .stroke();
-
-    doc
-      .rect(rightColX, addressY, colWidth, 18)
-      .fill(primaryColor);
-
-    doc
-      .fillColor('#FFFFFF')
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text('BILLED TO & DELIVER TO', rightColX + 8, addressY + 5);
+    doc.rect(rightColX, addressY, colWidth, boxH).strokeColor(borderColor).lineWidth(0.5).stroke();
+    doc.rect(rightColX, addressY, colWidth, 18).fill(primaryColor);
+    doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold').text('BILLED TO & DELIVER TO', rightColX + 8, addressY + 5);
 
     const shipAddr = order.shippingAddress || {};
     const custName = shipAddr.fullName || 'Valued Customer';
     const custPhone = shipAddr.phoneNumber || shipAddr.phone || 'N/A';
     const street = [shipAddr.addressLine1, shipAddr.addressLine2, shipAddr.landmark].filter(Boolean).join(', ') || 'Address not provided';
-    const cityStatePin = `${shipAddr.city || ''}, ${shipAddr.state || 'Madhya Pradesh'} - ${shipAddr.postalCode || shipAddr.pincode || ''}`;
+    const cityStatePin = [shipAddr.city, shipAddr.state].filter(Boolean).join(', ') + ` - ${shipAddr.postalCode || shipAddr.pincode || ''}`;
+    const buyerGstin = order.buyer?.gstin || '';
+    const buyerCompany = order.buyer?.companyName || '';
+    // Place of supply: the buyer's GSTIN state when given, otherwise the delivery state
+    const buyerStateCode = (buyerGstin && buyerGstin.slice(0, 2)) || stateCodeOf(shipAddr.state);
+    const intraState = !buyerStateCode || buyerStateCode === SELLER_STATE_CODE;
 
-    doc
-      .fillColor(textDark)
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text(custName, rightColX + 8, addressY + 24, { width: colWidth - 16 })
-      .font('Helvetica')
-      .fillColor(textMuted)
-      .text(street, rightColX + 8, addressY + 36, { width: colWidth - 16, lineGap: 1 })
-      .text(cityStatePin, rightColX + 8, addressY + 62, { width: colWidth - 16 })
-      .text(`Contact: ${custPhone}`, rightColX + 8, addressY + 75, { width: colWidth - 16 });
+    sy = addressY + 24;
+    put(rightColX + 8, colWidth - 16, buyerCompany || custName, { bold: true, color: textDark });
+    put(rightColX + 8, colWidth - 16, buyerCompany ? `Attn: ${custName}` : '');
+    put(rightColX + 8, colWidth - 16, buyerGstin ? `GSTIN: ${buyerGstin}` : '', { color: textDark });
+    put(rightColX + 8, colWidth - 16, street);
+    put(rightColX + 8, colWidth - 16, cityStatePin);
+    put(rightColX + 8, colWidth - 16, `Contact: ${custPhone}`);
+    put(rightColX + 8, colWidth - 16, shipAddr.state ? `Place of supply: ${shipAddr.state}${buyerStateCode ? ` (${buyerStateCode})` : ''}` : '', { color: textDark });
 
     // =========================================================================
     // 4. ITEMS TABLE
     // =========================================================================
-    const tableTop = 270;
+    const tableTop = addressY + boxH + 14;
 
     // Table Header
     doc
@@ -285,12 +262,13 @@ class InvoiceService {
       .fillColor('#FFFFFF')
       .fontSize(7.5)
       .font('Helvetica-Bold')
-      .text('#', 46, tableTop + 6, { width: 20 })
-      .text('ITEM DESCRIPTION', 68, tableTop + 6, { width: 230 })
-      .text('UNIT', 300, tableTop + 6, { width: 60, align: 'center' })
-      .text('UNIT PRICE', 365, tableTop + 6, { width: 65, align: 'right' })
-      .text('QTY', 435, tableTop + 6, { width: 35, align: 'center' })
-      .text('TOTAL', 475, tableTop + 6, { width: 72, align: 'right' });
+      .text('#', 46, tableTop + 6, { width: 16 })
+      .text('ITEM DESCRIPTION', 64, tableTop + 6, { width: 176 })
+      .text('HSN', 244, tableTop + 6, { width: 44, align: 'center' })
+      .text('UNIT', 290, tableTop + 6, { width: 50, align: 'center' })
+      .text('RATE', 344, tableTop + 6, { width: 62, align: 'right' })
+      .text('QTY', 410, tableTop + 6, { width: 36, align: 'center' })
+      .text('TOTAL', 470, tableTop + 6, { width: 77, align: 'right' });
 
     let currentY = tableTop + 20;
     const items = order.items || [];
@@ -312,21 +290,23 @@ class InvoiceService {
       const itemQty = item.qty || 1;
       const unitPrice = item.price || 0;
       const itemSubtotal = item.subtotal || unitPrice * itemQty;
-      const weightLabel = item.weight || '150g';
+      const weightLabel = item.weight || '1 kg';
+      const hsn = String(item.hsnCode || '').trim() || hsnFor(item) || '-';
 
       doc
         .fillColor(textDark)
         .fontSize(8)
         .font('Helvetica')
-        .text(String(index + 1), 46, currentY + 6, { width: 20 })
+        .text(String(index + 1), 46, currentY + 6, { width: 16 })
         .font('Helvetica-Bold')
-        .text(item.name || 'Artisanal Dry Fruit', 68, currentY + 6, { width: 230, ellipsis: true })
+        .text(item.name || 'Product', 64, currentY + 6, { width: 176, ellipsis: true })
         .font('Helvetica')
-        .text(weightLabel, 300, currentY + 6, { width: 60, align: 'center' })
-        .text(this._formatCurrency(unitPrice), 365, currentY + 6, { width: 65, align: 'right' })
-        .text(String(itemQty), 435, currentY + 6, { width: 35, align: 'center' })
+        .text(hsn, 244, currentY + 6, { width: 44, align: 'center' })
+        .text(weightLabel, 290, currentY + 6, { width: 50, align: 'center' })
+        .text(this._formatCurrency(unitPrice), 344, currentY + 6, { width: 62, align: 'right' })
+        .text(String(itemQty), 410, currentY + 6, { width: 36, align: 'center' })
         .font('Helvetica-Bold')
-        .text(this._formatCurrency(itemSubtotal), 475, currentY + 6, { width: 72, align: 'right' });
+        .text(this._formatCurrency(itemSubtotal), 470, currentY + 6, { width: 77, align: 'right' });
 
       currentY += rowHeight;
     });
@@ -347,7 +327,7 @@ class InvoiceService {
     // Left info box: Notes & Dispatch
     const leftBoxWidth = 270;
     doc
-      .rect(40, summaryY, leftBoxWidth, 105)
+      .rect(40, summaryY, leftBoxWidth, 120)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -385,7 +365,7 @@ class InvoiceService {
     const sumBoxWidth = 230;
 
     doc
-      .rect(sumBoxX, summaryY, sumBoxWidth, 105)
+      .rect(sumBoxX, summaryY, sumBoxWidth, 120)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -414,27 +394,35 @@ class InvoiceService {
     calcY += 15;
 
     const gstRate = settings.gstRate || 5;
-    addSummaryRow(`GST / Tax (${gstRate}%):`, this._formatCurrency(tax), calcY);
-    calcY += 15;
+    const gst = splitGst(tax, intraState);
+    if (intraState) {
+      addSummaryRow(`CGST (${gstRate / 2}%):`, this._formatCurrency(gst.cgst), calcY);
+      calcY += 15;
+      addSummaryRow(`SGST (${gstRate / 2}%):`, this._formatCurrency(gst.sgst), calcY);
+      calcY += 15;
+    } else {
+      addSummaryRow(`IGST (${gstRate}%):`, this._formatCurrency(gst.igst), calcY);
+      calcY += 15;
+    }
 
     // Grand Total Row
     doc
-      .rect(sumBoxX, summaryY + 75, sumBoxWidth, 30)
+      .rect(sumBoxX, summaryY + 90, sumBoxWidth, 30)
       .fill(primaryColor);
 
     doc
       .fillColor('#FFFFFF')
       .fontSize(10)
       .font('Helvetica-Bold')
-      .text('FINAL AMOUNT:', sumBoxX + 12, summaryY + 84)
+      .text('FINAL AMOUNT:', sumBoxX + 12, summaryY + 99)
       .fillColor(goldColor)
       .fontSize(11)
-      .text(this._formatCurrency(total), sumBoxX + 120, summaryY + 83, { width: 98, align: 'right' });
+      .text(this._formatCurrency(total), sumBoxX + 120, summaryY + 98, { width: 98, align: 'right' });
 
     // =========================================================================
     // 6. FOOTER & DECLARATIONS
     // =========================================================================
-    const footerY = 560;
+    const footerY = Math.max(560, summaryY + 120 + 24);
 
     doc
       .rect(40, footerY, 515, 0.5)
@@ -446,7 +434,7 @@ class InvoiceService {
       .font('Helvetica')
       .text('DECLARATION & TERMS:', 40, footerY + 8)
       .text(
-        '1. This is a computer-generated invoice and does not require a physical signature.\n' +
+        '1. This is a computer-generated tax invoice and does not require a physical signature.\n' +
         '2. All disputes are subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra.\n' +
         '3. For returns, refund status, or corporate gifting inquiries, please write to ' + (storeEmail || 'our support team') + '.',
         40,
@@ -465,7 +453,7 @@ class InvoiceService {
       .fillColor(primaryColor)
       .fontSize(7)
       .font('Helvetica-Bold')
-      .text(`FOR ${SELLER_LEGAL.name.toUpperCase()}`, 425, footerY + 12, { width: 125, align: 'center' });
+      .text(`FOR ${seller.name.toUpperCase()}`, 425, footerY + 12, { width: 125, align: 'center' });
 
     doc
       .fillColor(goldColor)

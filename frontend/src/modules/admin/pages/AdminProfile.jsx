@@ -13,7 +13,7 @@ const DEFAULT_WAREHOUSE = {
   warehouseCity: 'Mumbai',
   warehouseState: 'Maharashtra',
   warehousePincode: '400001',
-  warehousePhone: '+91 00000 00000',
+  warehousePhone: '',
   hubAddress: 'Warehouse Address, Mumbai, Maharashtra - 400001'
 };
 

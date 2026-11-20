@@ -3,17 +3,16 @@ import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Leaf, Clock, LifeBuoy, ChevronRight } from 'lucide-react';
 import { useAdmin } from '../../../context/AdminContext';
 import { resolveHelpSupport } from '../../../utils/helpSupport';
+import { useStoreRules } from '../../../hooks/useStoreRules';
 
-const INSTAGRAM_URL = 'https://www.instagram.com/your-domain.example';
-const INSTAGRAM_HANDLE = '@your-domain.example';
 
 export default function ContactPage() {
   const { settings } = useAdmin();
   const help = resolveHelpSupport(settings);
-  const officeAddress =
-    settings?.storeAddress ||
-    settings?.hubAddress ||
-    'Warehouse Address, Mumbai, Maharashtra - 400001';
+  const rules = useStoreRules();
+  const officeAddress = [rules.companyName, rules.companyAddress].filter(Boolean).join(', ') || settings?.storeAddress || '';
+  const INSTAGRAM_URL = rules.instagramUrl;
+  const INSTAGRAM_HANDLE = INSTAGRAM_URL ? '@' + (INSTAGRAM_URL.replace(/\/+$/, '').split('/').pop() || 'instagram') : '';
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -77,6 +76,7 @@ export default function ContactPage() {
                 </div>
               </a>
 
+              {INSTAGRAM_URL && (
               <a
                 href={INSTAGRAM_URL}
                 target="_blank"
@@ -93,9 +93,10 @@ export default function ContactPage() {
                 <div className="min-w-0">
                   <p className="text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider text-stone-500">Instagram</p>
                   <p className="text-sm font-bold text-[color:var(--brand-primary)]">{INSTAGRAM_HANDLE}</p>
-                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5">Recipes, tips & offers</p>
+                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5">Follow us for updates & offers</p>
                 </div>
               </a>
+              )}
 
               <div className="flex items-start gap-3 p-3 rounded-xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)]">
                 <div className="w-9 h-9 rounded-full bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] flex items-center justify-center shrink-0">

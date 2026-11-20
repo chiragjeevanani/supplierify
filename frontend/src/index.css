@@ -283,12 +283,7 @@ html {
   }
 }
 
-/* Mobile-only rules (<= 767px) */
-@media (max-width: 767px) {
-  footer {
-    display: none !important;
-  }
-}
+/* The footer (legal links, company details) is shown on every screen size */
 
 /* Prevent pinch / double-tap zoom on touch devices (bug #55) */
 html, body {

@@ -734,6 +734,9 @@ export function AuthProvider({ children }) {
           upiApp: orderPayload.selectedUpiApp || ''
         },
         couponCode: orderPayload.couponApplied || undefined,
+        acceptedTerms: orderPayload.acceptedTerms === true,
+        buyerGstin: orderPayload.buyerGstin || undefined,
+        buyerCompany: orderPayload.buyerCompany || undefined,
         idempotencyKey: `ord_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         guestId: guestId || undefined,
         items: Array.isArray(localCartItems) && localCartItems.length > 0

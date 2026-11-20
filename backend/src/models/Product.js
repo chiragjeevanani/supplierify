@@ -80,6 +80,8 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: '1 kg'
     },
+    // HSN code printed on the GST invoice (empty = a default is picked from the product name)
+    hsnCode: { type: String, trim: true, maxlength: 10, default: '' },
     // What one unit is: kilogram (default), piece, pair, set or meter. Prices, stock and quantities are in this unit.
     unit: {
       type: String,

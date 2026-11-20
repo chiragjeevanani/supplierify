@@ -1,3 +1,4 @@
+import { resolvePublicPhone } from '../utils/phone.js';
 import mongoose from 'mongoose';
 import Settings from '../models/Settings.js';
 import { ALLOWED_SETTINGS_FIELDS } from '../validations/settingsValidation.js';
@@ -27,6 +28,8 @@ export function sanitizeFontScale(value) {
   return Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, n));
 }
 
+const LEGAL_DEFAULT_KEYS = ['companyName', 'companyGstin', 'companyAddress', 'dispatchAddress', 'fssaiNumber', 'showTrademark', 'grievanceName', 'grievanceDesignation', 'grievanceEmail', 'grievancePhone', 'grievanceTimeline', 'foodSalesPaused'];
+
 export const DEFAULT_SETTINGS = {
   configKey: 'default_store_settings',
   gstRate: 5,
@@ -39,6 +42,18 @@ export const DEFAULT_SETTINGS = {
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
   fontScale: 100,
+  companyName: 'Bhavana Enterprises LLP',
+  companyGstin: '27ABGFB3485P1ZT',
+  companyAddress: 'Navin Sheva, Uran, Navi Mumbai',
+  dispatchAddress: '',
+  fssaiNumber: '',
+  showTrademark: false,
+  grievanceName: '',
+  grievanceDesignation: '',
+  grievanceEmail: '',
+  grievancePhone: '',
+  grievanceTimeline: 'We acknowledge every complaint within 48 hours and resolve it within 15 days of receiving it.',
+  foodSalesPaused: false,
   partialCodEnabled: false,
   partialCodPercent: 30,
   creditEnabled: false,
@@ -54,13 +69,13 @@ export const DEFAULT_SETTINGS = {
   warehouseCity: 'Mumbai',
   warehouseState: 'Maharashtra',
   warehousePincode: '400001',
-  warehousePhone: '+91 00000 00000',
+  warehousePhone: '',
   hubAddress: 'Warehouse Address, Mumbai, Maharashtra - 400001',
-  storeName: 'Dry Fruit Wholesale',
-  storeEmail: 'support@example.com',
-  supportEmail: 'support@example.com',
-  storePhone: '+91 00000 00000',
-  supportPhone: '+91 00000 00000',
+  storeName: 'Supplierfy',
+  storeEmail: '',
+  supportEmail: '',
+  storePhone: '',
+  supportPhone: '',
   storeAddress: 'Warehouse Address, Mumbai, Maharashtra - 400001',
   currency: '₹',
   timezone: 'Asia/Kolkata',
@@ -68,9 +83,9 @@ export const DEFAULT_SETTINGS = {
     title: 'Help & Support',
     subtitle:
       'Reach customer care or browse quick answers about orders, shipping, and payments.',
-    phone: '+91 00000 00000',
+    phone: '',
     phoneHours: 'Mon–Sat, 9 AM – 6 PM',
-    email: 'support@example.com',
+    email: '',
     emailNote: 'Reply within 24 hours',
     writeTitle: 'Write to us',
     writeLink: '/contact',
@@ -169,6 +184,11 @@ class SettingsService {
       settings = created.toObject();
     }
 
+    // Settings saved before the legal fields existed: fill those from the defaults
+    for (const key of LEGAL_DEFAULT_KEYS) {
+      if (settings[key] === undefined) settings[key] = DEFAULT_SETTINGS[key];
+    }
+
     this._cachedSettings = settings;
     this._cacheExpiry = now + this._cacheTTL;
 
@@ -186,8 +206,20 @@ class SettingsService {
       storeName: settings.storeName || DEFAULT_SETTINGS.storeName,
       storeEmail: settings.storeEmail || settings.supportEmail || DEFAULT_SETTINGS.storeEmail,
       supportEmail: settings.supportEmail || settings.storeEmail || DEFAULT_SETTINGS.supportEmail,
-      storePhone: settings.storePhone || settings.supportPhone || DEFAULT_SETTINGS.storePhone,
-      supportPhone: settings.supportPhone || settings.storePhone || DEFAULT_SETTINGS.supportPhone,
+      storePhone: resolvePublicPhone([settings.storePhone, settings.supportPhone], settings.whatsappNumber),
+      supportPhone: resolvePublicPhone([settings.supportPhone, settings.storePhone], settings.whatsappNumber),
+      companyName: settings.companyName || DEFAULT_SETTINGS.companyName,
+      companyGstin: settings.companyGstin || DEFAULT_SETTINGS.companyGstin,
+      companyAddress: settings.companyAddress || DEFAULT_SETTINGS.companyAddress,
+      dispatchAddress: settings.dispatchAddress || '',
+      fssaiNumber: String(settings.fssaiNumber || '').trim(),
+      showTrademark: settings.showTrademark === true,
+      grievanceName: settings.grievanceName || '',
+      grievanceDesignation: settings.grievanceDesignation || '',
+      grievanceEmail: settings.grievanceEmail || '',
+      grievancePhone: settings.grievancePhone || '',
+      grievanceTimeline: settings.grievanceTimeline || DEFAULT_SETTINGS.grievanceTimeline,
+      foodSalesPaused: settings.foodSalesPaused === true,
       storeAddress: settings.storeAddress || DEFAULT_SETTINGS.storeAddress,
       currency: settings.currency || DEFAULT_SETTINGS.currency,
       timezone: settings.timezone || DEFAULT_SETTINGS.timezone,
@@ -213,7 +245,7 @@ class SettingsService {
       helpSupport: sanitizeHelpSupport(
         {
           ...(settings.helpSupport || {}),
-          phone: settings.helpSupport?.phone || settings.supportPhone || settings.storePhone || '',
+          phone: resolvePublicPhone([settings.helpSupport?.phone, settings.supportPhone, settings.storePhone], settings.whatsappNumber),
           email: settings.helpSupport?.email || settings.supportEmail || settings.storeEmail || ''
         },
         DEFAULT_SETTINGS.helpSupport
@@ -240,6 +272,10 @@ class SettingsService {
           sanitized[key] = Number(updateData[key]);
         } else if (key === 'theme') {
           sanitized.theme = sanitizeTheme(updateData.theme);
+        } else if (key === 'foodSalesPaused' || key === 'showTrademark') {
+          sanitized[key] = updateData[key] === true || updateData[key] === 'true';
+        } else if (key === 'companyGstin') {
+          sanitized.companyGstin = String(updateData.companyGstin || '').trim().toUpperCase();
         } else if (key === 'partialCodEnabled') {
           sanitized.partialCodEnabled = updateData.partialCodEnabled === true || updateData.partialCodEnabled === 'true';
         } else if (key === 'partialCodPercent') {

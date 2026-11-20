@@ -151,7 +151,7 @@ class PushNotificationService {
         await fcmApi.saveToken(token, 'web');
         localStorage.setItem('fcm_token_web', token);
         this.currentToken = token;
-        console.log('✅ [FCM] Token successfully registered with Dry Fruit Wholesale backend.');
+        console.log('✅ [FCM] Token successfully registered with Supplierfy backend.');
         return { success: true, token };
       } catch (apiErr) {
         // If offline or not authenticated yet, save locally for sync on login
@@ -197,7 +197,7 @@ class PushNotificationService {
       this.foregroundUnsubscribe = onMessage(messagingInstance, (payload) => {
         console.log('📬 [FCM] Foreground push message received:', payload);
 
-        const title = payload.notification?.title || payload.data?.title || 'Dry Fruit Wholesale Notification';
+        const title = payload.notification?.title || payload.data?.title || 'Supplierfy Notification';
         const body = payload.notification?.body || payload.data?.body || '';
         const icon = payload.notification?.icon || payload.data?.icon || '/favicon.svg';
 

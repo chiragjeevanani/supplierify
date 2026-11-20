@@ -93,11 +93,11 @@ export async function sendSmtpTestEmail({ to } = {}) {
   const from = env.SMTP.FROM || env.SMTP.USER;
 
   await transporter.sendMail({
-    from: `"Dry Fruit Wholesale Admin" <${from}>`,
+    from: `"Supplierfy Admin" <${from}>`,
     to: recipient,
-    subject: 'Dry Fruit Wholesale — SMTP test email',
+    subject: 'Supplierfy — SMTP test email',
     text: [
-      'Dry Fruit Wholesale SMTP test',
+      'Supplierfy SMTP test',
       '',
       'This message confirms Gmail SMTP is configured for the admin panel.',
       `Sender: ${from}`,
@@ -105,7 +105,7 @@ export async function sendSmtpTestEmail({ to } = {}) {
     ].join('\n'),
     html: `
       <div style="font-family:Arial,sans-serif;color:#182019;padding:20px;">
-        <h2 style="color:#0E2A1B;">Dry Fruit Wholesale SMTP test</h2>
+        <h2 style="color:#0E2A1B;">Supplierfy SMTP test</h2>
         <p>This message confirms Gmail SMTP is configured for the admin panel.</p>
         <p style="font-size:12px;color:#5A6B60;">Sender: ${from}<br/>Time: ${new Date().toISOString()}</p>
       </div>
@@ -142,13 +142,13 @@ export async function sendAdminPasswordResetEmail({ to, resetUrl, expiresMinutes
         <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;border:1px solid #E8E2D5;overflow:hidden;">
           <tr>
             <td style="background:#0E2A1B;padding:24px 28px;text-align:center;">
-              <p style="margin:0;color:#D4AF37;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;">Dry Fruit Wholesale</p>
+              <p style="margin:0;color:#D4AF37;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;">Supplierfy</p>
               <h1 style="margin:8px 0 0;color:#F7F3E9;font-size:22px;">Admin Password Reset</h1>
             </td>
           </tr>
           <tr>
             <td style="padding:28px;color:#182019;font-size:15px;line-height:1.55;font-family:Arial,sans-serif;">
-              <p style="margin:0 0 14px;">We received a request to reset the password for the Dry Fruit Wholesale admin account (<strong>${loginEmail}</strong>).</p>
+              <p style="margin:0 0 14px;">We received a request to reset the password for the Supplierfy admin account (<strong>${loginEmail}</strong>).</p>
               <p style="margin:0 0 22px;">This link expires in <strong>${expiresMinutes} minutes</strong> and can be used only once.</p>
               <p style="margin:0 0 28px;text-align:center;">
                 <a href="${resetUrl}" style="display:inline-block;background:#0E2A1B;color:#D4AF37;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;">
@@ -168,7 +168,7 @@ export async function sendAdminPasswordResetEmail({ to, resetUrl, expiresMinutes
 </html>`;
 
   const text = [
-    'Dry Fruit Wholesale — Admin Password Reset',
+    'Supplierfy — Admin Password Reset',
     '',
     `We received a request to reset the password for ${loginEmail}.`,
     `This link expires in ${expiresMinutes} minutes and can be used only once.`,
@@ -180,9 +180,9 @@ export async function sendAdminPasswordResetEmail({ to, resetUrl, expiresMinutes
 
   try {
     await transporter.sendMail({
-      from: `"Dry Fruit Wholesale Admin" <${from}>`,
+      from: `"Supplierfy Admin" <${from}>`,
       to,
-      subject: 'Reset your Dry Fruit Wholesale admin password',
+      subject: 'Reset your Supplierfy admin password',
       text,
       html
     });

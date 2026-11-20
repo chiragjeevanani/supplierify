@@ -12,7 +12,7 @@ import User from './models/User.js';
 import Category from './models/Category.js';
 
 /**
- * Start Dry Fruit Wholesale Backend Server
+ * Start Supplierfy Backend Server
  */
 const startServer = async () => {
   try {
@@ -36,7 +36,7 @@ const startServer = async () => {
     // 2. Start Express HTTP Server
     const server = app.listen(env.PORT, () => {
       console.log('====================================================');
-      console.log(`🚀 Dry Fruit Wholesale Backend Server running in [${env.NODE_ENV}] mode`);
+      console.log(`🚀 Supplierfy Backend Server running in [${env.NODE_ENV}] mode`);
       console.log(`🌐 Server URL: http://localhost:${env.PORT}`);
       console.log(`💻 Frontend App: http://localhost:${env.PORT}`);
       console.log(`📡 API Endpoints: http://localhost:${env.PORT}/api/v1`);

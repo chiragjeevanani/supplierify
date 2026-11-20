@@ -336,7 +336,7 @@ export default function AdminDashboard() {
                           {idx + 1}
                         </span>
                         <img
-                          src={p.image || 'https://placehold.co/80x80?text=Dry Fruit Wholesale'}
+                          src={p.image || 'https://placehold.co/80x80?text=Supplierfy'}
                           alt=""
                           className="w-9 h-9 rounded-lg object-cover border border-stone-200 bg-white"
                         />

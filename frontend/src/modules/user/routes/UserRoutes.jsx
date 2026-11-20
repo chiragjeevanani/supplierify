@@ -12,6 +12,9 @@ import LoginPage from '../pages/LoginPage';
 import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
 import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
+import TermsPage from '../pages/TermsPage';
+import ShippingReturnPage from '../pages/ShippingReturnPage';
+import GrievancePage from '../pages/GrievancePage';
 import HelpSupportPage from '../pages/HelpSupportPage';
 import CreditPage from '../pages/CreditPage';
 import UserLayout from '../components/UserLayout';
@@ -30,6 +33,12 @@ export default function UserRoutes() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-and-conditions" element={<TermsPage />} />
+        <Route path="/shipping-and-return-policy" element={<ShippingReturnPage />} />
+        <Route path="/grievance-redressal" element={<GrievancePage />} />
+        <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
+        <Route path="/shipping-policy" element={<Navigate to="/shipping-and-return-policy" replace />} />
+        <Route path="/grievance" element={<Navigate to="/grievance-redressal" replace />} />
         <Route path="/help-support" element={<HelpSupportPage />} />
         <Route path="/help" element={<Navigate to="/help-support" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />

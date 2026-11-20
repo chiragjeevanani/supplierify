@@ -209,7 +209,7 @@ app.use('/api/fcm-tokens', fcmTokenRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // API only: the storefront is hosted separately, so there is no frontend to serve here.
-app.get('/', (req, res) => sendSuccess(res, 'Dry Fruit Wholesale API is running', { health: '/api/v1/health' }));
+app.get('/', (req, res) => sendSuccess(res, 'Supplierfy API is running', { health: '/api/v1/health' }));
 
 // 404 Route Not Found Handler
 app.use(notFoundHandler);

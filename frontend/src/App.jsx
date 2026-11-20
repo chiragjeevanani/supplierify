@@ -18,7 +18,7 @@ function App() {
     // Gracefully register background service worker & foreground listeners
     pushNotificationService.initializePushNotifications({
       onMessage: (payload) => {
-        console.log('[Dry Fruit Wholesale Push Engine] Received notification:', payload);
+        console.log('[Supplierfy Push Engine] Received notification:', payload);
         try {
           const type =
             payload?.data?.type ||

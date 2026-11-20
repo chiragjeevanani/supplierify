@@ -1,191 +1,75 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Leaf, Shield, Lock, Eye, Database, Mail, ChevronRight } from 'lucide-react';
-
-const sections = [
-  {
-    id: 'intro',
-    title: '1. Introduction',
-    body: [
-      'Dry Fruit Wholesale Private Limited (“Dry Fruit Wholesale”, “we”, “us”, or “our”) respects your privacy and is committed to protecting the personal information you share with us when you browse your-domain.example, place orders, or contact our support team.',
-      'This Privacy Policy explains what data we collect, how we use it, and the choices available to you. By using our website or app, you agree to the practices described here.'
-    ]
-  },
-  {
-    id: 'collect',
-    title: '2. Information We Collect',
-    body: [
-      'Account & contact details: name, phone number, email address, and delivery addresses you save.',
-      'Order information: products purchased, payment method type (e.g. COD or online), order value, and shipping details.',
-      'Technical data: device type, browser, IP address (approximate), and pages visited, used to keep the store secure and improve performance.',
-      'Support messages: any information you send us via contact forms, WhatsApp, email, or phone.'
-    ]
-  },
-  {
-    id: 'use',
-    title: '3. How We Use Your Information',
-    body: [
-      'To process, pack, and deliver your orders, and to send order status updates.',
-      'To verify login via OTP and keep your account secure.',
-      'To provide customer support, refunds, and returns assistance.',
-      'To improve our products, website experience, and shipping reliability.',
-      'To send important service messages. Marketing messages are sent only where permitted and you can opt out anytime.'
-    ]
-  },
-  {
-    id: 'sharing',
-    title: '4. Sharing With Trusted Partners',
-    body: [
-      'We do not sell your personal data.',
-      'We may share limited information with trusted service providers only as needed to run the store—for example payment gateways (such as Razorpay), logistics partners (such as Bigship / courier companies), SMS/OTP providers, and cloud hosting.',
-      'These partners are required to use your data only for the services they provide to Dry Fruit Wholesale and to protect it appropriately.'
-    ]
-  },
-  {
-    id: 'payments',
-    title: '5. Payments',
-    body: [
-      'Online payments are processed by secure third-party payment providers. We do not store your full card number, UPI PIN, or banking passwords on our servers.',
-      'For COD orders we only store the payment method and delivery details needed to complete the shipment.'
-    ]
-  },
-  {
-    id: 'retention',
-    title: '6. Data Retention & Security',
-    body: [
-      'We retain order and account records as long as needed for legal, tax, dispute, and customer-service purposes.',
-      'We use reasonable technical and organisational measures to protect your information. No method of transmission over the internet is 100% secure, but we work continuously to reduce risk.'
-    ]
-  },
-  {
-    id: 'rights',
-    title: '7. Your Rights',
-    body: [
-      'You may request access to, correction of, or deletion of your personal data (subject to legal retention needs) by contacting us.',
-      'You may update saved addresses and profile details from your Account after login.',
-      'You may ask us to stop promotional communication at any time.'
-    ]
-  },
-  {
-    id: 'cookies',
-    title: '8. Cookies & Local Storage',
-    body: [
-      'We use cookies and local browser storage for login sessions, cart contents, and basic site preferences so checkout works smoothly.',
-      'You can clear cookies/storage in your browser settings; some features (like staying logged in or keeping a cart) may then reset.'
-    ]
-  },
-  {
-    id: 'children',
-    title: '9. Children’s Privacy',
-    body: [
-      'Our store is intended for adults who can place orders. We do not knowingly collect personal information from children under 13. If you believe a child has provided us data, please contact us so we can delete it.'
-    ]
-  },
-  {
-    id: 'changes',
-    title: '10. Updates to This Policy',
-    body: [
-      'We may update this Privacy Policy from time to time. The “Last updated” date at the top of this page will change when we do. Continued use of the site after updates means you accept the revised policy.'
-    ]
-  },
-  {
-    id: 'contact',
-    title: '11. Contact Us',
-    body: [
-      'For privacy requests or questions, reach our support team:',
-      'Email: support@example.com',
-      'Phone: +91 00000 00000',
-      'Instagram: @your-domain.example (https://www.instagram.com/your-domain.example)',
-      'You can also visit our Help & Support page for FAQs and order help.'
-    ]
-  }
-];
+import LegalPage, { Section, List } from '../components/LegalPage';
+import { useStoreRules } from '../../../hooks/useStoreRules';
 
 export default function PrivacyPolicyPage() {
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
+  const r = useStoreRules();
+  const brand = r.storeName || 'Supplierfy';
+  const email = r.grievanceEmail || r.supportEmail || r.storeEmail;
   return (
-    <div className="min-h-screen bg-[color:var(--brand-surface)] font-sans text-[color:var(--brand-text)]">
+    <LegalPage title="Privacy Policy">
+      <p>
+        {brand}.in is owned and operated by <strong>{r.companyName}</strong> (“we”, “us”), {r.companyAddress}. This policy explains what personal data we collect from
+        buyers and suppliers who use the Website, why, and the choices you have. It is written to meet the Digital Personal Data Protection Act, 2023
+        (DPDP Act) and the Information Technology Act, 2000. By using the Website you agree to this policy.
+      </p>
 
-      <main className="pb-16 sm:pb-24">
-        <div className="bg-[color:var(--brand-primary)] text-[color:var(--brand-bg)] py-14 sm:py-20 text-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 pointer-events-none">
-            <div className="absolute top-10 left-10 w-64 h-64 bg-[color:var(--brand-accent)] rounded-full blur-[100px]" />
-            <div className="absolute bottom-10 right-10 w-64 h-64 bg-[color:var(--brand-primary-light)] rounded-full blur-[100px]" />
-          </div>
-          <div className="relative z-10 max-w-3xl mx-auto px-4">
-            <div className="inline-flex items-center justify-center gap-2 mb-4">
-              <Shield className="w-5 h-5 text-[color:var(--brand-accent)]" />
-              <span className="text-[color:var(--brand-accent)] font-bold tracking-[0.2em] uppercase text-xs sm:text-sm">
-                Legal
-              </span>
-            </div>
-            <h1 className="font-serif text-3xl sm:text-5xl font-bold mb-4">Privacy Policy</h1>
-            <p className="text-sm sm:text-base text-[#A2B5A8] max-w-2xl mx-auto leading-relaxed">
-              How Dry Fruit Wholesale collects, uses, and protects your information. This page is public — no login required.
-            </p>
-            <p className="text-[length:calc(11px*var(--fs))] text-[color:var(--brand-accent)]/90 mt-4 font-medium">Last updated: 1 October 2026</p>
-          </div>
-        </div>
+      <Section n="1" title="What we collect">
+        <List items={[
+          'Account details: name, mobile number (used for OTP login), email address, and the delivery addresses you save.',
+          'Business details you choose to give: company name and GSTIN, used on your tax invoice.',
+          'Order details: products, quantities, order value, payment method and status, delivery and tracking information.',
+          'Technical data: device and browser type, approximate IP address and pages visited, used for security and to keep the Website working. Your cart and login are kept in your browser storage.',
+          'Messages you send us by email, WhatsApp, phone or the contact form.'
+        ]} />
+      </Section>
 
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-8 relative z-20">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-            {[
-              { icon: Lock, label: 'Secure checkout' },
-              { icon: Eye, label: 'Transparent use' },
-              { icon: Database, label: 'No data selling' },
-              { icon: Mail, label: 'Easy contact' }
-            ].map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="bg-white rounded-2xl border border-[color:var(--brand-border)] p-3 sm:p-4 flex flex-col items-center text-center gap-2 shadow-sm"
-              >
-                <Icon className="w-5 h-5 text-[color:var(--brand-accent-dark)]" />
-                <span className="text-[length:calc(10px*var(--fs))] sm:text-xs font-bold text-[color:var(--brand-primary)]">{label}</span>
-              </div>
-            ))}
-          </div>
+      <Section n="2" title="Why we use it">
+        <List items={[
+          'To create your account, verify you by OTP, take and deliver your orders and send order updates.',
+          'To issue GST invoices and keep the records the law requires.',
+          'To take payments, handle refunds and prevent fraud.',
+          'To answer your queries and complaints, and to improve the Website.',
+          'To send service messages. We send promotional messages only with your consent, and you can opt out at any time.'
+        ]} />
+        <p>We process your data on the basis of your consent and, where the law allows, to fulfil your order and meet legal obligations.</p>
+      </Section>
 
-          <article className="bg-white rounded-3xl border border-[color:var(--brand-border)] shadow-sm p-6 sm:p-10 space-y-8">
-            {sections.map((section) => (
-              <section key={section.id} id={section.id} className="scroll-mt-24">
-                <h2 className="font-serif text-lg sm:text-xl font-bold text-[color:var(--brand-primary)] mb-3">
-                  {section.title}
-                </h2>
-                <div className="space-y-3 text-sm text-[#3A4B41] leading-relaxed">
-                  {section.body.map((para) => (
-                    <p key={para.slice(0, 40)}>{para}</p>
-                  ))}
-                </div>
-              </section>
-            ))}
+      <Section n="3" title="Who we share it with">
+        <p>We do not sell your personal data. We share only what is needed with service providers who help us run the store:</p>
+        <List items={[
+          'Payment gateway (Razorpay) to process online payments. Card, UPI and bank details are entered on the gateway’s secure page; we do not store them.',
+          'Logistics partners (our integrated courier platform and the couriers) to pick up and deliver your order: your name, address and phone number.',
+          'SMS / OTP, email and hosting providers.',
+          'Government or legal authorities when the law requires it.'
+        ]} />
+        <p>These providers may use your data only to provide their service to us and must protect it.</p>
+      </Section>
 
-            <div className="pt-6 border-t border-stone-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-              <p className="text-xs text-stone-500 flex items-center gap-2">
-                <Leaf className="w-4 h-4 text-[color:var(--brand-accent-dark)]" />
-                Need order help instead?
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  to="/help-support"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-xs font-bold uppercase tracking-wider"
-                >
-                  Help & Support <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[color:var(--brand-primary)] text-[color:var(--brand-primary)] text-xs font-bold uppercase tracking-wider"
-                >
-                  Contact Us
-                </Link>
-              </div>
-            </div>
-          </article>
-        </div>
-      </main>
+      <Section n="4" title="Buyer and supplier data">
+        <p>Business information such as company name, GSTIN, addresses and order history is treated as confidential. It is used only for the purposes above and is not shown to other buyers.</p>
+      </Section>
 
-    </div>
+      <Section n="5" title="How long we keep it">
+        <p>We keep your data while your account is active and as long as needed for the purposes above. Invoices and accounting records are kept for the period required by tax and company law, even after you close your account.</p>
+      </Section>
+
+      <Section n="6" title="Security">
+        <p>We use encrypted connections (HTTPS), access controls and secure hosting. No system is completely secure; if a data breach affecting you occurs, we will inform you and the authorities as the law requires.</p>
+      </Section>
+
+      <Section n="7" title="Your rights">
+        <p>Under the DPDP Act you can ask us to give you a summary of the data we hold, correct or complete it, erase it (subject to legal record-keeping), withdraw your consent, and have your grievance addressed. Write to our Grievance Officer{email ? ` at ${email}` : ''}; see <Link to="/grievance-redressal" className="underline">Grievance Redressal</Link>. If you are not satisfied, you may complain to the Data Protection Board of India.</p>
+      </Section>
+
+      <Section n="8" title="Children">
+        <p>The Website is for businesses and is not meant for anyone under 18. We do not knowingly collect data from children.</p>
+      </Section>
+
+      <Section n="9" title="Changes and contact">
+        <p>We may update this policy and will show the new date above. Questions about privacy can be sent to {email || 'our support team'}. Please also read our <Link to="/terms-and-conditions" className="underline">Terms & Conditions</Link>.</p>
+      </Section>
+    </LegalPage>
   );
 }

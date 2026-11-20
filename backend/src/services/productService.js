@@ -61,7 +61,7 @@ class ProductService {
 
     return await Product.find(query)
       .select(
-        'name slug subtitle tagline category flavor price oldPrice discountPercent rating reviewsCount weight unit minOrderQty weightOptions inStock stockCount badge badgeType isBestseller isNewLaunch isFeatured image gallery description details productDetails status createdAt updatedAt'
+        'name slug subtitle tagline category flavor price oldPrice discountPercent rating reviewsCount weight unit hsnCode minOrderQty weightOptions inStock stockCount badge badgeType isBestseller isNewLaunch isFeatured image gallery description details productDetails status createdAt updatedAt'
       )
       .sort({ createdAt: -1 })
       .lean()
@@ -211,6 +211,7 @@ class ProductService {
       reviewsCount: Number(data.reviewsCount || 0),
       weight: data.weight || `1 ${normalizeUnit(data.unit) || 'kg'}`,
       unit: normalizeUnit(data.unit) || 'kg',
+      hsnCode: String(data.hsnCode || '').trim().slice(0, 10),
       weightOptions,
       minOrderQty: Math.max(0, Number(data.minOrderQty) || 0),
       sku: data.sku || '',
@@ -274,7 +275,7 @@ class ProductService {
     const ALLOWED_FIELDS = [
       'name', 'subtitle', 'tagline', 'category', 'flavor', 'diet',
       'price', 'oldPrice', 'discountPercent', 'rating', 'reviewsCount',
-      'weight', 'unit', 'weightOptions', 'inStock', 'stockCount', 'badge', 'badgeType',
+      'weight', 'unit', 'hsnCode', 'weightOptions', 'inStock', 'stockCount', 'badge', 'badgeType',
       'isBestseller', 'isNewLaunch', 'isFeatured', 'image', 'gallery',
       'description', 'details', 'productDetails', 'ingredients', 'tags', 'status',
       'sku', 'shippingWeightKg', 'lengthCm', 'breadthCm', 'heightCm', 'minOrderQty'

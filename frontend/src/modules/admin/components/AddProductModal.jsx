@@ -20,6 +20,7 @@ const EMPTY_PRODUCT = {
   stockCount: 500,
   minOrderQty: 0,
   unit: 'kg',
+  hsnCode: '',
   shippingWeightKg: '',
   lengthCm: '',
   breadthCm: '',
@@ -104,6 +105,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
           oldPrice: initialData.oldPrice !== undefined ? initialData.oldPrice : 0,
           minOrderQty: initialData.minOrderQty || 0,
           unit: unitOf(initialData),
+          hsnCode: initialData.hsnCode || '',
           shippingWeightKg: initialData.shippingWeightKg ?? '',
           lengthCm: initialData.lengthCm ?? '',
           breadthCm: initialData.breadthCm ?? '',
@@ -381,6 +383,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         stockCount: Number(formData.stockCount || 0),
         minOrderQty: Math.max(0, Number(formData.minOrderQty) || 0),
         unit: formData.unit || 'kg',
+        hsnCode: String(formData.hsnCode || '').trim(),
         shippingWeightKg: formData.shippingWeightKg !== '' && formData.shippingWeightKg != null ? Number(formData.shippingWeightKg) : null,
         lengthCm: formData.lengthCm !== '' && formData.lengthCm != null ? Number(formData.lengthCm) : null,
         breadthCm: formData.breadthCm !== '' && formData.breadthCm != null ? Number(formData.breadthCm) : null,
@@ -533,6 +536,20 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     ))}
                   </select>
                   <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">Price, stock and the customer's quantity are all counted in this unit.</p>
+                </div>
+
+                {/* HSN code for the GST invoice */}
+                <div>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">HSN code (for the GST invoice)</label>
+                  <input
+                    type="text"
+                    value={formData.hsnCode || ''}
+                    onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
+                    placeholder="e.g. 0802 (leave empty to use the default for dry fruits)"
+                    maxLength={10}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  />
+                  <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">Dry fruits get a default code automatically. Metals, garments and furniture need a code entered here.</p>
                 </div>
 
                 {/* Pricing & Stock Row */}

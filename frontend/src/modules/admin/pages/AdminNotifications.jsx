@@ -133,7 +133,7 @@ export default function AdminNotifications() {
       setIsSendingTestPush(true);
       setPushFeedback(null);
       const res = await fcmApi.sendTestNotification({
-        title: 'Dry Fruit Wholesale Order Dispatch Test 🔔',
+        title: 'Supplierfy Order Dispatch Test 🔔',
         body: 'Dry Fruits Order #ORD-2026 dispatched via Quick Delivery!',
         link: '/admin/orders'
       });

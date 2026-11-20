@@ -1,3 +1,4 @@
+import { assertFoodSalesAllowed } from './foodRules.js';
 import mongoose from 'mongoose';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
@@ -266,6 +267,7 @@ class CartService {
       err.statusCode = product ? HTTP_STATUS.BAD_REQUEST : HTTP_STATUS.NOT_FOUND;
       throw err;
     }
+    await assertFoodSalesAllowed([product]);
 
     let finalPrice = product.price;
     let finalOldPrice = product.oldPrice;

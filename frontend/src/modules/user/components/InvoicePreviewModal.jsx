@@ -133,7 +133,7 @@ export default function InvoicePreviewModal({ isOpen, onClose, order, isAdmin = 
                 </span>
               </div>
               <p className="text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-500 truncate mt-0.5">
-                Dry Fruit Wholesale Official GST Invoice • Generated in Real-time
+                Supplierfy Official GST Invoice • Generated in Real-time
               </p>
             </div>
           </div>

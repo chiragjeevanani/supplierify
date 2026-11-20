@@ -2,9 +2,9 @@ export const DEFAULT_HELP_SUPPORT = {
   title: 'Help & Support',
   subtitle:
     'Reach customer care or browse quick answers about orders, shipping, and payments.',
-  phone: '+91 00000 00000',
+  phone: '',
   phoneHours: 'Mon–Sat, 9 AM – 6 PM',
-  email: 'support@example.com',
+  email: '',
   emailNote: 'Reply within 24 hours',
   writeTitle: 'Write to us',
   writeLink: '/contact',

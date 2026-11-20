@@ -333,7 +333,7 @@ class ReviewService {
       userEmail: r.user?.email || '',
       userPhone: r.user?.phone || '',
       avatar: r.user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      product: r.product?.name || 'DRY FRUIT WHOLESALE Product',
+      product: r.product?.name || 'SUPPLIERFY Product',
       productId: r.product?._id?.toString() || '',
       productImage: r.product?.image || '',
       orderId: r.order?._id?.toString() || '',
