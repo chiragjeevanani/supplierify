@@ -1,4 +1,4 @@
-import { groupOf, groupLabel } from '../../../utils/categoryGroups';
+import { groupOf, groupLabel, CATEGORY_GROUPS, productInCategory } from '../../../utils/categoryGroups';
 import React, { useState } from 'react';
 import { 
   Plus, 
@@ -18,8 +18,6 @@ import {
 import AdminSidebar from '../components/AdminSidebar';
 import AdminHeader from '../components/AdminHeader';
 import { resolveProductImage } from '../../../utils/productImage';
-import usePagination from '../../../hooks/usePagination';
-import AdminPagination from '../components/AdminPagination';
 import AddCategoryModal from '../components/AddCategoryModal';
 import { useAdmin } from '../../../context/AdminContext';
 
@@ -39,6 +37,7 @@ export default function AdminCategories() {
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Active' | 'Inactive'
   const [search, setSearch] = useState('');
+  const [section, setSection] = useState('all'); // 'all' | a section id
   
   // Feedback notification banner state
   const [feedback, setFeedback] = useState({ type: '', message: '' });
@@ -53,6 +52,13 @@ export default function AdminCategories() {
   // Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [newCategoryGroup, setNewCategoryGroup] = useState('dry-fruits');
+
+  const openNewCategory = (groupId) => {
+    setEditingCategory(null);
+    setNewCategoryGroup(groupId && groupId !== 'all' ? groupId : 'dry-fruits');
+    setIsCategoryModalOpen(true);
+  };
 
   // Toggle Category Active Status (Async API)
   const handleToggleCategoryStatus = async (catId) => {
@@ -87,7 +93,7 @@ export default function AdminCategories() {
   const exportToCSV = () => {
     let csv = "Category Name,Slug,Status,Order,Products Count,Description\n";
     categories.forEach(cat => {
-      const pCount = products.filter(p => p.category === cat.slug || p.category === cat.id).length;
+      const pCount = products.filter(p => productInCategory(p, cat) || p.category === cat.id).length;
       const desc = (cat.description || '').replace(/"/g, '""');
       csv += `"${cat.name}","${cat.slug || ''}","${cat.status || 'Active'}","${cat.order || 1}","${pCount}","${desc}"\n`;
     });
@@ -117,10 +123,14 @@ export default function AdminCategories() {
     return true;
   }).sort((a, b) => (a.order || a.sortOrder || 0) - (b.order || b.sortOrder || 0));
 
-  const pagination = usePagination(filteredCategories, {
-    initialPageSize: 12,
-    resetKey: `${statusFilter}|${search}|${viewMode}`
-  });
+  // Every section gets its own block, in the same order as the storefront
+  const sectionList = CATEGORY_GROUPS.map((g) => ({
+    ...g,
+    all: categories.filter((c) => groupOf(c) === g.id),
+    items: filteredCategories.filter((c) => groupOf(c) === g.id)
+  }));
+  const visibleSections = sectionList.filter((s) => section === 'all' || s.id === section);
+  const productsIn = (cats) => products.filter((p) => cats.some((c) => productInCategory(p, c) || p.category === c.id)).length;
 
   return (
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex font-sans">
@@ -167,6 +177,22 @@ export default function AdminCategories() {
             </div>
           </div>
 
+          {/* Section tabs: each section is shown on its own so categories never mix */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {[{ id: 'all', label: 'All Sections', all: categories }, ...sectionList].map((s) => {
+              const on = section === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSection(s.id)}
+                  className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-bold border transition-all cursor-pointer ${on ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] border-[color:var(--brand-primary)] shadow-xs' : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'}`}
+                >
+                  {s.label} <span className={on ? 'opacity-80' : 'text-stone-400'}>({s.all.length})</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Action & Filter Controls Bar */}
           <div className="bg-white rounded-xl p-3.5 sm:p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-3.5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -174,10 +200,7 @@ export default function AdminCategories() {
               {/* Left Group: Add Category + View Modes */}
               <div className="flex flex-wrap items-center gap-2.5">
                 <button
-                  onClick={() => {
-                    setEditingCategory(null);
-                    setIsCategoryModalOpen(true);
-                  }}
+                  onClick={() => openNewCategory(section)}
                   className="px-4 py-2 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-[length:calc(13px*var(--fs))] uppercase tracking-wider flex items-center gap-1.5 shadow-sm hover:scale-102 hover:bg-[color:var(--brand-primary-light)] transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4 text-[color:var(--brand-accent)]" />
@@ -275,7 +298,7 @@ export default function AdminCategories() {
                 <Loader2 className="w-8 h-8 text-[color:var(--brand-accent)] animate-spin mx-auto" />
                 <p className="font-semibold text-stone-700 text-sm">Loading categories from server...</p>
               </div>
-            ) : filteredCategories.length === 0 ? (
+            ) : filteredCategories.length === 0 && (search || statusFilter !== 'all') ? (
               <div className="bg-white rounded-xl p-10 border border-[color:var(--brand-border)] text-center space-y-3 shadow-2xs">
                 <Tag className="w-10 h-10 text-stone-300 mx-auto" />
                 <h3 className="font-sans font-bold text-base text-[color:var(--brand-primary)]">No Categories Found</h3>
@@ -293,14 +316,40 @@ export default function AdminCategories() {
                   </button>
                 )}
               </div>
-            ) : viewMode === 'list' ? (
+            ) : (
+              <div className="space-y-8">
+                {visibleSections.map((sec) => {
+                  const items = sec.items;
+                  return (
+                    <section key={sec.id} className="space-y-3">
+                      {/* Section header */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[color:var(--brand-primary)] text-white px-4 py-3 shadow-xs">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h2 className="font-sans font-bold text-sm sm:text-base uppercase tracking-wider text-[color:var(--brand-accent)]">{sec.label}</h2>
+                          <span className="text-xs font-semibold text-white/80">
+                            {sec.all.length} {sec.all.length === 1 ? 'category' : 'categories'} · {productsIn(sec.all)} products
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => openNewCategory(sec.id)}
+                          className="px-3 py-1.5 rounded-lg bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] text-xs font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer hover:opacity-90"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add to {sec.label}</span>
+                        </button>
+                      </div>
+
+                      {items.length === 0 ? (
+                        <div className="bg-white rounded-xl border border-dashed border-stone-300 p-6 text-center text-xs text-stone-500">
+                          No categories in {sec.label} yet. Use "Add to {sec.label}" to create the first one.
+                        </div>
+                      ) : viewMode === 'list' ? (
               /* LIST VIEW */
               <div className="space-y-2.5">
-                {pagination.pageItems.map((cat, pageIdx) => {
-                  const catIdx = pagination.from - 1 + pageIdx;
+                {items.map((cat, catIdx) => {
                   const catKey = cat.id || cat._id || `cat-${catIdx}`;
                   const isActive = cat.status !== 'Inactive';
-                  const pCount = products.filter(p => p.category === cat.slug || p.category === cat.id).length;
+                  const pCount = products.filter(p => productInCategory(p, cat) || p.category === cat.id).length;
 
                   return (
                     <div 
@@ -320,9 +369,6 @@ export default function AdminCategories() {
                             <h3 className="font-sans font-bold text-sm sm:text-base text-[color:var(--brand-primary)] truncate">
                               {cat.name}
                             </h3>
-                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider">
-                              {groupLabel(groupOf(cat))}
-                            </span>
                             {cat.badge && (
                               <span className="px-2 py-0.5 rounded-full bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)] border border-[color:var(--brand-primary)]/15 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider">
                                 {cat.badge}
@@ -398,14 +444,13 @@ export default function AdminCategories() {
                   );
                 })}
               </div>
-            ) : (
+                      ) : (
               /* GRID VIEW */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pagination.pageItems.map((cat, pageIdx) => {
-                  const catIdx = pagination.from - 1 + pageIdx;
+                {items.map((cat, catIdx) => {
                   const catKey = cat.id || cat._id || `cat-${catIdx}`;
                   const isActive = cat.status !== 'Inactive';
-                  const pCount = products.filter(p => p.category === cat.slug || p.category === cat.id).length;
+                  const pCount = products.filter(p => productInCategory(p, cat) || p.category === cat.id).length;
 
                   return (
                     <div 
@@ -508,11 +553,12 @@ export default function AdminCategories() {
                   );
                 })}
               </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
             )}
-
-            <div className="rounded-xl border border-[color:var(--brand-border)] bg-white overflow-hidden mt-4">
-              <AdminPagination pagination={pagination} label="categories" />
-            </div>
           </div>
 
         </main>
@@ -541,6 +587,7 @@ export default function AdminCategories() {
           }
         }}
         initialData={editingCategory}
+        defaultGroup={newCategoryGroup}
       />
     </div>
   );

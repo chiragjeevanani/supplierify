@@ -41,7 +41,17 @@ export const getPublicSettings = async (req, res, next) => {
   }
 };
 
+export const getLegalPage = async (req, res, next) => {
+  try {
+    const data = await settingsService.getLegalPage(String(req.params.page || ''));
+    return sendSuccess(res, 'Legal page retrieved successfully', data, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
+  getLegalPage,
   getAdminSettings,
   updateAdminSettings,
   getPublicSettings

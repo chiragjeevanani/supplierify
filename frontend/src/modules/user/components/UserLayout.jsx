@@ -8,7 +8,6 @@ import { useStoreRules } from '../../../hooks/useStoreRules';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import Logo from './Logo';
-import SiteFooter from './SiteFooter';
 import SocialLinks from './SocialLinks';
 import { BRAND } from '../../../config/brand';
 import { useCart } from '../../../context/CartContext';
@@ -266,7 +265,8 @@ export default function UserLayout({ children }) {
 
         <main className="flex-1 min-w-0">{children}</main>
 
-        <SiteFooter className={hideFab ? 'pb-24 md:pb-5' : 'pb-20 md:pb-5'} />
+        {/* Spacer so the floating WhatsApp button never covers the last content */}
+        <div aria-hidden="true" className={hideFab ? 'h-24 md:h-5' : 'h-20 md:h-5'} />
       </div>
 
       {!hideFab && waUrl && (

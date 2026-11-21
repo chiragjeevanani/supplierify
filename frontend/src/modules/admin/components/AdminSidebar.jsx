@@ -3,7 +3,7 @@ import { NavLink, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, FolderTree, 
   Boxes, Users, Tag, Star, Bell, 
-  BarChart3, Settings, ExternalLink, X, UserCircle, Images
+  BarChart3, Settings, ExternalLink, X, UserCircle, Images, FileText
 } from 'lucide-react';
 import Logo from '../../user/components/Logo';
 import { adminDashboardApi, adminNotificationApi } from '../../../utils/api';
@@ -110,6 +110,7 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
     { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: formatBadge(badges.notifications) },
     { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
     { name: 'Profile', path: '/admin/profile', icon: UserCircle },
+    { name: 'Legal Pages', path: '/admin/legal-pages', icon: FileText },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
 

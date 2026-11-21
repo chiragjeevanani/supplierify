@@ -30,3 +30,17 @@ export const isFoodProduct = (product, categories = []) => {
   const cat = (categories || []).find((c) => productInCategory(product, c));
   return cat ? FOOD_GROUPS.includes(groupOf(cat)) : false;
 };
+
+/** The category object a product belongs to (or undefined). */
+export const categoryOfProduct = (product, categories = []) =>
+  (categories || []).find((c) => productInCategory(product, c));
+
+/** Section id of a product (products whose category is unknown count as Dry Fruits, like old categories). */
+export const groupOfProduct = (product, categories = []) => {
+  const cat = categoryOfProduct(product, categories);
+  return cat ? groupOf(cat) : DEFAULT_GROUP;
+};
+
+/** Readable category name for a product (falls back to the raw slug). */
+export const categoryNameOfProduct = (product, categories = []) =>
+  categoryOfProduct(product, categories)?.name || String(product?.category || '').replace(/-/g, ' ');

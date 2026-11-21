@@ -5,10 +5,11 @@ import AdminHeader from '../components/AdminHeader';
 import usePagination from '../../../hooks/usePagination';
 import AdminPagination from '../components/AdminPagination';
 import { useAdmin } from '../../../context/AdminContext';
+import { groupLabel, groupOfProduct, categoryNameOfProduct } from '../../../utils/categoryGroups';
 
 export default function AdminInventory() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { products, adjustProductStock, updateProductStock, bulkRestock, settings } = useAdmin();
+  const { products, categories, adjustProductStock, updateProductStock, bulkRestock, settings } = useAdmin();
 
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'low', 'out', 'healthy'
   const [search, setSearch] = useState('');
@@ -250,8 +251,9 @@ export default function AdminInventory() {
                           </div>
                         </td>
 
-                        <td className="py-3 px-4 capitalize text-stone-700 font-semibold text-xs sm:text-sm">
-                          {p.category?.replace('-', ' ')}
+                        <td className="py-3 px-4 text-stone-700 font-semibold text-xs sm:text-sm">
+                          <div className="capitalize">{categoryNameOfProduct(p, categories)}</div>
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold uppercase tracking-wider">{groupLabel(groupOfProduct(p, categories))}</span>
                         </td>
 
                         <td className="py-3 px-4 font-bold text-stone-900 text-sm sm:text-base">
