@@ -4,6 +4,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import AdminHeader from '../components/AdminHeader';
 import usePagination from '../../../hooks/usePagination';
 import AdminPagination from '../components/AdminPagination';
+import CategoryOptions from '../components/CategoryOptions';
 import { useAdmin } from '../../../context/AdminContext';
 
 export default function AdminPromotions() {
@@ -267,9 +268,7 @@ export default function AdminPromotions() {
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none cursor-pointer"
                   >
                     <option value="all">All Categories</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.slug}>{c.name}</option>
-                    ))}
+                    <CategoryOptions categories={categories} />
                   </select>
                 </div>
 

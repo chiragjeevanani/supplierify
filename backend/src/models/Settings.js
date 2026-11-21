@@ -89,6 +89,13 @@ const settingsSchema = new mongoose.Schema(
     grievanceEmail: { type: String, trim: true, lowercase: true, maxlength: 120, default: '' },
     grievancePhone: { type: String, trim: true, maxlength: 30, default: '' },
     grievanceTimeline: { type: String, trim: true, maxlength: 300, default: 'We acknowledge every complaint within 48 hours and resolve it within 15 days of receiving it.' },
+    // Admin-edited legal pages (empty = the website shows its standard text). Plain text with simple formatting.
+    termsContent: { type: String, maxlength: 60000, default: '' },
+    privacyContent: { type: String, maxlength: 60000, default: '' },
+    shippingContent: { type: String, maxlength: 60000, default: '' },
+    termsUpdatedAt: { type: Date, default: null },
+    privacyUpdatedAt: { type: Date, default: null },
+    shippingUpdatedAt: { type: Date, default: null },
     // Pause the sale of food items (e.g. while the FSSAI licence is pending): they show "Coming soon" and cannot be bought
     foodSalesPaused: { type: Boolean, default: false },
 

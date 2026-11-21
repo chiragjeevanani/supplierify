@@ -17,6 +17,7 @@ import AdminReviews from '../pages/AdminReviews';
 import AdminAnalytics from '../pages/AdminAnalytics';
 import AdminNotifications from '../pages/AdminNotifications';
 import AdminSettings from '../pages/AdminSettings';
+import AdminLegalPages from '../pages/AdminLegalPages';
 import AdminProfile from '../pages/AdminProfile';
 import AdminLogin from '../pages/AdminLogin';
 import AdminForgotPassword from '../pages/AdminForgotPassword';
@@ -56,6 +57,7 @@ export default function AdminRoutes() {
       <Route path="/notifications" element={<ProtectedAdminRoute><AdminNotifications /></ProtectedAdminRoute>} />
       <Route path="/analytics" element={<ProtectedAdminRoute><AdminAnalytics /></ProtectedAdminRoute>} />
       <Route path="/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+      <Route path="/legal-pages" element={<ProtectedAdminRoute><AdminLegalPages /></ProtectedAdminRoute>} />
       <Route path="/profile" element={<ProtectedAdminRoute><AdminProfile /></ProtectedAdminRoute>} />
       
       {/* Fallback */}

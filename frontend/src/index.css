@@ -283,8 +283,6 @@ html {
   }
 }
 
-/* The footer (legal links, company details) is shown on every screen size */
-
 /* Prevent pinch / double-tap zoom on touch devices (bug #55) */
 html, body {
   touch-action: pan-x pan-y;

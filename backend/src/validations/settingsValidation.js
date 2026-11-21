@@ -29,6 +29,9 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'grievancePhone',
   'grievanceTimeline',
   'foodSalesPaused',
+  'termsContent',
+  'privacyContent',
+  'shippingContent',
   'partialCodEnabled',
   'partialCodPercent',
   'creditEnabled',
@@ -127,6 +130,11 @@ export const validateUpdateSettings = (req, res, next) => {
   if (body.creditDueDays !== undefined) {
     const d = Number(body.creditDueDays);
     if (!Number.isFinite(d) || d < 1 || d > 365) errors.push({ field: 'creditDueDays', message: 'Payment due days must be between 1 and 365' });
+  }
+  for (const key of ['termsContent', 'privacyContent', 'shippingContent']) {
+    if (body[key] !== undefined && (typeof body[key] !== 'string' || body[key].length > 60000)) {
+      errors.push({ field: key, message: 'Page text must be text of at most 60,000 characters' });
+    }
   }
   for (const key of ['foodSalesPaused', 'showTrademark']) {
     if (body[key] !== undefined && typeof body[key] !== 'boolean') errors.push({ field: key, message: 'This switch must be true or false' });

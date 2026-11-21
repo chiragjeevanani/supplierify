@@ -28,6 +28,8 @@ export function sanitizeFontScale(value) {
   return Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, n));
 }
 
+const LEGAL_PAGES = ['terms', 'privacy', 'shipping'];
+
 const LEGAL_DEFAULT_KEYS = ['companyName', 'companyGstin', 'companyAddress', 'dispatchAddress', 'fssaiNumber', 'showTrademark', 'grievanceName', 'grievanceDesignation', 'grievanceEmail', 'grievancePhone', 'grievanceTimeline', 'foodSalesPaused'];
 
 export const DEFAULT_SETTINGS = {
@@ -254,6 +256,24 @@ class SettingsService {
   }
 
   /**
+   * One admin-editable legal page. Empty content means "use the website's standard text".
+   * @param {'terms'|'privacy'|'shipping'} page
+   */
+  async getLegalPage(page) {
+    if (!LEGAL_PAGES.includes(page)) {
+      const err = new Error('Unknown legal page.');
+      err.statusCode = 404;
+      throw err;
+    }
+    const settings = await this.getSettings();
+    return {
+      page,
+      content: String(settings[page + 'Content'] || ''),
+      updatedAt: settings[page + 'UpdatedAt'] || null
+    };
+  }
+
+  /**
    * Update store settings (Admin only)
    * @param {object} updateData
    * @returns {Promise<object>}
@@ -333,6 +353,15 @@ class SettingsService {
       const wState = sanitized.warehouseState || current.warehouseState || DEFAULT_SETTINGS.warehouseState;
       const wPin = sanitized.warehousePincode || current.warehousePincode || DEFAULT_SETTINGS.warehousePincode;
       sanitized.hubAddress = `${wName}, ${wAddr}, ${wCity}, ${wState} - ${wPin}`;
+    }
+
+    // Edited legal pages get a fresh "last updated" date (only when the text really changed)
+    const editedPages = LEGAL_PAGES.filter((pg) => sanitized[pg + 'Content'] !== undefined);
+    if (editedPages.length) {
+      const current = await this.getSettings();
+      for (const pg of editedPages) {
+        if (String(current[pg + 'Content'] || '') !== sanitized[pg + 'Content']) sanitized[pg + 'UpdatedAt'] = new Date();
+      }
     }
 
     const updated = await Settings.findOneAndUpdate(

@@ -5,7 +5,7 @@ import { uploadApi } from '../../../utils/api';
 import { compressImageFile } from '../../../utils/compressImage';
 import { resolveProductImage } from '../../../utils/productImage';
 
-export default function AddCategoryModal({ isOpen, onClose, onSave, initialData = null }) {
+export default function AddCategoryModal({ isOpen, onClose, onSave, initialData = null, defaultGroup = 'dry-fruits' }) {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -49,7 +49,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
           image: '',
           subtext: '',
           badge: 'Popular',
-          group: 'dry-fruits',
+          group: defaultGroup || 'dry-fruits',
           popular: true
         });
         setShowUrlInput(false);
@@ -63,7 +63,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, defaultGroup]);
 
   if (!isOpen) return null;
 

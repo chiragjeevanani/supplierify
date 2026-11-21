@@ -747,7 +747,8 @@ export const adminSettingsApi = {
 };
 
 export const settingsApi = {
-  getPublicSettings: () => apiRequest('/settings', { method: 'GET' })
+  getPublicSettings: () => apiRequest('/settings', { method: 'GET' }),
+  getLegalPage: (page) => apiRequest('/settings/legal/' + encodeURIComponent(page), { method: 'GET' })
 };
 
 // Customer & Public Reviews API
