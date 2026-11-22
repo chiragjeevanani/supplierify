@@ -108,34 +108,72 @@ export default function ShopPage() {
   const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name
     || (activeCategory === 'all' && activeGroup ? CATEGORY_GROUPS.find((g) => g.id === activeGroup)?.label : '');
 
-  // Categories directory view
+  // Categories directory view: one block per section, so categories never mix
   if (showCategories) {
+    const sections = CATEGORY_GROUPS
+      .filter((g) => !activeGroupParam || g.id === activeGroupParam)
+      .map((g) => ({ ...g, items: categories.filter((c) => groupOf(c) === g.id) }))
+      .filter((g) => g.items.length > 0);
     return (
       <div className="px-4 sm:px-6 py-5 sm:py-6 max-w-7xl mx-auto">
-        <h2 className="font-serif text-2xl font-bold text-[color:var(--brand-primary)] mb-4">All Categories</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {categories.map((c) => (
-            <Link
-              key={c._id || c.id || c.slug}
-              to={`/shop?category=${c.slug}`}
-              className="group rounded-xl overflow-hidden bg-white border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] hover:shadow-md transition-all"
-            >
-              <div className="aspect-[4/3] bg-[color:var(--brand-surface)] overflow-hidden">
-                <img
-                  src={resolveOptimizedProductImage(c.image, { width: 400 })}
-                  alt={c.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+        <h2 className="font-serif text-2xl font-bold text-[color:var(--brand-primary)] mb-3">All Categories</h2>
+
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 mb-4" role="tablist" aria-label="Sections">
+          {[{ id: '', label: 'All' }, ...CATEGORY_GROUPS].map((g) => {
+            const on = activeGroupParam === g.id;
+            return (
+              <button
+                key={g.id || 'all'}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setSearchParams(g.id ? { tab: 'categories', group: g.id } : { tab: 'categories' })}
+                className={`shrink-0 rounded-lg px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                  on
+                    ? 'bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] border-[color:var(--brand-primary)]'
+                    : 'bg-white text-[color:var(--brand-primary)] border-transparent hover:bg-[color:var(--brand-accent)]/30'
+                }`}
+              >
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="space-y-8">
+          {sections.map((g) => (
+            <section key={g.id}>
+              <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b-2 border-[color:var(--brand-primary)]">
+                <h3 className="font-serif text-xl font-bold text-[color:var(--brand-primary)]">{g.label}</h3>
+                <Link to={`/shop?group=${g.id}`} className="text-xs font-bold underline text-[color:var(--brand-primary)] whitespace-nowrap">
+                  View all {g.label}
+                </Link>
               </div>
-              <div className="p-3">
-                <h3 className="font-bold text-[color:var(--brand-primary)]">{c.name}</h3>
-                {c.description && <p className="text-xs text-stone-500 mt-0.5 line-clamp-2">{c.description}</p>}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {g.items.map((c) => (
+                  <Link
+                    key={c._id || c.id || c.slug}
+                    to={`/shop?category=${c.slug}`}
+                    className="group rounded-xl overflow-hidden bg-white border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] hover:shadow-md transition-all"
+                  >
+                    <div className="aspect-[4/3] bg-[color:var(--brand-surface)] overflow-hidden">
+                      <img
+                        src={resolveOptimizedProductImage(c.image, { width: 400 })}
+                        alt={c.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-bold text-[color:var(--brand-primary)]">{c.name}</h3>
+                      {c.description && <p className="text-xs text-stone-500 mt-0.5 line-clamp-2">{c.description}</p>}
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
+            </section>
           ))}
         </div>
-        {categories.length === 0 && <p className="text-stone-500">No categories yet.</p>}
+        {sections.length === 0 && <p className="text-stone-500">No categories yet.</p>}
       </div>
     );
   }
