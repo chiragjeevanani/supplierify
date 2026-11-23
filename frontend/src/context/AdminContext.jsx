@@ -505,9 +505,12 @@ export function AdminProvider({ children }) {
         setCategories(prev => {
           const serverIds = new Set(fetched.map(c => String(c.id || c._id)));
           const serverSlugs = new Set(fetched.map(c => c.slug));
-          // Retain any locally created or custom categories that aren't yet on server
+          // Keep only categories created here that the server has not seen yet (temporary 'cat-…' ids).
+          // A copy saved in this browser earlier that the server no longer lists (deleted, or inactive in the
+          // customer list) must be dropped, otherwise it shows up stale and without its section.
           const localOnly = prev.filter(c => {
             const cid = String(c.id || c._id || '');
+            if (/^[0-9a-f]{24}$/i.test(cid)) return false;
             return !serverIds.has(cid) && !serverSlugs.has(c.slug);
           });
           return [...localOnly, ...fetched];
