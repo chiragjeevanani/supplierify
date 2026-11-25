@@ -378,30 +378,11 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   /**
-   * Request OTP from backend API
+   * Log in or sign up with mobile number + password, then start the session
    */
-  const requestOtp = async (phoneNumber) => {
+  const authenticate = async (request, phoneNumber) => {
     try {
-      const response = await userAuthApi.sendOtp(phoneNumber);
-      return {
-        success: true,
-        data: response.data,
-        message: response.message
-      };
-    } catch (err) {
-      return {
-        success: false,
-        message: err.message || 'Failed to send OTP'
-      };
-    }
-  };
-
-  /**
-   * Verify OTP and Login / Register User
-   */
-  const verifyOtpAndLogin = async (phoneNumber, otp) => {
-    try {
-      const response = await userAuthApi.verifyOtp(phoneNumber, otp);
+      const response = await request();
       if (response && response.data) {
         const { token: receivedToken, user: receivedUser } = response.data;
 
@@ -463,55 +444,34 @@ export function AuthProvider({ children }) {
       // Never create a fake logged-in session without a JWT
       return {
         success: false,
-        message: err.message || 'Verification failed. Please check your connection and try again.'
+        message: err.message || 'Could not log in. Please check your connection and try again.'
       };
     }
   };
 
-  const loginWithPhone = (phoneNumber) => {
-    const digitsOnly = (phoneNumber || '').replace(/\D/g, '').slice(-10);
-    if (digitsOnly.length < 10) {
-      return { success: false, message: 'Please enter a valid 10-digit mobile number.' };
+  const loginWithPassword = (phoneNumber, password) =>
+    authenticate(() => userAuthApi.login(phoneNumber, password), phoneNumber);
+
+  // data: { phone, email, password, confirmPassword }
+  const signUp = (data) => authenticate(() => userAuthApi.register(data), data.phone);
+
+  // The server ends all older sessions, so keep the new token it returns
+  const changePassword = async (data) => {
+    try {
+      const response = await userAuthApi.changePassword(data);
+      const nextToken = response?.data?.token;
+      if (nextToken) {
+        try {
+          localStorage.setItem('wholesale_user_token', nextToken);
+        } catch (e) {
+          console.error(e);
+        }
+        setToken(nextToken);
+      }
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not change the password.' };
     }
-
-    const existing = customers.find(c => {
-      const cDigits = (c.phone || '').replace(/\D/g, '').slice(-10);
-      return cDigits === digitsOnly;
-    });
-
-    if (existing) {
-      setUser(existing);
-      return { success: true, user: existing };
-    }
-
-    const newCustomer = {
-      id: `cust-${Date.now()}`,
-      name: `Member ${digitsOnly.slice(-4)}`,
-      email: `user.${digitsOnly}@example.com`,
-      phone: `+91 ${digitsOnly}`,
-      avatar: "",
-      rewardsPoints: 500,
-      tier: "Gold Wellness Member",
-      memberSince: "Just now",
-      totalOrders: 0,
-      totalSpent: 0,
-      city: "Mumbai",
-      state: "Maharashtra",
-      status: "Active"
-    };
-
-    setCustomers(prev => [newCustomer, ...prev]);
-    setUser(newCustomer);
-    return { success: true, user: newCustomer };
-  };
-
-  const loginWithDemo = (customerId) => {
-    const target = customers.find(c => c.id === customerId) || INITIAL_CUSTOMERS.find(c => c.id === customerId);
-    if (target) {
-      setUser(target);
-      return { success: true, user: target };
-    }
-    return { success: false, message: 'Demo customer not found.' };
   };
 
   const logout = () => {
@@ -916,10 +876,9 @@ export function AuthProvider({ children }) {
       addresses,
       selectedAddressId,
       setSelectedAddressId,
-      requestOtp,
-      verifyOtpAndLogin,
-      loginWithPhone,
-      loginWithDemo,
+      loginWithPassword,
+      signUp,
+      changePassword,
       logout,
       addAddress,
       updateAddress,

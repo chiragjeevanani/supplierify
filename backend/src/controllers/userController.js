@@ -107,7 +107,7 @@ export const deleteAccount = async (req, res, next) => {
           isVerified: false,
           deletedAt: new Date()
         },
-        $unset: { email: 1 }
+        $unset: { email: 1, passwordHash: 1 }
       }
     );
 

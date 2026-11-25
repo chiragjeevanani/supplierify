@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, Award, ShoppingBag, Search, Eye, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Users, Award, ShoppingBag, Search, Eye, X, Loader2, AlertCircle, RefreshCw, Download } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminHeader from '../components/AdminHeader';
 import usePagination from '../../../hooks/usePagination';
@@ -7,6 +7,49 @@ import AdminPagination from '../components/AdminPagination';
 import { formatOrder } from '../../../context/AuthContext';
 import { adminUserApi, adminOrderApi } from '../../../utils/api';
 import CustomerCreditPanel from '../components/CustomerCreditPanel';
+import CustomerPasswordPanel from '../components/CustomerPasswordPanel';
+
+const formatDateTime = (value) => {
+  const d = value ? new Date(value) : null;
+  return d && !Number.isNaN(d.getTime())
+    ? d.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : '—';
+};
+
+const csvCell = (value) => {
+  let text = String(value ?? '');
+  // stop spreadsheet programs from running customer-typed text as a formula
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+};
+
+const downloadCustomers = (list) => {
+  const rows = [
+    ['Name', 'Mobile', 'Email', 'Signed up', 'Last login', 'Status', 'Orders', 'Total spent', 'City', 'State', 'Addresses'],
+    ...list.map((c) => [
+      c.name,
+      c.phone,
+      c.email,
+      formatDateTime(c.createdAt),
+      formatDateTime(c.lastLoginAt),
+      c.status,
+      c.totalOrders,
+      c.totalSpent,
+      c.city,
+      c.state,
+      (c.addresses || []).map((a) => [a.fullName, a.line, a.city, a.state, a.postalCode, a.phoneNumber].filter(Boolean).join(', ')).join(' | ')
+    ])
+  ];
+  const blob = new Blob(['\uFEFF' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 export default function AdminCustomers() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -110,7 +153,8 @@ export default function AdminCustomers() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCustomer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCustomer?._id]);
 
   return (
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex font-sans">
@@ -179,6 +223,15 @@ export default function AdminCustomers() {
               ))}
             </div>
 
+            <button
+              type="button"
+              onClick={() => downloadCustomers(filteredCustomers)}
+              disabled={filteredCustomers.length === 0}
+              className="sm:ml-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg border border-stone-200 text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] hover:bg-stone-100 disabled:opacity-50 whitespace-nowrap"
+            >
+              <Download className="w-4 h-4" /> Download list
+            </button>
+
             {/* Search bar */}
             <div className="bg-[color:var(--brand-surface)] px-3.5 py-2 rounded-lg border border-stone-200 flex items-center gap-2.5 w-full sm:w-88 text-xs sm:text-sm">
               <Search className="w-4 h-4 text-stone-400 shrink-0" />
@@ -215,6 +268,7 @@ export default function AdminCustomers() {
                     <th className="py-3.5 px-4">Customer</th>
                     <th className="py-3.5 px-4">Loyalty Tier</th>
                     <th className="py-3.5 px-4">Location</th>
+                    <th className="py-3.5 px-4">Signed Up</th>
                     <th className="py-3.5 px-4">Orders Placed</th>
                     <th className="py-3.5 px-4">Total Spent</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
@@ -265,6 +319,10 @@ export default function AdminCustomers() {
 
                         <td className="py-3 px-4 text-stone-700 text-xs sm:text-sm font-medium">
                           {c.city ? `${c.city}${c.state ? `, ${c.state}` : ''}` : '—'}
+                        </td>
+
+                        <td className="py-3 px-4 text-stone-700 text-xs sm:text-sm font-medium whitespace-nowrap">
+                          {c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                         </td>
 
                         <td className="py-3 px-4 font-semibold text-stone-900 text-xs sm:text-sm">
@@ -354,7 +412,48 @@ export default function AdminCustomers() {
                   <span className="text-stone-500 block text-[length:calc(11px*var(--fs))] font-bold uppercase">Lifetime Spend</span>
                   <strong className="text-[color:var(--brand-primary)] font-bold">₹{(Number(selectedCustomer.totalSpent) || 0).toLocaleString('en-IN')}</strong>
                 </div>
+                <div>
+                  <span className="text-stone-500 block text-[length:calc(11px*var(--fs))] font-bold uppercase">Signed Up</span>
+                  <strong className="text-stone-800 font-semibold">{formatDateTime(selectedCustomer.createdAt)}</strong>
+                </div>
+                <div>
+                  <span className="text-stone-500 block text-[length:calc(11px*var(--fs))] font-bold uppercase">Last Login</span>
+                  <strong className="text-stone-800 font-semibold">{formatDateTime(selectedCustomer.lastLoginAt)}</strong>
+                </div>
+                <div>
+                  <span className="text-stone-500 block text-[length:calc(11px*var(--fs))] font-bold uppercase">Account Status</span>
+                  <strong className="text-stone-800 font-semibold">{selectedCustomer.status || '—'}</strong>
+                </div>
               </div>
+
+              {/* Saved addresses */}
+              <div className="space-y-2">
+                <h4 className="font-sans text-sm sm:text-base font-bold text-[color:var(--brand-primary)]">Saved Addresses ({selectedCustomer.addresses?.length || 0})</h4>
+                {selectedCustomer.addresses?.length ? (
+                  selectedCustomer.addresses.map((a, i) => (
+                    <div key={i} className="p-3 rounded-lg border border-stone-200 text-xs sm:text-sm">
+                      <div className="font-bold text-stone-900">
+                        {a.fullName} <span className="font-medium text-stone-500">• {a.phoneNumber}</span>
+                        {a.isDefault && <span className="ml-2 text-[length:calc(10px*var(--fs))] font-bold uppercase text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">Default</span>}
+                      </div>
+                      <p className="text-stone-600 mt-0.5 break-words">{[a.line, a.city, a.state, a.postalCode].filter(Boolean).join(', ')}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-stone-400 italic">No address saved yet.</p>
+                )}
+              </div>
+
+              <CustomerPasswordPanel
+                key={selectedCustomer._id || selectedCustomer.id}
+                customerId={selectedCustomer._id || selectedCustomer.id}
+                hasPassword={Boolean(selectedCustomer.hasPassword)}
+                onSaved={() => {
+                  const id = selectedCustomer._id || selectedCustomer.id;
+                  setCustomers((prev) => prev.map((c) => ((c._id || c.id) === id ? { ...c, hasPassword: true } : c)));
+                  setSelectedCustomer((c) => (c ? { ...c, hasPassword: true } : c));
+                }}
+              />
 
               <CustomerCreditPanel
                 customerId={selectedCustomer._id || selectedCustomer.id}

@@ -11,7 +11,7 @@ import adminNotificationRoutes from './adminNotificationRoutes.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { requireAdmin } from '../middleware/roleMiddleware.js';
 import { adminLoginLimiter } from '../middleware/rateLimiter.js';
-import { validateAdminLogin, validateUserStatusUpdate } from '../validations/adminValidation.js';
+import { validateAdminLogin, validateUserStatusUpdate, validateSetUserPassword } from '../validations/adminValidation.js';
 import { validateAdminProfileUpdate } from '../validations/adminAuthValidation.js';
 
 const router = Router();
@@ -42,5 +42,6 @@ router.get('/users', adminController.getAllUsers);
 router.get('/users/:id/credit', adminController.getUserCredit);
 router.patch('/users/:id/credit', adminController.updateUserCredit);
 router.patch('/users/:id/status', validateUserStatusUpdate, adminController.updateUserStatus);
+router.patch('/users/:id/password', validateSetUserPassword, adminController.setUserPassword);
 
 export default router;

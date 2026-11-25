@@ -76,7 +76,7 @@ Please check the parcel at delivery. Report any damage, shortage or wrong item w
 Food items (such as dry fruits) are natural products. Slight variation in size, colour and weight is normal. Please store them in a cool, dry place and use them within the shelf life shown on the pack. Food items are sold in line with applicable food safety laws; our FSSAI registration details are shown in the website footer when available.
 
 ## 9. Your responsibilities
-- Keep your login (mobile OTP) and account secure; you are responsible for activity on your account.
+- Keep your password and account secure; you are responsible for activity on your account.
 - Do not misuse the Website, attempt to disrupt it, or place orders with false details.
 - Resell the goods only in compliance with applicable laws, including food safety and labelling rules.
 
@@ -95,14 +95,14 @@ We may update these terms; the version on the Website when you place an order ap
 const PRIVACY = `{{brand}}.in is owned and operated by **{{company}}** (“we”, “us”), {{address}}. This policy explains what personal data we collect from buyers and suppliers who use the Website, why, and the choices you have. It is written to meet the Digital Personal Data Protection Act, 2023 (DPDP Act) and the Information Technology Act, 2000. By using the Website you agree to this policy.
 
 ## 1. What we collect
-- Account details: name, mobile number (used for OTP login), email address, and the delivery addresses you save.
+- Account details: name, mobile number (used to log in), your password (stored only in encrypted form), email address, and the delivery addresses you save.
 - Business details you choose to give: company name and GSTIN, used on your tax invoice.
 - Order details: products, quantities, order value, payment method and status, delivery and tracking information.
 - Technical data: device and browser type, approximate IP address and pages visited, used for security and to keep the Website working. Your cart and login are kept in your browser storage.
 - Messages you send us by email, WhatsApp, phone or the contact form.
 
 ## 2. Why we use it
-- To create your account, verify you by OTP, take and deliver your orders and send order updates.
+- To create your account, sign you in, take and deliver your orders and send order updates.
 - To issue GST invoices and keep the records the law requires.
 - To take payments, handle refunds and prevent fraud.
 - To answer your queries and complaints, and to improve the Website.
@@ -114,7 +114,7 @@ We process your data on the basis of your consent and, where the law allows, to 
 We do not sell your personal data. We share only what is needed with service providers who help us run the store:
 - Payment gateway (Razorpay) to process online payments. Card, UPI and bank details are entered on the gateway’s secure page; we do not store them.
 - Logistics partners (our integrated courier platform and the couriers) to pick up and deliver your order: your name, address and phone number.
-- SMS / OTP, email and hosting providers.
+- SMS, email and hosting providers.
 - Government or legal authorities when the law requires it.
 
 These providers may use your data only to provide their service to us and must protect it.

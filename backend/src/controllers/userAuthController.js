@@ -53,6 +53,54 @@ class UserAuthController {
   }
 
   /**
+   * Sign up with phone + password
+   * POST /api/v1/auth/user/register
+   */
+  async register(req, res, next) {
+    try {
+      const result = await userAuthService.register(req.body);
+      return sendSuccess(res, 'Account created successfully', result, HTTP_STATUS.CREATED);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Log in with phone + password
+   * POST /api/v1/auth/user/login
+   */
+  async login(req, res, next) {
+    try {
+      const result = await userAuthService.loginWithPassword(req.body);
+      return sendSuccess(res, 'Authentication successful', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Change own password
+   * PATCH /api/v1/auth/user/password (Protected)
+   */
+  async changePassword(req, res, next) {
+    try {
+      const result = await userAuthService.changePassword(req.user._id, req.body);
+      return sendSuccess(res, 'Password changed successfully', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
    * Fetch authenticated user's profile
    * GET /api/v1/auth/user/profile (Protected)
    */

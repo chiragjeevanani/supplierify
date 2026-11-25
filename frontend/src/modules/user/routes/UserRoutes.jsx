@@ -47,7 +47,7 @@ export default function UserRoutes() {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/credit" element={<RequireAuth><CreditPage /></RequireAuth>} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<Navigate to="/login" replace />} />
+        <Route path="/register" element={<Navigate to="/login?mode=signup" replace />} />
         {/* Catch-all to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

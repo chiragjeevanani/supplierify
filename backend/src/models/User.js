@@ -39,6 +39,16 @@ const userSchema = new mongoose.Schema(
       ],
       default: undefined
     },
+    // Password login. Never returned by queries or JSON unless explicitly selected.
+    passwordHash: {
+      type: String,
+      select: false
+    },
+    // Sessions issued before this moment are rejected (see authMiddleware)
+    passwordChangedAt: {
+      type: Date,
+      default: null
+    },
     role: {
       type: String,
       enum: Object.values(ROLES),
@@ -92,6 +102,7 @@ const userSchema = new mongoose.Schema(
     toJSON: {
       transform: (doc, ret) => {
         delete ret.__v;
+        delete ret.passwordHash;
         return ret;
       }
     }

@@ -208,14 +208,21 @@ export async function apiRequest(endpoint, options = {}) {
 
 // User Auth API methods
 export const userAuthApi = {
-  sendOtp: (phone) => apiRequest('/auth/user/send-otp', {
+  // data: { phone, email, password, confirmPassword }
+  register: (data) => apiRequest('/auth/user/register', {
     method: 'POST',
-    body: JSON.stringify({ phone })
+    body: JSON.stringify(data)
   }),
 
-  verifyOtp: (phone, otp) => apiRequest('/auth/user/verify-otp', {
+  login: (phone, password) => apiRequest('/auth/user/login', {
     method: 'POST',
-    body: JSON.stringify({ phone, otp })
+    body: JSON.stringify({ phone, password })
+  }),
+
+  // data: { currentPassword, newPassword, confirmPassword }
+  changePassword: (data) => apiRequest('/auth/user/password', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
   }),
 
   getProfile: () => apiRequest('/auth/user/profile', {
@@ -620,6 +627,10 @@ export const adminUserApi = {
     if (search) query.append('search', search);
     return apiRequest(`/admin/users?${query.toString()}`, { method: 'GET' });
   },
+  setPassword: (id, password) => apiRequest(`/admin/users/${id}/password`, {
+    method: 'PATCH',
+    body: JSON.stringify({ password })
+  }),
   getCredit: (id) => apiRequest(`/admin/users/${id}/credit`, { method: 'GET' }),
   // creditLimitOverride: number, or null to use the store default; creditBlocked: boolean
   updateCredit: (id, data) => apiRequest(`/admin/users/${id}/credit`, {

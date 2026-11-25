@@ -22,6 +22,7 @@ import { useAdmin } from '../../../context/AdminContext';
 import { resolveHelpSupport } from '../../../utils/helpSupport';
 import { paymentMethodLabel, isCreditOrder, formatDueDate } from '../../../utils/paymentLabel';
 import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
+import ChangePasswordCard from '../components/ChangePasswordCard';
 
 export default function AccountPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1107,7 +1108,7 @@ export default function AccountPage() {
                       />
                     </div>
                     <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">
-                      10-digit number used for OTP login
+                      10-digit number used to log in
                     </span>
                   </div>
 
@@ -1123,6 +1124,8 @@ export default function AccountPage() {
                       : 'Update Profile'}
                   </button>
                 </form>
+
+                <ChangePasswordCard />
               </div>
             )}
 

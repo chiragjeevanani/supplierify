@@ -848,10 +848,6 @@ export default function CheckoutPage() {
                           className="flex-1 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl border border-stone-200 text-xs font-medium focus:outline-none focus:border-[color:var(--brand-primary)] bg-stone-50 focus:bg-white transition-colors"
                           placeholder="10-digit phone number"
                         />
-                        <div className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-emerald-50 text-emerald-800 rounded-lg sm:rounded-xl text-[length:calc(9.5px*var(--fs))] sm:text-xs font-bold flex items-center gap-1 shrink-0 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>OTP Verified</span>
-                        </div>
                       </div>
                     </div>
 

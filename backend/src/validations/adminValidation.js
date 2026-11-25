@@ -1,3 +1,4 @@
+import { passwordProblem } from './userAuthValidation.js';
 import { sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
 
@@ -44,7 +45,19 @@ export const validateUserStatusUpdate = (req, res, next) => {
   next();
 };
 
+export const validateSetUserPassword = (req, res, next) => {
+  if (!/^[a-f\d]{24}$/i.test(String(req.params.id))) {
+    return sendError(res, 'Invalid customer id.', {}, HTTP_STATUS.BAD_REQUEST);
+  }
+  const problem = passwordProblem(req.body?.password);
+  if (problem) {
+    return sendError(res, problem, { field: 'password' }, HTTP_STATUS.BAD_REQUEST);
+  }
+  next();
+};
+
 export default {
   validateAdminLogin,
-  validateUserStatusUpdate
+  validateUserStatusUpdate,
+  validateSetUserPassword
 };

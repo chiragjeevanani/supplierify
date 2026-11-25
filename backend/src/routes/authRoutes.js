@@ -7,6 +7,7 @@ import { validateSendOtp, validateVerifyOtp } from '../validations/userAuthValid
 import { validateAdminLogin } from '../validations/adminAuthValidation.js';
 import { otpRequestLimiter, otpVerifyLimiter, adminLoginLimiter } from '../middleware/rateLimiter.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { requireOtpLogin } from '../middleware/otpGate.js';
 import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
@@ -16,8 +17,8 @@ router.use('/user', userAuthRoutes);
 router.use('/admin', adminAuthRoutes);
 
 // 2. Direct Root-Level Aliases for convenience & backward compatibility
-router.post('/send-otp', otpRequestLimiter, validateSendOtp, userAuthController.sendOtp);
-router.post('/verify-otp', otpVerifyLimiter, validateVerifyOtp, userAuthController.verifyOtp);
+router.post('/send-otp', requireOtpLogin, otpRequestLimiter, validateSendOtp, userAuthController.sendOtp);
+router.post('/verify-otp', requireOtpLogin, otpVerifyLimiter, validateVerifyOtp, userAuthController.verifyOtp);
 router.post('/login', adminLoginLimiter, validateAdminLogin, adminAuthController.login);
 
 /**
