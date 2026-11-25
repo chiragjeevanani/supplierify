@@ -183,7 +183,7 @@ export const getAllUsers = async (req, res, next) => {
       return {
         id: String(u._id),
         _id: String(u._id),
-        // Sign up does not ask for a name, so fall back to the one on a saved address
+        // Older accounts may have no name, so fall back to the one on a saved address
         name: u.name || addresses[0]?.fullName || '',
         email: u.email || '',
         phone: u.phone || '',

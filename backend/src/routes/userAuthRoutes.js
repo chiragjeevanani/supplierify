@@ -6,9 +6,10 @@ import {
   validateUpdateProfile,
   validateRegister,
   validatePasswordLogin,
+  validateCheckPhone,
   validateChangePassword
 } from '../validations/userAuthValidation.js';
-import { otpRequestLimiter, otpVerifyLimiter, passwordLoginLimiter, registerLimiter, changePasswordLimiter } from '../middleware/rateLimiter.js';
+import { otpRequestLimiter, otpVerifyLimiter, passwordLoginLimiter, registerLimiter, changePasswordLimiter, phoneCheckLimiter } from '../middleware/rateLimiter.js';
 import { requireOtpLogin } from '../middleware/otpGate.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { requireUser } from '../middleware/roleMiddleware.js';
@@ -16,6 +17,7 @@ import { requireUser } from '../middleware/roleMiddleware.js';
 const router = Router();
 
 /** Sign up and log in with mobile number + password */
+router.post('/check', phoneCheckLimiter, validateCheckPhone, userAuthController.checkPhone);
 router.post('/register', registerLimiter, validateRegister, userAuthController.register);
 router.post('/login', passwordLoginLimiter, validatePasswordLogin, userAuthController.login);
 router.patch('/password', authMiddleware, requireUser, changePasswordLimiter, validateChangePassword, userAuthController.changePassword);

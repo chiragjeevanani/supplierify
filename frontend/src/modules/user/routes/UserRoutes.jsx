@@ -24,13 +24,9 @@ export default function UserRoutes() {
   return (
     <UserLayout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/shop" element={<ShopPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
-        <Route path="/wishlist" element={<WishlistPage />} />
-        <Route path="/about" element={<AboutPage />} />
+        {/* Open to everyone: signing in, and the pages people must be able to read before they sign up */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms-and-conditions" element={<TermsPage />} />
@@ -39,17 +35,26 @@ export default function UserRoutes() {
         <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
         <Route path="/shipping-policy" element={<Navigate to="/shipping-and-return-policy" replace />} />
         <Route path="/grievance" element={<Navigate to="/grievance-redressal" replace />} />
-        <Route path="/help-support" element={<HelpSupportPage />} />
-        <Route path="/help" element={<Navigate to="/help-support" replace />} />
         <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
-        <Route path="/order-tracking" element={<OrderTrackingPage />} />
-        <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/credit" element={<RequireAuth><CreditPage /></RequireAuth>} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<Navigate to="/login?mode=signup" replace />} />
-        {/* Catch-all to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* Everything else needs a signed-in customer */}
+        <Route element={<RequireAuth />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/help-support" element={<HelpSupportPage />} />
+          <Route path="/help" element={<Navigate to="/help-support" replace />} />
+          <Route path="/order-tracking" element={<OrderTrackingPage />} />
+          <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/credit" element={<CreditPage />} />
+          {/* Catch-all to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
       </Routes>
     </UserLayout>
   );

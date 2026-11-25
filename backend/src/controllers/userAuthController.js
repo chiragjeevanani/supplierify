@@ -53,6 +53,22 @@ class UserAuthController {
   }
 
   /**
+   * What to ask for next on the login screen
+   * POST /api/v1/auth/user/check
+   */
+  async checkPhone(req, res, next) {
+    try {
+      const result = await userAuthService.checkPhone(req.body.phone);
+      return sendSuccess(res, 'OK', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
    * Sign up with phone + password
    * POST /api/v1/auth/user/register
    */

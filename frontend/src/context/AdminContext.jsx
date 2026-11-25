@@ -6,6 +6,7 @@ import { BANNERS_DATA } from '../data/adminData';
 import { INITIAL_RECIPES } from '../data/recipes';
 import { recipeApi, adminRecipeApi } from '../utils/api';
 import pushNotificationService from '../services/pushNotificationService';
+import { useAuth } from './AuthContext';
 import { resolveProductImage } from '../utils/productImage';
 
 const AdminContext = createContext();
@@ -200,6 +201,7 @@ export const normalizeCoupon = (c) => ({
 });
 
 export function AdminProvider({ children }) {
+  const { token: customerToken } = useAuth();
   // 0. Admin Authentication State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     try {
@@ -428,6 +430,8 @@ export function AdminProvider({ children }) {
   // Admin sessions load every recipe (incl. drafts); storefront loads only published ones.
   useEffect(() => {
     const isAdminArea = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+    // The catalogue is only served to signed-in accounts
+    if (isAdminArea ? !isAdminAuthenticated : !customerToken) return;
     const request = isAdminArea ? adminRecipeApi.getAll() : recipeApi.getRecipes();
     request
       .then(res => {
@@ -439,7 +443,7 @@ export function AdminProvider({ children }) {
         }
       })
       .catch(err => console.warn('[AdminContext] Recipes backend load note:', err.message));
-  }, []);
+  }, [customerToken, isAdminAuthenticated]);
 
   // Fetch and sync products directly from MongoDB backend API (Single Source of Truth)
   const refreshProducts = async () => {
@@ -573,14 +577,16 @@ export function AdminProvider({ children }) {
     }
   };
 
+  // Load (and reload) once someone signs in: the server refuses the catalogue to visitors
   useEffect(() => {
-    refreshProducts();
-    refreshCategories();
     refreshSettings();
+    if (!customerToken && !isAdminAuthenticated) return;
+    refreshProducts().catch(() => {}); // the error is shown through productsError
+    refreshCategories();
     if (isAdminAuthenticated) {
       refreshReviews();
     }
-  }, [isAdminAuthenticated]);
+  }, [isAdminAuthenticated, customerToken]);
 
   // Product Actions - MongoDB API backed
   const addProduct = async (productData) => {

@@ -93,6 +93,7 @@ export function CartProvider({ children }) {
 
   // Fetch or sync authoritative cart from backend MongoDB on mount / login
   const refreshCartFromBackend = useCallback(async () => {
+    if (!isAuthenticated) return;
     setIsSyncing(true);
     try {
       const res = await cartApi.getCart(guestId);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
-  ArrowRight, CheckCircle2, ShieldCheck, ArrowLeft, AlertCircle, Lock, UserPlus
+  ArrowRight, CheckCircle2, ShieldCheck, AlertCircle, Lock, UserPlus, Phone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getConfettiColors } from '../../../utils/theme';
@@ -14,16 +14,34 @@ const FIELD =
   'w-full px-3.5 py-3 text-sm font-semibold text-stone-900 placeholder:text-stone-400 rounded-2xl border border-stone-300 bg-[color:var(--brand-surface)]/50 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/10 transition-all';
 const LABEL = 'block text-xs font-bold text-[color:var(--brand-primary)] mb-2';
 
+// [heading, line under it] for each step
+const TITLES = {
+  phone: ['Log In or Sign Up', 'Enter your mobile number to see our products.'],
+  password: ['Welcome Back', 'Enter your password to log in.'],
+  signup: ['Create Account', 'This number is new here. Add your details to continue.'],
+  contact: ['Set Your Password', 'We need to set up this account for you.']
+};
+// [button text, text while working]
+const BUTTONS = {
+  phone: ['Continue', 'Checking...'],
+  password: ['Log In', 'Logging in...'],
+  signup: ['Create Account', 'Creating account...']
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { user, token, isAuthenticated, loginWithPassword, signUp } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, token, isAuthenticated, checkPhone, loginWithPassword, signUp } = useAuth();
   const rules = useStoreRules();
 
-  const redirectTarget = searchParams.get('redirect') || location.state?.from?.pathname || '/account';
-  const isSignup = searchParams.get('mode') === 'signup';
+  const redirectTarget = searchParams.get('redirect') || location.state?.from?.pathname || '/';
 
+  // 'phone' first; the server then says: 'password' (existing), 'signup' (new) or 'contact'
+  const [step, setStep] = useState('phone');
+  const isSignup = step === 'signup';
+
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,12 +59,8 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, token, user, navigate, redirectTarget, isLoading, successMsg]);
 
-  const switchMode = (signup) => {
-    const next = new URLSearchParams(searchParams);
-    if (signup) next.set('mode', 'signup');
-    else next.delete('mode');
-    // keep location.state so we still return to the page that asked for login
-    setSearchParams(next, { replace: true, state: location.state });
+  const changeNumber = () => {
+    setStep('phone');
     setPassword('');
     setConfirmPassword('');
     setErrorMsg('');
@@ -55,9 +69,11 @@ export default function LoginPage() {
 
   const validate = () => {
     if (!/^[6-9]\d{9}$/.test(phone)) return 'Please enter a valid 10-digit mobile number.';
+    if (step === 'phone') return '';
+    if (isSignup && name.trim().length < 2) return 'Please enter your name.';
+    if (isSignup && email.trim() && !/^\S+@\S+\.\S{2,}$/.test(email.trim())) return 'Please enter a valid email address.';
     if (!password) return 'Please enter your password.';
     if (!isSignup) return '';
-    if (email.trim() && !/^\S+@\S+\.\S{2,}$/.test(email.trim())) return 'Please enter a valid email address.';
     if (password.length < PASSWORD_MIN) return `Password must be at least ${PASSWORD_MIN} characters.`;
     if (password !== confirmPassword) return 'Passwords do not match.';
     return '';
@@ -74,8 +90,17 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
+
+    if (step === 'phone') {
+      const res = await checkPhone(phone);
+      setIsLoading(false);
+      if (res.success && ['password', 'signup', 'contact'].includes(res.step)) setStep(res.step);
+      else setErrorMsg(res.message || 'Could not continue. Please try again.');
+      return;
+    }
+
     const res = isSignup
-      ? await signUp({ phone, email: email.trim(), password, confirmPassword })
+      ? await signUp({ name: name.trim(), phone, email: email.trim(), password, confirmPassword })
       : await loginWithPassword(phone, password);
 
     if (res.success) {
@@ -105,16 +130,7 @@ export default function LoginPage() {
 
         <div className="w-full max-w-md mx-auto">
 
-          {/* Breadcrumb / Return Link */}
-          <div className="mb-4 flex items-center justify-between">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-[color:var(--brand-primary)] transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Store</span>
-            </Link>
-
+          <div className="mb-4 flex items-center justify-center">
             <span className="text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-accent-dark)] bg-[color:var(--brand-bg)] px-2.5 py-1 rounded-lg border border-[color:var(--brand-accent)]/30">
               Supplierfy Secure Access
             </span>
@@ -130,43 +146,23 @@ export default function LoginPage() {
 
               <div className="relative z-10 flex flex-col items-center">
                 <div className="w-12 h-12 rounded-2xl bg-[color:var(--brand-primary-light)] border border-[color:var(--brand-accent)]/40 flex items-center justify-center text-[color:var(--brand-accent)] shadow-md mb-3">
-                  {isSignup ? <UserPlus className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+                  {step === 'phone' && <Phone className="w-6 h-6" />}
+                  {isSignup && <UserPlus className="w-6 h-6" />}
+                  {(step === 'password' || step === 'contact') && <Lock className="w-6 h-6" />}
                 </div>
 
                 <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                  {isSignup ? 'Create Account' : 'Log In'}
+                  {TITLES[step][0]}
                 </h1>
 
                 <p className="text-xs text-[#A2B5A8] mt-1 font-normal max-w-xs leading-relaxed">
-                  {isSignup
-                    ? 'Sign up with your mobile number and a password.'
-                    : 'Use your mobile number and password.'}
+                  {TITLES[step][1]}
                 </p>
               </div>
             </div>
 
             {/* Body Form */}
             <div className="p-6 sm:p-8 space-y-5">
-
-              {/* Log in / Sign up switch */}
-              <div role="tablist" className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-stone-100">
-                {[[false, 'Log In'], [true, 'Sign Up']].map(([signup, label]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    role="tab"
-                    aria-selected={isSignup === signup}
-                    onClick={() => switchMode(signup)}
-                    className={`py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                      isSignup === signup
-                        ? 'bg-white text-[color:var(--brand-primary)] shadow-sm'
-                        : 'text-stone-500 hover:text-stone-800'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
 
               {errorMsg && (
                 <div role="alert" className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center gap-2 animate-fadeIn">
@@ -182,7 +178,38 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {step !== 'phone' && (
+                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-stone-50 border border-stone-200 text-sm">
+                  <span className="font-bold text-stone-900 tracking-wide">+91 {phone}</span>
+                  <button type="button" onClick={changeNumber} className="text-xs font-bold text-[color:var(--brand-primary)] underline cursor-pointer">
+                    Change
+                  </button>
+                </div>
+              )}
+
+              {step !== 'contact' && (
+              <form key={step} onSubmit={handleSubmit} className="space-y-4" noValidate>
+                {/* lets password managers save the number with the password */}
+                {step !== 'phone' && <input type="text" name="username" autoComplete="username" value={phone} readOnly hidden />}
+                {isSignup && (
+                  <div>
+                    <label className={LABEL} htmlFor="authName">Full Name</label>
+                    <input
+                      id="authName"
+                      name="name"
+                      type="text"
+                      autoComplete="name"
+                      autoFocus
+                      maxLength={100}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      className={FIELD}
+                    />
+                  </div>
+                )}
+
+                {step === 'phone' && (
                 <div>
                   <label className={LABEL} htmlFor="authPhone">Mobile Number</label>
                   <div className="flex items-center rounded-2xl border border-stone-300 focus-within:border-[color:var(--brand-primary)] focus-within:ring-2 focus-within:ring-[color:var(--brand-primary)]/10 overflow-hidden bg-[color:var(--brand-surface)]/50 transition-all">
@@ -209,6 +236,7 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
+                )}
 
                 {isSignup && (
                   <div>
@@ -228,18 +256,21 @@ export default function LoginPage() {
                   </div>
                 )}
 
+                {step !== 'phone' && (
                 <div>
                   <label className={LABEL} htmlFor="authPassword">Password</label>
                   <PasswordInput
                     id="authPassword"
                     name="password"
                     autoComplete={isSignup ? 'new-password' : 'current-password'}
+                    autoFocus={!isSignup}
                     value={password}
                     onChange={setPassword}
                     placeholder={isSignup ? `At least ${PASSWORD_MIN} characters` : 'Enter your password'}
                     className={FIELD}
                   />
                 </div>
+                )}
 
                 {isSignup && (
                   <div>
@@ -261,27 +292,32 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="w-full py-3.5 bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 min-h-[48px]"
                 >
-                  <span>
-                    {isSignup
-                      ? (isLoading ? 'Creating account...' : 'Create Account')
-                      : (isLoading ? 'Logging in...' : 'Log In')}
-                  </span>
+                  <span>{isLoading ? BUTTONS[step][1] : BUTTONS[step][0]}</span>
                   {!isLoading && <ArrowRight className="w-4 h-4 text-[color:var(--brand-accent)]" />}
                 </button>
               </form>
+              )}
 
-              {!isSignup && (
+              {step === 'contact' && (
+                <p className="text-sm text-stone-700 leading-relaxed text-center">
+                  This number already has an account without a password. Contact us and we will set one for you.
+                </p>
+              )}
+
+              {(step === 'password' || step === 'contact') && (
                 <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowHelp((v) => !v)}
-                    className="text-xs font-bold text-[color:var(--brand-primary)] underline cursor-pointer"
-                  >
-                    Forgot password?
-                  </button>
-                  {showHelp && (
+                  {step === 'password' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowHelp((v) => !v)}
+                      className="text-xs font-bold text-[color:var(--brand-primary)] underline cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                  {(showHelp || step === 'contact') && (
                     <p className="mt-2 text-xs text-stone-600 leading-relaxed">
-                      Contact us and we will set a new password for you.
+                      {step === 'password' ? 'Contact us and we will set a new password for you.' : ''}
                       {supportPhone && (
                         <>
                           {' '}Call{' '}

@@ -88,9 +88,13 @@ const cleanPhone = (raw) => {
   return /^[6-9]\d{9}$/.test(phone) ? phone : '';
 };
 
-/** Sign up: phone, email (optional), password, confirm password */
+/** Sign up: name, phone, email (optional), password, confirm password */
 export const validateRegister = (req, res, next) => {
-  const { phone, email, password, confirmPassword } = req.body || {};
+  const { name, phone, email, password, confirmPassword } = req.body || {};
+  const fullName = typeof name === 'string' ? name.replace(/\s+/g, ' ').trim() : '';
+  if (fullName.length < 2 || !/\p{L}/u.test(fullName)) return bad(res, 'Please enter your name.', 'name');
+  if (fullName.length > 100) return bad(res, 'Name cannot exceed 100 characters.', 'name');
+
   const normalized = cleanPhone(phone);
   if (!normalized) return bad(res, 'Please enter a valid 10-digit mobile number.', 'phone');
 
@@ -108,7 +112,14 @@ export const validateRegister = (req, res, next) => {
   if (problem) return bad(res, problem, 'password');
   if (password !== confirmPassword) return bad(res, 'Passwords do not match.', 'confirmPassword');
 
-  req.body = { phone: normalized, email: mail, password };
+  req.body = { name: fullName, phone: normalized, email: mail, password };
+  next();
+};
+
+export const validateCheckPhone = (req, res, next) => {
+  const normalized = cleanPhone(req.body?.phone);
+  if (!normalized) return bad(res, 'Please enter a valid 10-digit mobile number.', 'phone');
+  req.body = { phone: normalized };
   next();
 };
 

@@ -31,6 +31,9 @@ const NAV_ITEMS = [
   { label: 'Terms & Conditions', to: '/terms-and-conditions', icon: Shield }
 ];
 
+// What a visitor who has not signed in can open
+const GUEST_NAV = ['/contact', '/privacy-policy', '/terms-and-conditions'];
+
 const PAGE_TITLES = [
   ['/shop', 'Wholesale Catalogue'],
   ['/product', 'Product Details'],
@@ -44,6 +47,9 @@ const PAGE_TITLES = [
   ['/about', 'About Us'],
   ['/contact', 'Contact'],
   ['/privacy-policy', 'Privacy Policy'],
+  ['/terms-and-conditions', 'Terms & Conditions'],
+  ['/shipping-and-return-policy', 'Shipping & Returns'],
+  ['/grievance-redressal', 'Grievance Redressal'],
   ['/help-support', 'Help & Support']
 ];
 
@@ -53,7 +59,8 @@ const SIDEBAR_KEY = 'wholesale_sidebar_open';
 export default function UserLayout({ children }) {
   const { lineCount, whatsappNumber, whatsappGreeting, storeName } = useCart();
   const { wishlistCount } = useWishlist();
-  const { user } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
+  const signedIn = Boolean(isAuthenticated && token);
   const { creditEnabled } = useStoreRules();
   const location = useLocation();
   const navigate = useNavigate();
@@ -123,7 +130,7 @@ export default function UserLayout({ children }) {
 
       <nav className="flex-1 overflow-y-auto py-3 px-2" aria-label="Main navigation">
         <ul className="space-y-0.5">
-          {NAV_ITEMS.filter((item) => !item.needsCredit || creditEnabled).map((item) => {
+          {NAV_ITEMS.filter((item) => (signedIn || GUEST_NAV.includes(item.to)) && (!item.needsCredit || creditEnabled)).map((item) => {
             const Icon = item.icon;
             const badge = badgeFor(item);
             return (
@@ -207,6 +214,7 @@ export default function UserLayout({ children }) {
             <h1 className="font-serif text-base lg:text-lg font-bold text-[color:var(--brand-primary)] leading-tight truncate">{pageTitle}</h1>
           </div>
 
+          {signedIn && (
           <form onSubmit={submitSearch} className="flex-1 min-w-0 max-w-xl ml-auto sm:ml-4" role="search">
             <div className="flex items-center rounded-lg border border-[color:var(--brand-border-strong)] bg-[color:var(--brand-surface)] focus-within:border-[color:var(--brand-accent)] overflow-hidden">
               <input
@@ -221,8 +229,10 @@ export default function UserLayout({ children }) {
               </button>
             </div>
           </form>
+          )}
 
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className={`flex items-center gap-1 sm:gap-2 shrink-0 ${signedIn ? '' : 'ml-auto'}`}>
+            {signedIn && (
             <Link
               to="/cart"
               className="relative p-2 rounded-lg text-[color:var(--brand-primary)] hover:bg-stone-100"
@@ -235,8 +245,9 @@ export default function UserLayout({ children }) {
                 </span>
               )}
             </Link>
+            )}
 
-            {user ? (
+            {signedIn && user ? (
               <Link
                 to="/account"
                 className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-stone-100"

@@ -46,8 +46,26 @@ class UserAuthService {
     return !order && !address;
   }
 
-  /** Create an account with phone + password (email optional) */
-  async register({ phone, email, password }) {
+  /**
+   * First step of the login screen: what should this number be asked for next?
+   * 'password' (it has an account), 'signup' (new), or 'contact' (older account the store
+   * must set a password for).
+   */
+  async checkPhone(phone) {
+    const user = await User.findOne({ phone }).select('+passwordHash');
+    if (!user) return { phone, step: 'signup' };
+    if (user.status === ACCOUNT_STATUS.BLOCKED) {
+      throw fail(BLOCKED_MESSAGE, HTTP_STATUS.FORBIDDEN, 'ACCOUNT_BLOCKED');
+    }
+    if (user.passwordHash) return { phone, step: 'password' };
+    if (user.status === ACCOUNT_STATUS.ACTIVE && (await this.isEmptyAccount(user))) {
+      return { phone, step: 'signup' };
+    }
+    return { phone, step: 'contact' };
+  }
+
+  /** Create an account with name, phone and password (email optional) */
+  async register({ name, phone, email, password }) {
     const existing = await User.findOne({ phone }).select('+passwordHash');
 
     if (existing) {
@@ -76,6 +94,7 @@ class UserAuthService {
     const passwordHash = await bcrypt.hash(password, 10);
     const user = existing || new User({ phone, role: ROLES.USER, status: ACCOUNT_STATUS.ACTIVE });
     user.passwordHash = passwordHash;
+    user.name = name;
     if (email) user.email = email;
     user.isVerified = false; // number not verified by OTP
     user.lastLoginAt = new Date();
@@ -99,7 +118,7 @@ class UserAuthService {
 
     if (user && !user.passwordHash) {
       throw fail(
-        'No password is set for this number yet. Use Sign Up, or contact us and we will set one for you.',
+        'No password is set for this number yet. Please contact us and we will set one for you.',
         HTTP_STATUS.UNAUTHORIZED,
         'PASSWORD_NOT_SET'
       );

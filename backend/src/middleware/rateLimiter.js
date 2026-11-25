@@ -123,6 +123,16 @@ export const changePasswordLimiter = createRateLimiter({
 });
 
 /**
+ * Login screen phone lookup (Max 20 per 15 minutes per mobile number)
+ */
+export const phoneCheckLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many attempts. Please try again after 15 minutes.',
+  keyGenerator: (req) => `pw-check-${String(req.body?.phone || '').replace(/\D/g, '').slice(-10)}`
+});
+
+/**
  * Admin Login Rate Limiter (Max 10 login attempts per 15 minutes)
  */
 export const adminLoginLimiter = createRateLimiter({

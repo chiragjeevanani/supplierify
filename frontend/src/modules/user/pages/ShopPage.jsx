@@ -31,7 +31,7 @@ export default function ShopPage() {
   const [visible, setVisible] = useState(PAGE_SIZE);
 
   useEffect(() => {
-    if (refreshProducts) refreshProducts();
+    if (refreshProducts) refreshProducts().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

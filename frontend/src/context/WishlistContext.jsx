@@ -50,6 +50,7 @@ export function WishlistProvider({ children }) {
 
   // Load authoritative wishlist from MongoDB on mount
   const refreshWishlistFromBackend = useCallback(async () => {
+    if (!isAuthenticated) return;
     setIsLoading(true);
     try {
       const res = await wishlistApi.getWishlist(guestId);
@@ -82,13 +83,13 @@ export function WishlistProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
-  }, [guestId]);
+  }, [guestId, isAuthenticated]);
 
   useEffect(() => {
     refreshWishlistFromBackend();
   }, [refreshWishlistFromBackend]);
 
-  // After OTP login, merge guest/local wishlist into the authenticated account
+  // After login, merge guest/local wishlist into the authenticated account
   useEffect(() => {
     if (!token || !isAuthenticated) return;
     let cancelled = false;

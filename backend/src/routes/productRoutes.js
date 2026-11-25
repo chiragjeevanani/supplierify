@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 import productController from '../controllers/productController.js';
 
 const router = Router();
@@ -8,13 +9,13 @@ const router = Router();
  * @desc    Get all active store products with search & category filters
  * @access  Public
  */
-router.get('/', productController.getPublicProducts);
+router.get('/', authMiddleware, productController.getPublicProducts);
 
 /**
  * @route   GET /api/v1/products/:id
  * @desc    Get single product by ID
  * @access  Public
  */
-router.get('/:id', productController.getPublicProductById);
+router.get('/:id', authMiddleware, productController.getPublicProductById);
 
 export default router;

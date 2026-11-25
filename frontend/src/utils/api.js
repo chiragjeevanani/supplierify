@@ -208,7 +208,13 @@ export async function apiRequest(endpoint, options = {}) {
 
 // User Auth API methods
 export const userAuthApi = {
-  // data: { phone, email, password, confirmPassword }
+  // -> data.step: 'password' | 'signup' | 'contact'
+  checkPhone: (phone) => apiRequest('/auth/user/check', {
+    method: 'POST',
+    body: JSON.stringify({ phone })
+  }),
+
+  // data: { name, phone, email, password, confirmPassword }
   register: (data) => apiRequest('/auth/user/register', {
     method: 'POST',
     body: JSON.stringify(data)

@@ -449,10 +449,20 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Login screen, step 1: does this number need a password or a new account?
+  const checkPhone = async (phoneNumber) => {
+    try {
+      const response = await userAuthApi.checkPhone(phoneNumber);
+      return { success: true, step: response?.data?.step };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not continue. Please try again.' };
+    }
+  };
+
   const loginWithPassword = (phoneNumber, password) =>
     authenticate(() => userAuthApi.login(phoneNumber, password), phoneNumber);
 
-  // data: { phone, email, password, confirmPassword }
+  // data: { name, phone, email, password, confirmPassword }
   const signUp = (data) => authenticate(() => userAuthApi.register(data), data.phone);
 
   // The server ends all older sessions, so keep the new token it returns
@@ -876,6 +886,7 @@ export function AuthProvider({ children }) {
       addresses,
       selectedAddressId,
       setSelectedAddressId,
+      checkPhone,
       loginWithPassword,
       signUp,
       changePassword,

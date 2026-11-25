@@ -32,7 +32,7 @@ export default function HomePage() {
   const rules = useStoreRules();
 
   useEffect(() => {
-    if (refreshProducts) refreshProducts();
+    if (refreshProducts) refreshProducts().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
