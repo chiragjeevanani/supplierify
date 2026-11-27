@@ -41,7 +41,7 @@ import { requireAdmin } from './middleware/roleMiddleware.js';
 import { validateOrderId } from './validations/orderValidation.js';
 import { notFoundHandler, errorMiddleware } from './middleware/errorMiddleware.js';
 import { sendSuccess } from './utils/response.js';
-import { UPLOADS_ROOT } from './services/uploadService.js';
+import { UPLOADS_ROOT, serveStoredUpload, setUploadHeaders } from './services/uploadService.js';
 
 // Initialize Express
 const app = express();
@@ -105,13 +105,10 @@ app.use(
     dotfiles: 'deny',
     maxAge: '30d',
     immutable: true,
-    setHeaders: (res) => {
-      // Uploaded files are images only; never let a browser sniff them into something executable
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'");
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    }
-  })
+    setHeaders: setUploadHeaders
+  }),
+  // Not in the folder (for example after a redeploy): read it from the database
+  serveStoredUpload
 );
 
 // Health Check Endpoints

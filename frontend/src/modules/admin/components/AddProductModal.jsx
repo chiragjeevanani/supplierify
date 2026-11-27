@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Check, UploadCloud, Image as ImageIcon, Trash2, Plus, RefreshCw, Star, Loader2, Cloud, Sparkles, Layers } from 'lucide-react';
 
 import { CATEGORIES } from '../../../data/categories';
-import { CATEGORY_GROUPS, groupOf } from '../../../utils/categoryGroups';
+import { CATEGORY_GROUPS, groupOf, defaultUnitForGroup } from '../../../utils/categoryGroups';
 import { UNITS, unitOf, unitText } from '../../../utils/units';
 import { useAdmin } from '../../../context/AdminContext';
 import { uploadApi } from '../../../utils/api';
@@ -36,7 +36,7 @@ const EMPTY_PRODUCT = {
   ]
 };
 
-export default function AddProductModal({ isOpen, onClose, onSave, initialData = null, categories: propCategories = null }) {
+export default function AddProductModal({ isOpen, onClose, onSave, initialData = null, categories: propCategories = null, defaultCategory = '' }) {
   const [activeTab, setActiveTab] = useState('basic');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadStatusMsg, setUploadStatusMsg] = useState('');
@@ -52,6 +52,8 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
   const [formData, setFormData] = useState(EMPTY_PRODUCT);
   const editingId = initialData?._id || initialData?.id || null;
+  const categoryFor = (value) => allCategories.find((c) => (c.slug || c.id || c._id) === value);
+  const unitFor = (value) => defaultUnitForGroup(groupOf(categoryFor(value)));
 
   useEffect(() => {
     if (isOpen) {
@@ -123,12 +125,12 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
           variants: mappedVariants
         });
       } else {
-        const defaultCat = (allCategories && allCategories.length > 0)
-          ? (allCategories[0].slug || allCategories[0].id || 'almonds-nuts')
-          : 'almonds-nuts';
+        const first = categoryFor(defaultCategory) || allCategories?.[0];
+        const defaultCat = first?.slug || first?.id || 'almonds-nuts';
         setFormData({
           ...EMPTY_PRODUCT,
-          category: defaultCat
+          category: defaultCat,
+          unit: unitFor(defaultCat)
         });
       }
       setActiveTab('basic');
@@ -490,7 +492,11 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     required
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Artisanal Truffle & Herb Dry Fruit"
+                    placeholder={{
+                      garments: "e.g. Men's Round Neck T-shirt",
+                      metals: 'e.g. Copper Wire Scrap',
+                      'household-furniture': 'e.g. Three Seater Sofa'
+                    }[groupOf(categoryFor(formData.category))] || 'e.g. California Almonds'}
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]"
                   />
                 </div>
@@ -501,9 +507,12 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   <select
                     value={formData.category}
                     onChange={e => {
+                      const next = e.target.value;
                       setFormData(prev => ({
                         ...prev,
-                        category: e.target.value
+                        category: next,
+                        // follow the section's usual unit on a new product, unless the unit was changed by hand
+                        unit: !editingId && prev.unit === unitFor(prev.category) ? unitFor(next) : prev.unit
                       }));
                     }}
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white cursor-pointer"

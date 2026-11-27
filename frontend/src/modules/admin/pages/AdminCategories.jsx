@@ -1,5 +1,6 @@
 import { groupOf, groupLabel, CATEGORY_GROUPS, productInCategory } from '../../../utils/categoryGroups';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Edit2, 
@@ -33,6 +34,9 @@ export default function AdminCategories() {
     refreshCategories,
     categoriesLoading
   } = useAdmin();
+
+  const navigate = useNavigate();
+  const addProductTo = (cat) => navigate(`/admin/products?addTo=${encodeURIComponent(cat.slug || cat.id)}`);
 
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid'
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'Active' | 'Inactive'
@@ -193,6 +197,11 @@ export default function AdminCategories() {
             })}
           </div>
 
+          <p className="rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm px-4 py-3">
+            A <strong>category</strong> is a folder, for example "Men T-shirts". To sell an item with its price, stock and
+            Add to Cart, press <strong>Add product</strong> on its category.
+          </p>
+
           {/* Action & Filter Controls Bar */}
           <div className="bg-white rounded-xl p-3.5 sm:p-4 border border-[color:var(--brand-border)] shadow-2xs space-y-3.5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -335,13 +344,13 @@ export default function AdminCategories() {
                           className="px-3 py-1.5 rounded-lg bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] text-xs font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer hover:opacity-90"
                         >
                           <Plus className="w-3.5 h-3.5" />
-                          <span>Add to {sec.label}</span>
+                          <span>Add category</span>
                         </button>
                       </div>
 
                       {items.length === 0 ? (
                         <div className="bg-white rounded-xl border border-dashed border-stone-300 p-6 text-center text-xs text-stone-500">
-                          No categories in {sec.label} yet. Use "Add to {sec.label}" to create the first one.
+                          No categories in {sec.label} yet. Use "Add category" to create the first one.
                         </div>
                       ) : viewMode === 'list' ? (
               /* LIST VIEW */
@@ -408,6 +417,14 @@ export default function AdminCategories() {
 
                       {/* Right: Actions */}
                       <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 flex-wrap">
+                        <button
+                          onClick={() => addProductTo(cat)}
+                          className="px-3 py-1.5 rounded-lg bg-[color:var(--brand-primary)] text-white text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer hover:bg-[color:var(--brand-primary-light)]"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add product</span>
+                        </button>
+
                         <button
                           onClick={() => {
                             setEditingCategory(cat);
@@ -515,6 +532,13 @@ export default function AdminCategories() {
                       </div>
 
                       {/* Footer Actions */}
+                      <button
+                        onClick={() => addProductTo(cat)}
+                        className="mx-3 mb-2 px-3 py-2 rounded-lg bg-[color:var(--brand-primary)] text-white text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer hover:bg-[color:var(--brand-primary-light)]"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add product</span>
+                      </button>
                       <div className="p-3 bg-[color:var(--brand-surface)] border-t border-stone-100 flex items-center justify-between gap-2">
                         <button
                           onClick={() => handleToggleCategoryStatus(cat.id || cat._id)}

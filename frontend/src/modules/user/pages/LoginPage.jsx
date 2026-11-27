@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
-  ArrowRight, CheckCircle2, ShieldCheck, AlertCircle, Lock, UserPlus, Phone
+  ArrowRight, CheckCircle2, AlertCircle, Lock, UserPlus, Phone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getConfettiColors } from '../../../utils/theme';
@@ -11,8 +11,8 @@ import { useStoreRules } from '../../../hooks/useStoreRules';
 import PasswordInput, { PASSWORD_MIN } from '../components/PasswordInput';
 
 const FIELD =
-  'w-full px-3.5 py-3 text-sm font-semibold text-stone-900 placeholder:text-stone-400 rounded-2xl border border-stone-300 bg-[color:var(--brand-surface)]/50 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/10 transition-all';
-const LABEL = 'block text-xs font-bold text-[color:var(--brand-primary)] mb-2';
+  'w-full px-3.5 py-2.5 text-sm font-semibold text-stone-900 placeholder:text-stone-400 rounded-2xl border border-stone-300 bg-[color:var(--brand-surface)]/50 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/10 transition-all';
+const LABEL = 'block text-xs font-bold text-[color:var(--brand-primary)] mb-1.5';
 
 // [heading, line under it] for each step
 const TITLES = {
@@ -122,15 +122,10 @@ export default function LoginPage() {
   const whatsapp = rules.whatsappNumber;
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[color:var(--brand-surface)] text-[color:var(--brand-text)] selection:bg-[color:var(--brand-accent)] selection:text-[color:var(--brand-primary)] font-sans">
-      <div>
-      </div>
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-4 bg-[color:var(--brand-surface)] text-[color:var(--brand-text)] selection:bg-[color:var(--brand-accent)] selection:text-[color:var(--brand-primary)] font-sans">
+        <div className="w-full max-w-md">
 
-      <main className="flex-1 py-6 sm:py-10 md:py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-center pb-24 md:pb-12">
-
-        <div className="w-full max-w-md mx-auto">
-
-          <div className="mb-4 flex items-center justify-center">
+          <div className="mb-3 flex items-center justify-center [@media(max-height:700px)]:hidden">
             <span className="text-[length:calc(11px*var(--fs))] font-bold text-[color:var(--brand-accent-dark)] bg-[color:var(--brand-bg)] px-2.5 py-1 rounded-lg border border-[color:var(--brand-accent)]/30">
               Supplierfy Secure Access
             </span>
@@ -140,18 +135,18 @@ export default function LoginPage() {
           <div className="bg-white rounded-3xl border border-[color:var(--brand-border)] shadow-xl overflow-hidden animate-fadeIn">
 
             {/* Top Brand Banner */}
-            <div className="bg-[color:var(--brand-primary)] p-6 sm:p-8 text-center text-white border-b border-[color:var(--brand-accent)]/30 relative overflow-hidden">
+            <div className="bg-[color:var(--brand-primary)] px-6 py-5 [@media(max-height:760px)]:py-3 text-center text-white border-b border-[color:var(--brand-accent)]/30 relative overflow-hidden">
               <div className="absolute -right-10 -top-10 w-36 h-36 bg-[color:var(--brand-accent)]/15 rounded-full blur-2xl pointer-events-none" />
               <div className="absolute -left-10 -bottom-10 w-36 h-36 bg-[color:var(--brand-accent)]/15 rounded-full blur-2xl pointer-events-none" />
 
               <div className="relative z-10 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-2xl bg-[color:var(--brand-primary-light)] border border-[color:var(--brand-accent)]/40 flex items-center justify-center text-[color:var(--brand-accent)] shadow-md mb-3">
+                <div className="w-11 h-11 rounded-2xl bg-[color:var(--brand-primary-light)] border border-[color:var(--brand-accent)]/40 flex items-center justify-center text-[color:var(--brand-accent)] shadow-md mb-2 [@media(max-height:760px)]:hidden">
                   {step === 'phone' && <Phone className="w-6 h-6" />}
                   {isSignup && <UserPlus className="w-6 h-6" />}
                   {(step === 'password' || step === 'contact') && <Lock className="w-6 h-6" />}
                 </div>
 
-                <h1 className="font-serif text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                <h1 className="font-serif text-2xl font-extrabold text-white tracking-tight">
                   {TITLES[step][0]}
                 </h1>
 
@@ -162,7 +157,7 @@ export default function LoginPage() {
             </div>
 
             {/* Body Form */}
-            <div className="p-6 sm:p-8 space-y-5">
+            <div className="p-5 sm:px-7 space-y-3.5">
 
               {errorMsg && (
                 <div role="alert" className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center gap-2 animate-fadeIn">
@@ -179,7 +174,7 @@ export default function LoginPage() {
               )}
 
               {step !== 'phone' && (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-stone-50 border border-stone-200 text-sm">
+                <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-stone-50 border border-stone-200 text-sm">
                   <span className="font-bold text-stone-900 tracking-wide">+91 {phone}</span>
                   <button type="button" onClick={changeNumber} className="text-xs font-bold text-[color:var(--brand-primary)] underline cursor-pointer">
                     Change
@@ -188,7 +183,7 @@ export default function LoginPage() {
               )}
 
               {step !== 'contact' && (
-              <form key={step} onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <form key={step} onSubmit={handleSubmit} className="space-y-3" noValidate>
                 {/* lets password managers save the number with the password */}
                 {step !== 'phone' && <input type="text" name="username" autoComplete="username" value={phone} readOnly hidden />}
                 {isSignup && (
@@ -213,7 +208,7 @@ export default function LoginPage() {
                 <div>
                   <label className={LABEL} htmlFor="authPhone">Mobile Number</label>
                   <div className="flex items-center rounded-2xl border border-stone-300 focus-within:border-[color:var(--brand-primary)] focus-within:ring-2 focus-within:ring-[color:var(--brand-primary)]/10 overflow-hidden bg-[color:var(--brand-surface)]/50 transition-all">
-                    <div className="flex items-center gap-1.5 px-3.5 py-3 border-r border-stone-200 bg-stone-50/80 text-xs font-bold text-stone-700 select-none shrink-0">
+                    <div className="flex items-center gap-1.5 px-3.5 py-2.5 border-r border-stone-200 bg-stone-50/80 text-xs font-bold text-stone-700 select-none shrink-0">
                       <span>🇮🇳</span>
                       <span>+91</span>
                     </div>
@@ -232,7 +227,7 @@ export default function LoginPage() {
                         setPhone(digits.slice(0, 10));
                       }}
                       placeholder="Enter 10-digit number"
-                      className="w-full px-3.5 py-3 text-sm font-semibold text-stone-900 placeholder:text-stone-400 bg-transparent focus:outline-none tracking-wide"
+                      className="w-full px-3.5 py-2.5 text-sm font-semibold text-stone-900 placeholder:text-stone-400 bg-transparent focus:outline-none tracking-wide"
                     />
                   </div>
                 </div>
@@ -256,6 +251,7 @@ export default function LoginPage() {
                   </div>
                 )}
 
+                <div className={isSignup ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : ''}>
                 {step !== 'phone' && (
                 <div>
                   <label className={LABEL} htmlFor="authPassword">Password</label>
@@ -266,7 +262,7 @@ export default function LoginPage() {
                     autoFocus={!isSignup}
                     value={password}
                     onChange={setPassword}
-                    placeholder={isSignup ? `At least ${PASSWORD_MIN} characters` : 'Enter your password'}
+                    placeholder={isSignup ? `Min. ${PASSWORD_MIN} characters` : 'Enter your password'}
                     className={FIELD}
                   />
                 </div>
@@ -281,16 +277,17 @@ export default function LoginPage() {
                       autoComplete="new-password"
                       value={confirmPassword}
                       onChange={setConfirmPassword}
-                      placeholder="Type the password again"
+                      placeholder="Type it again"
                       className={FIELD}
                     />
                   </div>
                 )}
+                </div>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 min-h-[48px]"
+                  className="w-full py-3 bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 min-h-[46px]"
                 >
                   <span>{isLoading ? BUTTONS[step][1] : BUTTONS[step][0]}</span>
                   {!isLoading && <ArrowRight className="w-4 h-4 text-[color:var(--brand-accent)]" />}
@@ -350,20 +347,25 @@ export default function LoginPage() {
                 </p>
               )}
 
-              {/* Security & Assurance Badge */}
-              <div className="flex items-center justify-center gap-2 text-[length:calc(11px*var(--fs))] text-stone-500 pt-3 border-t border-stone-100">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Encrypted connection • Supplierfy Safe Access</span>
-              </div>
+              {!isSignup && (
+                <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[length:calc(11px*var(--fs))] text-stone-500 pt-3 border-t border-stone-100" aria-label="Policies and contact">
+                  {[
+                    ['/terms-and-conditions', 'Terms'],
+                    ['/privacy-policy', 'Privacy'],
+                    ['/shipping-and-return-policy', 'Shipping & Returns'],
+                    ['/grievance-redressal', 'Grievance'],
+                    ['/contact', 'Contact']
+                  ].map(([to, label]) => (
+                    <Link key={to} to={to} className="underline hover:text-[color:var(--brand-primary)]">{label}</Link>
+                  ))}
+                </nav>
+              )}
 
             </div>
 
           </div>
 
         </div>
-
-      </main>
-
     </div>
   );
 }

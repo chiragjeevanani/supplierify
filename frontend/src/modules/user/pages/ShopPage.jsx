@@ -4,6 +4,7 @@ import { Search, X } from 'lucide-react';
 import { CATEGORY_GROUPS, groupOf, productInCategory } from '../../../utils/categoryGroups';
 
 import ProductCard from '../components/ProductCard';
+import ListingCard from '../components/ListingCard';
 import { useAdmin } from '../../../context/AdminContext';
 import { useStoreRules } from '../../../hooks/useStoreRules';
 import { resolveOptimizedProductImage } from '../../../utils/productImage';
@@ -18,7 +19,7 @@ const SORTS = [
 ];
 
 export default function ShopPage() {
-  const { products = [], categories: rawCategories = [], refreshProducts } = useAdmin();
+  const { products = [], categories: rawCategories = [], refreshProducts, productsLoading, productsError } = useAdmin();
   const rules = useStoreRules();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -87,6 +88,21 @@ export default function ShopPage() {
     else sorted.sort((a, b) => Number(Boolean(b.isFeatured || b.isBestseller)) - Number(Boolean(a.isFeatured || a.isBestseller)));
     return sorted;
   }, [products, categories, activeCategory, activeGroup, searchQuery, sortBy]);
+
+  const stillLoading = productsLoading && products.length === 0;
+
+  // Categories that have no product yet are shown as listings (photo, details, enquiry),
+  // so nothing the store has put up stays hidden
+  const listings = useMemo(() => {
+    if (stillLoading || (productsError && products.length === 0)) return [];
+    const q = searchQuery.toLowerCase();
+    const pool = activeCategory === 'all'
+      ? visibleCategories
+      : categories.filter((c) => c.slug === activeCategory || String(c._id || c.id) === activeCategory);
+    return pool.filter((c) =>
+      !products.some((p) => productInCategory(p, c)) &&
+      (!q || `${c.name} ${c.description || ''}`.toLowerCase().includes(q)));
+  }, [products, categories, visibleCategories, activeCategory, searchQuery, stillLoading, productsError]);
 
   const selectGroup = (id) => {
     const next = {};
@@ -255,7 +271,9 @@ export default function ShopPage() {
         </div>
       )}
 
-      {results.length === 0 ? (
+      {stillLoading ? (
+        <p className="text-sm text-stone-500 py-10 text-center">Loading products…</p>
+      ) : results.length === 0 && listings.length === 0 ? (
         <div className="rounded-xl bg-white border border-dashed border-[color:var(--brand-accent)] p-10 text-center">
           <p className="font-semibold text-[color:var(--brand-primary)]">No products found</p>
           <p className="text-sm text-stone-500 mt-1">Try a different category or search term.</p>
@@ -265,6 +283,8 @@ export default function ShopPage() {
         </div>
       ) : (
         <>
+          {results.length > 0 && (
+            <>
           <p className="text-xs text-stone-500 mb-3">{results.length} product{results.length === 1 ? '' : 's'}</p>
           <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {results.slice(0, visible).map((p, i) => (
@@ -280,6 +300,22 @@ export default function ShopPage() {
                 Show more
               </button>
             </div>
+          )}
+            </>
+          )}
+
+          {listings.length > 0 && visible >= results.length && (
+            <section className={results.length > 0 ? 'mt-8' : ''} aria-label="Listings">
+              {results.length > 0 && (
+                <h3 className="font-serif text-xl font-bold text-[color:var(--brand-primary)] mb-1">More in our range</h3>
+              )}
+              <p className="text-sm text-stone-600 mb-3">Message us on WhatsApp to order these.</p>
+              <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                {listings.map((c) => (
+                  <ListingCard key={c._id || c.id || c.slug} category={c} />
+                ))}
+              </div>
+            </section>
           )}
         </>
       )}

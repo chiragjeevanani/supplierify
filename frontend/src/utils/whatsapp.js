@@ -75,6 +75,17 @@ export function buildCartEnquiry({ items = [], greeting }) {
 }
 
 /** General enquiry with no product selected. */
+/** Enquiry about a listing that has no product yet (a category with its photo and details). */
+export function buildListingEnquiry({ listing, greeting }) {
+  const details = String(listing?.description || '').trim();
+  return [
+    `${hello(greeting)}, I would like to enquire about:`,
+    '',
+    listing?.name || '',
+    details && details !== listing?.name ? details : ''
+  ].filter((line, i) => line || i === 1).join('\n');
+}
+
 export function buildGeneralEnquiry({ greeting } = {}) {
   return `${hello(greeting)}, I would like to know more about your wholesale dry fruits.`;
 }

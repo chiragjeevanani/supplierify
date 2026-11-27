@@ -115,6 +115,26 @@ export default function UserLayout({ children }) {
   const hideFab =
     /^\/(product|checkout)/.test(location.pathname) || (location.pathname.startsWith('/cart') && lineCount > 0);
 
+  // The login screen stands on its own: no header or menu, so the card sits in the middle
+  if (location.pathname === '/login') {
+    return (
+      <div className="min-h-screen bg-[color:var(--brand-surface)] text-[color:var(--brand-text)]">
+        <main>{children}</main>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat on WhatsApp"
+            className="fixed bottom-4 right-4 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#25D366] text-white shadow-lg hidden sm:flex items-center justify-center hover:scale-105 transition-transform"
+          >
+            <WhatsAppIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+          </a>
+        )}
+      </div>
+    );
+  }
+
   const sidebar = (
     <div className="h-full flex flex-col bg-[color:var(--brand-primary)] text-white">
       <div className="h-16 shrink-0 flex items-center justify-between px-4 border-b border-white/10">

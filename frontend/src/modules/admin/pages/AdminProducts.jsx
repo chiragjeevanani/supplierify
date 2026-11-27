@@ -1,5 +1,6 @@
 import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import usePagination from '../../../hooks/usePagination';
 import AdminPagination from '../components/AdminPagination';
 import { Plus, Search, Edit2, Trash2, Flame, CheckCircle2, AlertCircle, Eye, RefreshCw, Image as ImageIcon } from 'lucide-react';
@@ -42,6 +43,17 @@ export default function AdminProducts() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [newProductCategory, setNewProductCategory] = useState('');
+  // "Add product" on the Categories page arrives here as ?addTo=<category>
+  const [searchParams, setSearchParams] = useSearchParams();
+  const addTo = searchParams.get('addTo');
+  useEffect(() => {
+    if (!addTo || !categories?.length) return;
+    setNewProductCategory(addTo);
+    setEditingProduct(null);
+    setIsAddModalOpen(true);
+    setSearchParams({}, { replace: true });
+  }, [addTo, categories, setSearchParams]);
   const [viewingProduct, setViewingProduct] = useState(null);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
@@ -437,10 +449,12 @@ export default function AdminProducts() {
         onClose={() => {
           setIsAddModalOpen(false);
           setEditingProduct(null);
+          setNewProductCategory('');
         }}
         onSave={handleSaveProduct}
         initialData={editingProduct}
         categories={categories}
+        defaultCategory={newProductCategory || (selectedCategory !== 'all' ? selectedCategory : '')}
       />
 
       <ViewProductModal

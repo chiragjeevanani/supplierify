@@ -8,6 +8,9 @@ export const CATEGORY_GROUPS = [
 
 export const DEFAULT_GROUP = 'dry-fruits';
 
+/** Unit a new product starts with in each section (the admin can change it). */
+export const defaultUnitForGroup = (id) => (id === 'garments' || id === 'household-furniture' ? 'piece' : 'kg');
+
 /** Group id of a category (categories saved before sections existed count as Dry Fruits). */
 export const groupOf = (category) => {
   const g = String(category?.group || '').trim();

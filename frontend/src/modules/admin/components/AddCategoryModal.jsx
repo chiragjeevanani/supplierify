@@ -143,7 +143,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
               {initialData ? 'Edit Category' : 'Add New Category'}
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
-              {initialData ? 'Update category information' : 'Create a category for your store catalog'}
+              {initialData ? 'Update category information' : 'A folder for products. Add items for sale under Products.'}
             </p>
           </div>
           <button
@@ -300,6 +300,12 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
               placeholder="Short description for this category..."
               className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white resize-none"
             />
+            {/price|₹|\b(rs|inr)\b/i.test(formData.description || '') && (
+              <p role="note" className="mt-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[length:calc(11px*var(--fs))] px-3 py-2">
+                This looks like an item for sale. Save it under <strong>Products → Add Product</strong> so customers see the
+                price and can add it to their cart.
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}

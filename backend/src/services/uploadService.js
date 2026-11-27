@@ -2,13 +2,15 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import MediaFile from '../models/MediaFile.js';
 
 /**
- * Local image storage.
- * Files are written to <backend>/uploads/<folder>/ and served by Express at /uploads/<folder>/<file>.
- * Only the relative path ("/uploads/...") is stored in the database, so it keeps working if the site
- * moves to another domain. When hosting, make sure the `uploads` folder lives on persistent storage
- * and is included in backups.
+ * Image storage.
+ * Every upload is saved in the database (MediaFile) and copied to <backend>/uploads/<folder>/ as a cache.
+ * Photos are served at /uploads/<folder>/<file>: from the folder when the copy is there, otherwise from
+ * the database. A redeploy that empties the folder therefore loses nothing.
+ * Only the relative path ("/uploads/...") is stored on products etc., so it keeps working if the site
+ * moves to another domain.
  */
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +30,42 @@ const SIGNATURES = [
   { ext: 'avif', mime: 'image/avif', test: (b) => b.length > 12 && b.subarray(4, 8).toString('ascii') === 'ftyp' && /avif|avis/.test(b.subarray(8, 16).toString('ascii')) }
 ];
 const ALLOWED_EXTS = new Set(SIGNATURES.map((s) => s.ext));
+
+const FILE_PATH = /^[a-z0-9_-]{1,40}\/[A-Za-z0-9_-]+\.([a-z0-9]{2,5})$/;
+
+/** Headers for every uploaded photo, wherever it is read from. */
+export const setUploadHeaders = (res) => {
+  // Uploaded files are images only; never let a browser sniff them into something executable
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'");
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+};
+
+const writeCopy = async (rel, buffer) => {
+  const full = path.join(UPLOADS_ROOT, rel);
+  await fs.promises.mkdir(path.dirname(full), { recursive: true });
+  await fs.promises.writeFile(full, buffer);
+};
+
+/** Express handler (mounted at /uploads, after express.static): serve a photo kept in the database. */
+export async function serveStoredUpload(req, res, next) {
+  try {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    const rel = String(req.path || '').replace(/^\/+/, '');
+    const match = rel.match(FILE_PATH);
+    if (!match || !ALLOWED_EXTS.has(match[1])) return next();
+    const file = await MediaFile.findOne({ path: rel }).lean();
+    if (!file) return next();
+    const buffer = Buffer.from(file.data.buffer || file.data);
+    writeCopy(rel, buffer).catch(() => {}); // next time it comes straight from the folder
+    setUploadHeaders(res);
+    res.setHeader('Content-Type', file.mime);
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    return res.end(req.method === 'HEAD' ? undefined : buffer);
+  } catch (error) {
+    return next(error);
+  }
+}
 
 const badRequest = (message, statusCode = 400) => {
   const err = new Error(message);
@@ -53,7 +91,7 @@ const toBuffer = (source) => {
 
 class UploadService {
   /**
-   * Save an image to local disk.
+   * Save an image.
    * @param {Buffer|string} fileSource file buffer or base64 data URI
    * @param {{ folder?: string }} [options]
    * @returns {Promise<{ url: string, publicId: string, format: string, bytes: number }>}
@@ -69,11 +107,12 @@ class UploadService {
     if (!type) throw badRequest('Unsupported file. Please upload a JPG, PNG, WEBP, GIF or AVIF image.', 415);
 
     const folder = safeFolder(options.folder);
-    const dir = path.join(UPLOADS_ROOT, folder);
-    await fs.promises.mkdir(dir, { recursive: true });
-
     const name = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${type.ext}`;
-    await fs.promises.writeFile(path.join(dir, name), buffer);
+    const rel = `${folder}/${name}`;
+
+    // The database copy is the one that lasts, so the upload fails if it cannot be saved
+    await MediaFile.create({ path: rel, mime: type.mime, size: buffer.length, data: buffer });
+    await writeCopy(rel, buffer).catch((err) => console.warn('[Upload] Could not write the folder copy:', err.message));
 
     return {
       url: `/uploads/${folder}/${name}`,
@@ -97,11 +136,12 @@ class UploadService {
     const full = path.resolve(UPLOADS_ROOT, rel);
     if (!full.startsWith(UPLOADS_ROOT + path.sep)) return { result: 'ok', skipped: true };
 
+    const { deletedCount } = await MediaFile.deleteOne({ path: rel });
     try {
       await fs.promises.unlink(full);
       return { result: 'deleted' };
     } catch (err) {
-      if (err.code === 'ENOENT') return { result: 'not_found' };
+      if (err.code === 'ENOENT') return { result: deletedCount ? 'deleted' : 'not_found' };
       throw err;
     }
   }
