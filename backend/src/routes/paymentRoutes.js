@@ -19,7 +19,7 @@ router.post('/webhook', paymentController.handleWebhook);
 // Protected Customer Routes
 router.use(authMiddleware);
 
-// POST /api/v1/payments/checkout-session — Razorpay first, Dry Fruit Wholesale order after pay (prepaid only)
+// POST /api/v1/payments/checkout-session — Razorpay first, Supplierfy order after pay (prepaid only)
 router.post(
   '/checkout-session',
   requireUser,

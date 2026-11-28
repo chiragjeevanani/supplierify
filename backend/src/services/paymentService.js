@@ -1,3 +1,5 @@
+import { assertFoodSalesAllowed } from './foodRules.js';
+import { normalizeGstin } from '../utils/gst.js';
 import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
 import Order from '../models/Order.js';
@@ -152,7 +154,7 @@ class PaymentService {
   }
 
   /**
-   * Prepaid checkout: create Razorpay session WITHOUT placing an Dry Fruit Wholesale order.
+   * Prepaid checkout: create Razorpay session WITHOUT placing an Supplierfy order.
    * Order is created only after payment verification succeeds.
    */
   static async createCheckoutSession(userId, payload = {}) {
@@ -161,8 +163,23 @@ class PaymentService {
       paymentMethod = 'UPI',
       couponCode = null,
       guestId = null,
-      items: clientItems = null
+      items: clientItems = null,
+      acceptedTerms = false,
+      buyerGstin = '',
+      buyerCompany = ''
     } = payload;
+
+    if (acceptedTerms !== true) {
+      const err = new Error('Please accept the Terms & Conditions and Privacy Policy to continue.');
+      err.statusCode = 400;
+      throw err;
+    }
+    const cleanBuyerGstin = normalizeGstin(buyerGstin);
+    if (cleanBuyerGstin === null) {
+      const err = new Error('The buyer GSTIN you entered is not valid. It has 15 characters, for example 27ABCDE1234F1Z5.');
+      err.statusCode = 400;
+      throw err;
+    }
 
     if (!addressId) {
       const err = new Error('Delivery address is required to start online payment.');
@@ -170,6 +187,7 @@ class PaymentService {
       throw err;
     }
 
+    const isPartialCod = String(paymentMethod).toUpperCase() === 'PARTIAL_COD';
     const normalizedPaymentMethod = ['UPI', 'CARD', 'NETBANKING'].includes(
       String(paymentMethod).toUpperCase()
     )
@@ -203,8 +221,8 @@ class PaymentService {
     const Product = (await import('../models/Product.js')).default;
     const settingsService = (await import('./settingsService.js')).default;
     const couponService = (await import('./couponService.js')).default;
-    const { calculateOrderTotals } = await import('../utils/pricing.js');
-    const { resolveShiprocketDeliveryFee } = await import('./shippingQuoteService.js');
+    const { calculateOrderTotals, computePartialCod } = await import('../utils/pricing.js');
+    const { resolveShippingDeliveryFee } = await import('./shippingQuoteService.js');
     const cartService = (await import('./cartService.js')).default;
 
     const selectedAddress = await Address.findOne({ _id: addressId, user: userId });
@@ -232,6 +250,7 @@ class PaymentService {
 
     const productIds = cart.items.map((item) => item.product);
     const products = await Product.find({ _id: { $in: productIds } });
+    await assertFoodSalesAllowed(products);
     const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
     let subtotal = 0;
@@ -246,7 +265,7 @@ class PaymentService {
       }
       const minQtyKg = resolveMinQtyKg(liveProduct, minQtySettings);
       if (item.qty < minQtyKg) {
-        const err = new Error(minQtyMessage(liveProduct.name, minQtyKg));
+        const err = new Error(minQtyMessage(liveProduct.name, minQtyKg, liveProduct.unit));
         err.statusCode = 400;
         throw err;
       }
@@ -282,9 +301,16 @@ class PaymentService {
     }
 
     const settings = await settingsService.getSettings();
-    const shipQuote = await resolveShiprocketDeliveryFee({
+    // Partial COD is a cash-on-delivery order for fees and shipping: the courier collects the balance
+    const feeMethod = isPartialCod ? 'COD' : normalizedPaymentMethod;
+    if (isPartialCod && settings.partialCodEnabled !== true) {
+      const err = new Error('Partial payment (pay a part now, rest on delivery) is not available right now.');
+      err.statusCode = 400;
+      throw err;
+    }
+    const shipQuote = await resolveShippingDeliveryFee({
       pincode: selectedAddress.postalCode,
-      paymentMethod: normalizedPaymentMethod,
+      paymentMethod: feeMethod,
       subtotal,
       items: draftItems,
       productMap
@@ -299,12 +325,24 @@ class PaymentService {
     const pricing = calculateOrderTotals({
       subtotal,
       discount,
-      paymentMethod: normalizedPaymentMethod,
+      paymentMethod: feeMethod,
       settings,
       deliveryFee: shipQuote.deliveryFee
     });
 
-    const amountInPaise = Math.round(pricing.total * 100);
+    // Partial COD: only the advance is charged now (decided here on the server, never by the browser)
+    let partialSplit = null;
+    if (isPartialCod) {
+      partialSplit = computePartialCod(pricing.total, settings.partialCodPercent ?? 30);
+      if (!partialSplit) {
+        const err = new Error('This order is too small to split into a part payment. Please pay the full amount online.');
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+    const chargeNow = partialSplit ? partialSplit.advance : pricing.total;
+
+    const amountInPaise = Math.round(chargeNow * 100);
     if (amountInPaise <= 0) {
       const err = new Error('Invalid checkout total amount.');
       err.statusCode = 400;
@@ -321,8 +359,8 @@ class PaymentService {
         notes: {
           userId: userId.toString(),
           addressId: addressId.toString(),
-          paymentMethod: normalizedPaymentMethod,
-          checkout: 'prepaid_before_order'
+          paymentMethod: isPartialCod ? 'PARTIAL_COD' : normalizedPaymentMethod,
+          checkout: isPartialCod ? 'partial_cod_advance_before_order' : 'prepaid_before_order'
         }
       });
     } catch (gatewayErr) {
@@ -338,7 +376,7 @@ class PaymentService {
       user: userId,
       gateway: 'RAZORPAY',
       gatewayOrderId: razorpayOrder.id,
-      amount: pricing.total,
+      amount: chargeNow,
       currency: 'INR',
       paymentMethod: normalizedPaymentMethod,
       status: 'PENDING',
@@ -352,12 +390,18 @@ class PaymentService {
       metadata: {
         checkoutIntent: {
           addressId: addressId.toString(),
-          paymentMethod: normalizedPaymentMethod,
+          paymentMethod: isPartialCod ? 'PARTIAL_COD' : normalizedPaymentMethod,
           couponCode: activeCouponCode,
           guestId: guestId || null,
           items: draftItems,
           expectedTotal: pricing.total,
-          deliveryFee: pricing.deliveryFee
+          deliveryFee: pricing.deliveryFee,
+          acceptedTerms: true,
+          buyerGstin: cleanBuyerGstin || '',
+          buyerCompany: String(buyerCompany || '').trim().slice(0, 150),
+          ...(partialSplit
+            ? { partialCod: { advance: partialSplit.advance, balance: partialSplit.balance, percent: settings.partialCodPercent ?? 30 } }
+            : {})
         }
       }
     });
@@ -370,6 +414,8 @@ class PaymentService {
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
       payableTotal: pricing.total,
+      chargeNow,
+      ...(partialSplit ? { advanceAmount: partialSplit.advance, balanceDue: partialSplit.balance } : {}),
       deliveryFee: pricing.deliveryFee,
       paymentId: payment._id,
       customer: {
@@ -380,7 +426,7 @@ class PaymentService {
   }
 
   /**
-   * After Razorpay success: verify signature, THEN create Dry Fruit Wholesale order (prepaid only).
+   * After Razorpay success: verify signature, THEN create Supplierfy order (prepaid only).
    */
   static async verifyAndPlacePrepaidOrder(
     userId,
@@ -457,6 +503,11 @@ class PaymentService {
         addressId: intent.addressId,
         paymentMethod: intent.paymentMethod || payment.paymentMethod || 'UPI',
         paymentStatus: 'PAID',
+        advanceAmount: intent.partialCod?.advance || 0,
+        // sessions created before this rule existed carry no flag; new sessions only exist after acceptance
+        acceptedTerms: intent.acceptedTerms !== false,
+        buyerGstin: intent.buyerGstin || '',
+        buyerCompany: intent.buyerCompany || '',
         paymentDetails: {
           transactionId: razorpayPaymentId,
           upiApp: ''
@@ -494,8 +545,9 @@ class PaymentService {
     };
     await payment.save();
 
-    // Ensure order payment fields are paid (placeOrder may have set them)
-    if (order.payment?.status !== 'PAID') {
+    // Ensure order payment fields are paid (placeOrder may have set them).
+    // Partial COD orders stay "partially paid" until the courier collects the balance.
+    if (order.payment?.method !== 'PARTIAL_COD' && order.payment?.status !== 'PAID') {
       order.payment.status = 'PAID';
       order.payment.transactionId = razorpayPaymentId;
       await order.save();
@@ -612,7 +664,7 @@ class PaymentService {
     }
     await order.save();
 
-    // Shiprocket is NOT pushed on payment — admin pushes on "Ready for Dispatch".
+    // Bigship is NOT pushed on payment — admin marks the order PACKED.
 
     // 9. Clear customer's cart
     await Cart.findOneAndUpdate(
@@ -688,15 +740,18 @@ class PaymentService {
           await payment.save();
 
           if (payment.order) {
-            await Order.findByIdAndUpdate(payment.order, {
-              $set: {
-                'payment.status': 'PAID',
-                'payment.transactionId': gatewayPaymentId
-              }
-            });
+            // A partial COD advance must not mark the whole order as paid
+            await Order.updateOne(
+              { _id: payment.order, 'payment.method': { $ne: 'PARTIAL_COD' } },
+              { $set: { 'payment.status': 'PAID', 'payment.transactionId': gatewayPaymentId } }
+            );
+            await Order.updateOne(
+              { _id: payment.order, 'payment.method': 'PARTIAL_COD' },
+              { $set: { 'payment.transactionId': gatewayPaymentId } }
+            );
           } else if (payment.user && payment.metadata?.checkoutIntent?.addressId) {
             // Prepaid-before-order: customer paid but closed tab before /verify —
-            // create the Dry Fruit Wholesale order from the stored checkout intent (idempotent).
+            // create the Supplierfy order from the stored checkout intent (idempotent).
             try {
               const intent = payment.metadata.checkoutIntent;
               const { placeOrder } = await import('./orderService.js');
@@ -704,6 +759,10 @@ class PaymentService {
                 addressId: intent.addressId,
                 paymentMethod: intent.paymentMethod || payment.paymentMethod || 'UPI',
                 paymentStatus: 'PAID',
+                advanceAmount: intent.partialCod?.advance || 0,
+                acceptedTerms: intent.acceptedTerms !== false,
+                buyerGstin: intent.buyerGstin || '',
+                buyerCompany: intent.buyerCompany || '',
                 paymentDetails: {
                   transactionId: gatewayPaymentId,
                   upiApp: ''
@@ -733,7 +792,7 @@ class PaymentService {
             }
           }
 
-          // Shiprocket deferred until admin "Ready for Dispatch"
+          // Bigship deferred until admin marks the order PACKED
         }
         break;
       }

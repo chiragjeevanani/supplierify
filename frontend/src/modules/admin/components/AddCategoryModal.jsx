@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { CATEGORY_GROUPS, groupOf } from '../../../utils/categoryGroups';
 import { X, Check, UploadCloud, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { uploadApi } from '../../../utils/api';
 import { compressImageFile } from '../../../utils/compressImage';
 import { resolveProductImage } from '../../../utils/productImage';
 
-export default function AddCategoryModal({ isOpen, onClose, onSave, initialData = null }) {
+export default function AddCategoryModal({ isOpen, onClose, onSave, initialData = null, defaultGroup = 'dry-fruits' }) {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -34,6 +35,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
           image: initialData.image || '',
           subtext: initialData.subtext || '',
           badge: initialData.badge || 'Popular',
+          group: groupOf(initialData),
           popular: initialData.popular !== false
         });
         setShowUrlInput(!!initialData.image && !initialData.image.startsWith('data:'));
@@ -47,6 +49,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
           image: '',
           subtext: '',
           badge: 'Popular',
+          group: defaultGroup || 'dry-fruits',
           popular: true
         });
         setShowUrlInput(false);
@@ -60,7 +63,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, defaultGroup]);
 
   if (!isOpen) return null;
 
@@ -140,7 +143,7 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
               {initialData ? 'Edit Category' : 'Add New Category'}
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
-              {initialData ? 'Update category information' : 'Create a category for your store catalog'}
+              {initialData ? 'Update category information' : 'A folder for products. Add items for sale under Products.'}
             </p>
           </div>
           <button
@@ -244,6 +247,21 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
             </div>
           </div>
 
+          {/* Section on the storefront */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">Section *</label>
+            <select
+              value={formData.group || 'dry-fruits'}
+              onChange={(e) => setFormData({ ...formData, group: e.target.value })}
+              className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)] cursor-pointer"
+            >
+              {CATEGORY_GROUPS.map((g) => (
+                <option key={g.id} value={g.id}>{g.label}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-stone-500 mt-1">Products of this category show under this heading on the home page.</p>
+          </div>
+
           {/* Status & Display Order */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -282,6 +300,12 @@ export default function AddCategoryModal({ isOpen, onClose, onSave, initialData 
               placeholder="Short description for this category..."
               className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white resize-none"
             />
+            {/price|₹|\b(rs|inr)\b/i.test(formData.description || '') && (
+              <p role="note" className="mt-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[length:calc(11px*var(--fs))] px-3 py-2">
+                This looks like an item for sale. Save it under <strong>Products → Add Product</strong> so customers see the
+                price and can add it to their cart.
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}

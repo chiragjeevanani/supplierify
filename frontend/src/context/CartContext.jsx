@@ -4,6 +4,8 @@ import { useAuth } from './AuthContext';
 import { cartApi, settingsApi } from '../utils/api';
 import { resolveProductImage } from '../utils/productImage';
 import { useStoreRules, getMinQty } from '../hooks/useStoreRules';
+import { unitOf, unitWeightLabel, qtyWithUnit } from '../utils/units';
+import { isFoodProduct } from '../utils/categoryGroups';
 
 const CartContext = createContext();
 
@@ -21,7 +23,7 @@ const getOrCreateGuestId = () => {
 };
 
 export function CartProvider({ children }) {
-  const { coupons, settings, products } = useAdmin();
+  const { coupons, settings, products, categories: catalogCategories } = useAdmin();
   const { token, isAuthenticated } = useAuth();
   const [liveSettings, setLiveSettings] = useState(null);
   const [guestId] = useState(getOrCreateGuestId);
@@ -91,6 +93,7 @@ export function CartProvider({ children }) {
 
   // Fetch or sync authoritative cart from backend MongoDB on mount / login
   const refreshCartFromBackend = useCallback(async () => {
+    if (!isAuthenticated) return;
     setIsSyncing(true);
     try {
       const res = await cartApi.getCart(guestId);
@@ -215,19 +218,26 @@ export function CartProvider({ children }) {
    * Add to Cart from any section (Homepage bestsellers, Shop, Details, Wishlist)
    * Standardizes product ID, weight, image and price snapshot
    */
-  const addToCart = async (product, weight = '1 kg', qty = 1, openDrawer = false) => {
+  const addToCart = async (product, weight = null, qty = 1, openDrawer = false) => {
     if (!product) return;
 
     const prodId = (product._id || product.id || product.slug)?.toString();
-    const cleanWeight = weight || product.weight || '1 kg';
+    const cleanWeight = weight || unitWeightLabel(product);
+    const unit = unitOf(product);
     let cleanQty = Math.max(1, Number(qty) || 1);
+
+    // Food sales paused by the admin (FSSAI licence pending)
+    if (rules.foodSalesPaused && isFoodProduct(product, catalogCategories)) {
+      showStockNotice(`${product.name || 'This product'} is coming soon. We are not taking orders for food items right now.`);
+      return false;
+    }
 
     // Wholesale minimum: the cart line for this product must reach the minimum kg
     const minQty = getMinQty(product, rules);
     const alreadyInCart = getCartQtyForProduct(prodId);
     if (alreadyInCart + cleanQty < minQty) {
       cleanQty = minQty - alreadyInCart;
-      showStockNotice(`Minimum order for ${product.name || 'this product'} is ${minQty} kg. Quantity set to ${minQty} kg.`);
+      showStockNotice(`Minimum order for ${product.name || 'this product'} is ${qtyWithUnit(minQty, unit)}. Quantity set to ${qtyWithUnit(minQty, unit)}.`);
     }
 
     // Stock guard: never add more than what is available
@@ -239,11 +249,11 @@ export function CartProvider({ children }) {
         return false;
       }
       if (remaining <= 0) {
-        showStockNotice(`You already have all ${stockLimit} kg available in your cart.`);
+        showStockNotice(`You already have all ${qtyWithUnit(stockLimit, unit)} available in your cart.`);
         return false;
       }
       if (cleanQty > remaining) {
-        showStockNotice(`Only ${stockLimit} kg available. Added ${remaining} kg.`);
+        showStockNotice(`Only ${qtyWithUnit(stockLimit, unit)} available. Added ${qtyWithUnit(remaining, unit)}.`);
         cleanQty = remaining;
       }
     }
@@ -358,7 +368,7 @@ export function CartProvider({ children }) {
       if (line) {
         const minQty = getMinQty(findCatalogProduct(targetId) || line, rules);
         if ((Number(line.qty) || 0) + delta < minQty) {
-          showStockNotice(`Minimum order is ${minQty} kg. Remove the item to take it out of your cart.`);
+          showStockNotice(`Minimum order is ${qtyWithUnit(minQty, unitOf(line))}. Remove the item to take it out of your cart.`);
           return;
         }
       }
@@ -369,7 +379,7 @@ export function CartProvider({ children }) {
       const remaining = getRemainingStock(targetId);
       if (remaining < delta) {
         const limit = getStockLimit(targetId);
-        showStockNotice(limit !== null && limit <= 0 ? 'This product is out of stock.' : `Only ${limit} kg available in stock.`);
+        showStockNotice(limit !== null && limit <= 0 ? 'This product is out of stock.' : `Only ${qtyWithUnit(limit, unitOf(findCatalogProduct(targetId)))} available in stock.`);
         return;
       }
     }
@@ -417,7 +427,7 @@ export function CartProvider({ children }) {
     const finalQty = Math.max(next, minQty);
     const limit = getStockLimit(targetId);
     if (limit !== null && finalQty > limit) {
-      showStockNotice(`Only ${limit} kg available in stock.`);
+      showStockNotice(`Only ${qtyWithUnit(limit, unitOf(findCatalogProduct(targetId)))} available in stock.`);
       return;
     }
 
@@ -548,7 +558,7 @@ export function CartProvider({ children }) {
   const freeShippingMin = effectiveSettings?.freeDeliveryThreshold ?? 499;
   const gstRate = (effectiveSettings?.gstRate ?? 5) / 100;
 
-  // Shipping is calculated live from Shiprocket at checkout (pincode + payment method)
+  // Shipping is calculated live from Bigship at checkout (pincode + payment method)
   const deliveryFee = null;
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const tax = Math.round(taxableAmount * gstRate);

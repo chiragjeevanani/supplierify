@@ -53,7 +53,7 @@ export default function AdminReviews() {
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex font-sans">
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className="flex-1 admin-main flex flex-col min-w-0 w-full">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Customer Reviews & Testimonials" />
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-3.5 w-full font-sans">
@@ -198,7 +198,7 @@ export default function AdminReviews() {
                 {r.adminReply && (
                   <div className="bg-[color:var(--brand-primary)]/5 border-l-3 border-[color:var(--brand-primary)] p-2.5 rounded-r-lg text-xs space-y-0.5">
                     <span className="font-bold text-[color:var(--brand-primary)] flex items-center gap-1 text-[length:calc(11px*var(--fs))]">
-                      <MessageSquare className="w-3 h-3 text-[color:var(--brand-accent)]" /> Response from Dry Fruit Wholesale Team:
+                      <MessageSquare className="w-3 h-3 text-[color:var(--brand-accent)]" /> Response from Supplierfy Team:
                     </span>
                     <p className="text-stone-700 italic font-normal">{r.adminReply}</p>
                   </div>

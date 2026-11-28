@@ -112,7 +112,7 @@ export default function AdminDashboard() {
         }}
       />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className="flex-1 admin-main flex flex-col min-w-0 w-full">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Executive Dashboard" />
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-4.5 w-full font-sans">
@@ -336,7 +336,7 @@ export default function AdminDashboard() {
                           {idx + 1}
                         </span>
                         <img
-                          src={p.image || 'https://placehold.co/80x80?text=Dry Fruit Wholesale'}
+                          src={p.image || 'https://placehold.co/80x80?text=Supplierfy'}
                           alt=""
                           className="w-9 h-9 rounded-lg object-cover border border-stone-200 bg-white"
                         />

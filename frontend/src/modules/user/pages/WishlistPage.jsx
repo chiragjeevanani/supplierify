@@ -10,6 +10,7 @@ import { useWishlist } from '../../../context/WishlistContext';
 import { useCart } from '../../../context/CartContext';
 import { useAdmin } from '../../../context/AdminContext';
 import { resolveProductImage } from '../../../utils/productImage';
+import { unitWeightLabel } from '../../../utils/units';
 
 export default function WishlistPage() {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ export default function WishlistPage() {
 
   const handleMoveAllToCart = () => {
     wishlistedProducts.forEach(product => {
-      addToCart(product, '1 kg', 1, false);
+      addToCart(product, unitWeightLabel(product), 1, false);
     });
   };
 
@@ -256,7 +257,7 @@ export default function WishlistPage() {
                       {/* Price and Discount */}
                       <div className="flex items-baseline gap-1 pt-0.5">
                         <span className="font-extrabold text-[length:calc(11px*var(--fs))] sm:text-xs text-[color:var(--brand-primary)]">₹{p.price}</span>
-                        {p.oldPrice && (
+                        {Number(p.oldPrice) > Number(p.price) && (
                           <span className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-400 line-through">₹{p.oldPrice}</span>
                         )}
                         {p.discount && (
@@ -269,7 +270,7 @@ export default function WishlistPage() {
 
                     {/* Add to Cart CTA */}
                     <button
-                      onClick={() => addToCart(p, '1 kg', 1, false)}
+                      onClick={() => addToCart(p, unitWeightLabel(p), 1, false)}
                       className="mt-2 sm:mt-3 w-full py-1 sm:py-1.5 bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] font-bold uppercase rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-98"
                     >
                       <ShoppingBag className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -335,7 +336,7 @@ export default function WishlistPage() {
                     </div>
 
                     <button
-                      onClick={() => addToCart(p, '1 kg', 1, false)}
+                      onClick={() => addToCart(p, unitWeightLabel(p), 1, false)}
                       className="mt-2 sm:mt-3 w-full py-1 sm:py-1.5 bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] hover:bg-[color:var(--brand-primary-light)] text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] font-bold uppercase rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs active:scale-98"
                     >
                       <span>+ Add</span>

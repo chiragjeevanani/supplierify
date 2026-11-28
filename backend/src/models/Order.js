@@ -20,6 +20,7 @@ const orderItemSchema = new mongoose.Schema(
       type: String,
       default: '150g'
     },
+    hsnCode: { type: String, default: '' },
     price: {
       type: Number,
       required: true,
@@ -83,16 +84,23 @@ const paymentSchema = new mongoose.Schema(
   {
     method: {
       type: String,
-      enum: ['COD', 'UPI', 'CARD', 'NETBANKING'],
+      enum: ['COD', 'UPI', 'CARD', 'NETBANKING', 'CREDIT', 'PARTIAL_COD'],
       default: 'COD'
     },
     status: {
       type: String,
-      enum: ['PENDING', 'AUTHORIZED', 'PAID', 'FAILED', 'REFUND_PENDING', 'PARTIALLY_REFUNDED', 'REFUNDED'],
+      enum: ['PENDING', 'AUTHORIZED', 'PARTIALLY_PAID', 'PAID', 'FAILED', 'REFUND_PENDING', 'PARTIALLY_REFUNDED', 'REFUNDED'],
       default: 'PENDING'
     },
+    // Partial COD: part paid online up front (₹), and the balance the courier collects on delivery (₹)
+    advancePaid: { type: Number, default: 0, min: 0 },
+    balanceDue: { type: Number, default: 0, min: 0 },
     transactionId: { type: String, default: '' },
-    upiApp: { type: String, default: '' }
+    upiApp: { type: String, default: '' },
+    // Pay-on-credit orders: when payment is due, and when the admin recorded it as paid
+    creditDueDate: { type: Date, default: null },
+    paidAt: { type: Date, default: null },
+    paymentNote: { type: String, default: '', trim: true }
   },
   { _id: false }
 );
@@ -169,6 +177,12 @@ const orderSchema = new mongoose.Schema(
       type: paymentSchema,
       default: () => ({})
     },
+    // B2B buyer details for the GST invoice (optional) and proof that the buyer accepted the terms
+    buyer: {
+      gstin: { type: String, default: '', trim: true, uppercase: true },
+      companyName: { type: String, default: '', trim: true }
+    },
+    termsAcceptedAt: { type: Date, default: null },
     delivery: {
       type: deliverySchema,
       default: () => ({})
@@ -193,8 +207,38 @@ const orderSchema = new mongoose.Schema(
       default: null
     },
     /**
-     * Shiprocket shipment metadata (auth tokens are NEVER stored here).
-     * Multi-seller ready: optional pickupLocation override per fulfillment source.
+     * Bigship shipment metadata (login tokens are NEVER stored here).
+     * customOrderId is Bigship's CustomGlobalOrderId — used for rates, tracking, documents and cancel.
+     */
+    bigship: {
+      customOrderId: { type: String, default: '', trim: true, index: true },
+      awbCode: { type: String, default: '', trim: true, index: true },
+      referenceNumber: { type: String, default: '', trim: true },
+      courierId: { type: Number, default: null },
+      courierName: { type: String, default: '', trim: true },
+      freight: { type: Number, default: null },
+      status: { type: String, default: '', trim: true },
+      labelUrl: { type: String, default: '' },
+      invoiceUrl: { type: String, default: '' },
+      manifestUrl: { type: String, default: '' },
+      trackingUrl: { type: String, default: '' },
+      pickupWarehouseId: { type: String, default: '', trim: true },
+      weightKg: { type: Number, default: null },
+      lengthCm: { type: Number, default: null },
+      breadthCm: { type: Number, default: null },
+      heightCm: { type: Number, default: null },
+      isRto: { type: Boolean, default: false },
+      // Courier checkpoints from Bigship track-order (newest first, capped) — shown to the customer
+      trackingHistory: [
+        { _id: false, status: { type: String, default: '' }, message: { type: String, default: '' }, at: { type: Date, default: null } }
+      ],
+      lastSyncedAt: { type: Date, default: null },
+      lastUpdatedAt: { type: Date, default: null },
+      errorMessage: { type: String, default: '' }
+    },
+    /**
+     * LEGACY: Shiprocket shipment metadata of orders shipped before the move to Bigship.
+     * Kept only so old orders still show their AWB/courier. Nothing writes to it any more.
      */
     shiprocket: {
       orderId: { type: String, default: '', trim: true, index: true },
@@ -281,6 +325,7 @@ const orderSchema = new mongoose.Schema(
 
 // Indexes
 orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ user: 1, 'payment.method': 1, 'payment.status': 1 });
 
 export const Order = mongoose.model('Order', orderSchema);
 export default Order;

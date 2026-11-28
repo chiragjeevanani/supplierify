@@ -2,21 +2,30 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Check, UploadCloud, Image as ImageIcon, Trash2, Plus, RefreshCw, Star, Loader2, Cloud, Sparkles, Layers } from 'lucide-react';
 
 import { CATEGORIES } from '../../../data/categories';
+import { CATEGORY_GROUPS, groupOf, defaultUnitForGroup } from '../../../utils/categoryGroups';
+import { UNITS, unitOf, unitText } from '../../../utils/units';
 import { useAdmin } from '../../../context/AdminContext';
 import { uploadApi } from '../../../utils/api';
 import { resolveProductImage } from '../../../utils/productImage';
 import { compressImageFile } from '../../../utils/compressImage';
+import { MAX_PRODUCT_PHOTOS } from '../../../utils/listings';
 
 const EMPTY_PRODUCT = {
   name: '',
   tagline: '',
   category: 'almonds-nuts',
   isBestseller: true,
-  price: 500,
-  oldPrice: 550,
-  discountPercent: 9,
+  price: '',
+  oldPrice: '',
+  discountPercent: 0,
   stockCount: 500,
   minOrderQty: 0,
+  unit: 'kg',
+  hsnCode: '',
+  shippingWeightKg: '',
+  lengthCm: '',
+  breadthCm: '',
+  heightCm: '',
   badge: 'BESTSELLER',
   image: '',
   gallery: [],
@@ -24,14 +33,15 @@ const EMPTY_PRODUCT = {
   details: '',
   productDetails: '',
   variants: [
-    { id: 'v1', name: 'Per kg', weight: '1 kg', price: 500, oldPrice: 550, stock: 500 }
+    { id: 'v1', name: 'Per kg', weight: '1 kg', price: 0, oldPrice: 0, stock: 500 }
   ]
 };
 
-export default function AddProductModal({ isOpen, onClose, onSave, initialData = null, categories: propCategories = null }) {
+export default function AddProductModal({ isOpen, onClose, onSave, initialData = null, categories: propCategories = null, defaultCategory = '', prefill = null }) {
   const [activeTab, setActiveTab] = useState('basic');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadStatusMsg, setUploadStatusMsg] = useState('');
+  const [photoNote, setPhotoNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const { categories: adminCategories, refreshCategories } = useAdmin();
@@ -44,6 +54,8 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
   const [formData, setFormData] = useState(EMPTY_PRODUCT);
   const editingId = initialData?._id || initialData?.id || null;
+  const categoryFor = (value) => allCategories.find((c) => (c.slug || c.id || c._id) === value);
+  const unitFor = (value) => defaultUnitForGroup(groupOf(categoryFor(value)));
 
   useEffect(() => {
     if (isOpen) {
@@ -96,6 +108,12 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
           price: initialData.price !== undefined ? initialData.price : 500,
           oldPrice: initialData.oldPrice !== undefined ? initialData.oldPrice : 0,
           minOrderQty: initialData.minOrderQty || 0,
+          unit: unitOf(initialData),
+          hsnCode: initialData.hsnCode || '',
+          shippingWeightKg: initialData.shippingWeightKg ?? '',
+          lengthCm: initialData.lengthCm ?? '',
+          breadthCm: initialData.breadthCm ?? '',
+          heightCm: initialData.heightCm ?? '',
           discountPercent: initialData.discountPercent || 0,
           stockCount: initialData.stockCount !== undefined ? initialData.stockCount : 500,
           badge: initialData.badge || '',
@@ -109,15 +127,30 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
           variants: mappedVariants
         });
       } else {
-        const defaultCat = (allCategories && allCategories.length > 0)
-          ? (allCategories[0].slug || allCategories[0].id || 'almonds-nuts')
-          : 'almonds-nuts';
+        const first = categoryFor(defaultCategory) || allCategories?.[0];
+        const defaultCat = first?.slug || first?.id || 'almonds-nuts';
         setFormData({
           ...EMPTY_PRODUCT,
-          category: defaultCat
+          category: defaultCat,
+          unit: unitFor(defaultCat),
+          ...(prefill || {})
         });
+        // a photo that no longer exists on the server must not be copied to the new product
+        if (prefill?.image) {
+          const probe = new Image();
+          probe.onerror = () => {
+            setFormData((prev) => ({
+              ...prev,
+              image: prev.image === prefill.image ? '' : prev.image,
+              gallery: (prev.gallery || []).filter((g) => g !== prefill.image)
+            }));
+            setPhotoNote('The old photo of this item is missing. Please add the photos again.');
+          };
+          probe.src = resolveProductImage(prefill.image);
+        }
       }
       setActiveTab('basic');
+      setPhotoNote('');
       setIsUploadingImage(false);
       setIsSubmitting(false);
       setUploadStatusMsg('');
@@ -141,16 +174,19 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
     if (files.length === 0) return;
 
     const currentGallery = Array.isArray(formData.gallery) ? formData.gallery : [];
-    const maxImages = 4;
+    const maxImages = MAX_PRODUCT_PHOTOS;
     const remainingSlots = maxImages - currentGallery.length;
 
     if (remainingSlots <= 0) {
-      alert('You can select up to 4 gallery photos. Please remove an existing photo first.');
+      alert(`A product can have up to ${MAX_PRODUCT_PHOTOS} photos. Please remove one first.`);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     const filesToProcess = files.slice(0, remainingSlots);
+    setPhotoNote(files.length > remainingSlots
+      ? `Only ${remainingSlots} more photo(s) could be added: the limit is ${MAX_PRODUCT_PHOTOS}.`
+      : '');
 
     // Instant blob previews (no heavy base64 encode before upload)
     const previewUrls = filesToProcess.map((file) => URL.createObjectURL(file));
@@ -321,6 +357,10 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
       alert('Please enter a valid selling price greater than 0.');
       return;
     }
+    if (formData.stockCount === '' || Number(formData.stockCount) < 0) {
+      alert('Please enter the stock you have.');
+      return;
+    }
     // Original price must be >= selling price (blank / 0 = no strike-through price)
     const originalNum = Number(formData.oldPrice);
     if (formData.oldPrice !== '' && formData.oldPrice !== undefined && originalNum > 0 && originalNum < priceNum) {
@@ -365,9 +405,15 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         category: formData.category || 'almonds-nuts',
         flavor: formData.flavor || '',
         price: priceNum,
-        oldPrice: Number(formData.oldPrice || Math.round(priceNum * 1.2)),
+        oldPrice: Number(formData.oldPrice || 0),
         stockCount: Number(formData.stockCount || 0),
         minOrderQty: Math.max(0, Number(formData.minOrderQty) || 0),
+        unit: formData.unit || 'kg',
+        hsnCode: String(formData.hsnCode || '').trim(),
+        shippingWeightKg: formData.shippingWeightKg !== '' && formData.shippingWeightKg != null ? Number(formData.shippingWeightKg) : null,
+        lengthCm: formData.lengthCm !== '' && formData.lengthCm != null ? Number(formData.lengthCm) : null,
+        breadthCm: formData.breadthCm !== '' && formData.breadthCm != null ? Number(formData.breadthCm) : null,
+        heightCm: formData.heightCm !== '' && formData.heightCm != null ? Number(formData.heightCm) : null,
         isBestseller: Boolean(formData.isBestseller),
         badge: formData.badge || (formData.isBestseller ? 'BESTSELLER' : ''),
         image: primaryImg,
@@ -375,16 +421,16 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         description: formData.description || '',
         details: formData.productDetails || formData.details || '',
         productDetails: formData.productDetails || formData.details || '',
-        // Wholesale: always one sellable unit, "1 kg", priced per kg
-        weight: '1 kg',
+        // Wholesale: one sellable unit ("1 kg", "1 piece"...), priced per that unit
+        weight: `1 ${formData.unit || 'kg'}`,
         weightOptions: [
-          { weight: '1 kg', price: priceNum, oldPrice: Number(formData.oldPrice || 0), isDefault: true }
+          { weight: `1 ${formData.unit || 'kg'}`, price: priceNum, oldPrice: Number(formData.oldPrice || 0), isDefault: true }
         ],
         variants: [
           {
             id: 'v1',
-            name: 'Per kg',
-            weight: '1 kg',
+            name: `Per ${formData.unit || 'kg'}`,
+            weight: `1 ${formData.unit || 'kg'}`,
             price: priceNum,
             oldPrice: Number(formData.oldPrice || 0),
             stock: Number(formData.stockCount || 0)
@@ -434,7 +480,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         {/* Modal Form Tabs */}
         <div className="flex border-b border-stone-200 px-4 sm:px-6 bg-[color:var(--brand-surface)] gap-4 sm:gap-6 shrink-0">
           {[
-            { id: 'basic', label: 'Product Details & Pricing (per kg)' }
+            { id: 'basic', label: `Product Details & Pricing (per ${formData.unit || 'kg'})` }
           ].map(tab => (
             <button
               key={tab.id}
@@ -470,7 +516,11 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     required
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Artisanal Truffle & Herb Dry Fruit"
+                    placeholder={{
+                      garments: "e.g. Men's Round Neck T-shirt",
+                      metals: 'e.g. Copper Wire Scrap',
+                      'household-furniture': 'e.g. Three Seater Sofa'
+                    }[groupOf(categoryFor(formData.category))] || 'e.g. California Almonds'}
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]"
                   />
                 </div>
@@ -481,20 +531,58 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   <select
                     value={formData.category}
                     onChange={e => {
+                      const next = e.target.value;
                       setFormData(prev => ({
                         ...prev,
-                        category: e.target.value
+                        category: next,
+                        // follow the section's usual unit on a new product, unless the unit was changed by hand
+                        unit: !editingId && prev.unit === unitFor(prev.category) ? unitFor(next) : prev.unit
                       }));
                     }}
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white cursor-pointer"
                   >
-                    {allCategories.map(c => {
-                      const catVal = c.slug || c.id || c._id;
+                    {CATEGORY_GROUPS.map((g) => {
+                      const inGroup = allCategories.filter((c) => groupOf(c) === g.id);
+                      if (inGroup.length === 0) return null;
                       return (
-                        <option key={c.id || c.slug || c._id} value={catVal}>{c.name}</option>
+                        <optgroup key={g.id} label={g.label}>
+                          {inGroup.map((c) => {
+                            const catVal = c.slug || c.id || c._id;
+                            return <option key={c.id || c.slug || c._id} value={catVal}>{c.name}</option>;
+                          })}
+                        </optgroup>
                       );
                     })}
                   </select>
+                </div>
+
+                {/* Sold by (unit) */}
+                <div>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">Sold by *</label>
+                  <select
+                    value={formData.unit || 'kg'}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)] bg-white cursor-pointer"
+                  >
+                    {UNITS.map((u) => (
+                      <option key={u.id} value={u.id}>{u.label}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">Price, stock and the customer's quantity are all counted in this unit.</p>
+                </div>
+
+                {/* HSN code for the GST invoice */}
+                <div>
+                  <label className="block text-xs sm:text-[length:calc(13px*var(--fs))] font-bold text-stone-800 mb-1">HSN code (for the GST invoice)</label>
+                  <input
+                    type="text"
+                    value={formData.hsnCode || ''}
+                    onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
+                    placeholder="e.g. 0802 (leave empty to use the default for dry fruits)"
+                    maxLength={10}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  />
+                  <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">Dry fruits get a default code automatically. Metals, garments and furniture need a code entered here.</p>
                 </div>
 
                 {/* Pricing & Stock Row */}
@@ -506,7 +594,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Selling Price (₹ per kg) *
+                        Selling Price (₹ per {formData.unit || 'kg'}) *
                       </label>
                       <input
                         type="number"
@@ -514,20 +602,20 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         min="1"
                         value={formData.price}
                         onChange={e => setFormData({ ...formData, price: e.target.value })}
-                        placeholder="500"
+                        placeholder="Enter price"
                         className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
                       />
                     </div>
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Original Price (₹ per kg)
+                        Original Price (₹ per {formData.unit || 'kg'})
                       </label>
                       <input
                         type="number"
                         min="0"
                         value={formData.oldPrice}
                         onChange={e => setFormData({ ...formData, oldPrice: e.target.value })}
-                        placeholder="550"
+                        placeholder="Optional"
                         className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white focus:outline-none ${
                           Number(formData.oldPrice) > 0 && Number(formData.price) > 0 && Number(formData.oldPrice) < Number(formData.price)
                             ? 'border-rose-400 focus:border-rose-500'
@@ -542,7 +630,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     </div>
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Stock (kg)
+                        Stock ({unitText(2, formData.unit)})
                       </label>
                       <input
                         type="number"
@@ -555,7 +643,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     </div>
                     <div>
                       <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">
-                        Min. Order (kg)
+                        Min. Order ({unitText(2, formData.unit)})
                       </label>
                       <input
                         type="number"
@@ -565,10 +653,39 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         placeholder="0 = store default"
                         className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
                       />
-                      <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">0 uses the store-wide minimum from Settings.</p>
+                      <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-stone-500">Leave 0 for the default ({(formData.unit || 'kg') === 'kg' ? 'store-wide minimum from Settings' : '1'}).</p>
                     </div>
                   </div>
                 </div>
+
+                {(formData.unit || 'kg') !== 'kg' && (
+                  <div className="p-3.5 bg-[color:var(--brand-surface)] rounded-xl border border-stone-200 space-y-3">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-[color:var(--brand-primary)]">
+                      Courier details (needed to ship)
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        ['shippingWeightKg', `Weight of 1 ${formData.unit} (kg)`],
+                        ['lengthCm', 'Length (cm)'],
+                        ['breadthCm', 'Width (cm)'],
+                        ['heightCm', 'Height (cm)']
+                      ].map(([key, label]) => (
+                        <div key={key}>
+                          <label className="block text-[length:calc(11.5px*var(--fs))] font-bold text-stone-700 mb-1">{label}</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={formData[key] ?? ''}
+                            onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[length:calc(10.5px*var(--fs))] text-stone-500">The courier needs the weight to book the shipment. Size is optional (a standard box is used if left empty).</p>
+                  </div>
+                )}
 
                 {/* Homepage Best Sellers Inclusion Option */}
                 <div className={`p-4 rounded-xl border transition-all ${
@@ -614,7 +731,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   </label>
                 </div>
 
-                {/* Product Photos & Gallery (3-4 Images Selection Option) */}
+                {/* Product Photos & Gallery */}
                 <div className="p-3.5 sm:p-4 bg-[color:var(--brand-surface)] rounded-xl border border-stone-200 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                     <div>
@@ -623,17 +740,15 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                           Product Photos & Gallery
                         </label>
                         <span className={`text-[length:calc(10px*var(--fs))] font-bold px-2 py-0.5 rounded-full border ${
-                          (formData.gallery?.length || 0) >= 3
+                          (formData.gallery?.length || 0) > 0
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                            : (formData.gallery?.length || 0) > 0
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
                             : 'bg-stone-100 text-stone-600 border-stone-300'
                         }`}>
-                          {(formData.gallery?.length || 0)} of 4 photos selected
+                          {(formData.gallery?.length || 0)} of {MAX_PRODUCT_PHOTOS} photos
                         </span>
                       </div>
                       <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5 font-normal">
-                        Select <strong>3 to 4 images</strong> to showcase packaging front, Dry Fruits texture, and nutrition details in the user app gallery slider.
+                        Add up to <strong>{MAX_PRODUCT_PHOTOS} photos</strong>. You can select several at once. The first one is the cover customers see in the shop.
                       </p>
                     </div>
 
@@ -649,7 +764,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     className="hidden"
                   />
 
-                  {/* Gallery Grid (3-4 Slots) */}
+                  {/* Gallery Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {(formData.gallery || []).map((imgUrl, idx) => {
                       const isPrimary = idx === 0;
@@ -709,7 +824,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                           {/* Hover: Set as Cover */}
                           {!isPrimary && (
-                            <div className="absolute inset-x-0 bottom-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <div className="absolute inset-x-0 bottom-0 p-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -727,8 +842,8 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       );
                     })}
 
-                    {/* Add More Photos Slot (Visible if fewer than 4 photos) */}
-                    {(formData.gallery?.length || 0) < 4 && (
+                    {/* Add More Photos Slot */}
+                    {(formData.gallery?.length || 0) < MAX_PRODUCT_PHOTOS && (
                       <button
                         type="button"
                         disabled={isUploadingImage}
@@ -749,7 +864,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                               Add Photo
                             </span>
                             <span className="text-[length:calc(9.5px*var(--fs))] text-stone-400 font-medium">
-                              Slot {(formData.gallery?.length || 0) + 1} of 4
+                              Slot {(formData.gallery?.length || 0) + 1} of {MAX_PRODUCT_PHOTOS}
                             </span>
                           </>
                         )}
@@ -766,7 +881,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       <UploadCloud className="w-8 h-8 text-[color:var(--brand-accent)] mx-auto" />
                       <div>
                         <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">
-                          Click to select 3–4 gallery photos at once
+                          Click to select photos (several at once)
                         </p>
                         <p className="text-[length:calc(11px*var(--fs))] text-stone-500 font-normal mt-0.5">
                           Hold <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[length:calc(10px*var(--fs))]">Ctrl</kbd> or <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[length:calc(10px*var(--fs))]">Shift</kbd> in file explorer to select multiple files. PNG, JPG, WEBP formats.
@@ -777,9 +892,13 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-xs font-bold uppercase tracking-wider shadow-xs hover:bg-[color:var(--brand-primary-light)] pointer-events-none"
                       >
                         <UploadCloud className="w-3.5 h-3.5" />
-                        <span>Choose 3–4 Photos</span>
+                        <span>Choose Photos</span>
                       </button>
                     </div>
+                  )}
+
+                  {photoNote && (
+                    <p role="note" className="text-xs font-semibold text-amber-900 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">{photoNote}</p>
                   )}
 
                   {/* Upload status message */}

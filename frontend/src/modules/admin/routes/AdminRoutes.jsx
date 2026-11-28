@@ -16,7 +16,9 @@ import AdminReviews from '../pages/AdminReviews';
 // import AdminPromotions from '../pages/AdminPromotions';
 import AdminAnalytics from '../pages/AdminAnalytics';
 import AdminNotifications from '../pages/AdminNotifications';
+import PasswordRequestAlert from '../components/PasswordRequestAlert';
 import AdminSettings from '../pages/AdminSettings';
+import AdminLegalPages from '../pages/AdminLegalPages';
 import AdminProfile from '../pages/AdminProfile';
 import AdminLogin from '../pages/AdminLogin';
 import AdminForgotPassword from '../pages/AdminForgotPassword';
@@ -34,7 +36,10 @@ function ProtectedAdminRoute({ children }) {
 }
 
 export default function AdminRoutes() {
+  const { isAdminAuthenticated } = useAdmin();
   return (
+    <>
+    {isAdminAuthenticated && <PasswordRequestAlert />}
     <Routes>
       {/* Public Admin auth routes */}
       <Route path="/login" element={<AdminLogin />} />
@@ -56,10 +61,12 @@ export default function AdminRoutes() {
       <Route path="/notifications" element={<ProtectedAdminRoute><AdminNotifications /></ProtectedAdminRoute>} />
       <Route path="/analytics" element={<ProtectedAdminRoute><AdminAnalytics /></ProtectedAdminRoute>} />
       <Route path="/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+      <Route path="/legal-pages" element={<ProtectedAdminRoute><AdminLegalPages /></ProtectedAdminRoute>} />
       <Route path="/profile" element={<ProtectedAdminRoute><AdminProfile /></ProtectedAdminRoute>} />
       
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
+    </>
   );
 }

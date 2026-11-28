@@ -3,11 +3,12 @@ import { NavLink, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, Package, FolderTree, 
   Boxes, Users, Tag, Star, Bell, 
-  BarChart3, Settings, ExternalLink, X, UserCircle, Images
+  BarChart3, Settings, ExternalLink, X, UserCircle, Images, FileText
 } from 'lucide-react';
 import Logo from '../../user/components/Logo';
 import { adminDashboardApi, adminNotificationApi } from '../../../utils/api';
 import { useAdmin } from '../../../context/AdminContext';
+import { useAdminSidebarCollapsed } from '../adminSidebarState';
 
 function formatBadge(value) {
   if (value == null || value === '') return null;
@@ -19,6 +20,7 @@ function formatBadge(value) {
 export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
   const asideRef = useRef(null);
   const navRef = useRef(null);
+  const collapsed = useAdminSidebarCollapsed();
   const { coupons } = useAdmin();
   const propOrders = badgesProp?.orders;
   const propCoupons = badgesProp?.coupons;
@@ -108,6 +110,7 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
     { name: 'Notifications', path: '/admin/notifications', icon: Bell, badge: formatBadge(badges.notifications) },
     { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
     { name: 'Profile', path: '/admin/profile', icon: UserCircle },
+    { name: 'Legal Pages', path: '/admin/legal-pages', icon: FileText },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
 
@@ -125,7 +128,11 @@ export default function AdminSidebar({ isOpen, onClose, badges: badgesProp }) {
         ref={asideRef}
         data-lenis-prevent
         className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[color:var(--brand-primary)] text-[color:var(--brand-border-strong)] border-r border-[color:var(--brand-accent)]/25 flex flex-col transition-[transform,visibility] duration-300 ${
-          isOpen ? 'translate-x-0 visible' : '-translate-x-full invisible lg:translate-x-0 lg:visible'
+          isOpen
+            ? 'translate-x-0 visible'
+            : collapsed
+            ? '-translate-x-full invisible'
+            : '-translate-x-full invisible lg:translate-x-0 lg:visible'
         }`}
       >
         {/* Top Logo & Header — fixed height */}

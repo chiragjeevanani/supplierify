@@ -1,3 +1,4 @@
+import { assertFoodSalesAllowed } from './foodRules.js';
 import mongoose from 'mongoose';
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
@@ -266,6 +267,7 @@ class CartService {
       err.statusCode = product ? HTTP_STATUS.BAD_REQUEST : HTTP_STATUS.NOT_FOUND;
       throw err;
     }
+    await assertFoodSalesAllowed([product]);
 
     let finalPrice = product.price;
     let finalOldPrice = product.oldPrice;
@@ -288,7 +290,7 @@ class CartService {
     const minQtyKg = resolveMinQtyKg(product, await settingsService.getSettings());
     const resultingQty = (existingIndex > -1 ? cart.items[existingIndex].qty : 0) + cleanQty;
     if (resultingQty < minQtyKg) {
-      const err = new Error(minQtyMessage(product.name, minQtyKg));
+      const err = new Error(minQtyMessage(product.name, minQtyKg, product.unit));
       err.statusCode = HTTP_STATUS.BAD_REQUEST;
       throw err;
     }
@@ -352,7 +354,7 @@ class CartService {
         if (productForMin) {
           const minQtyKg = resolveMinQtyKg(productForMin, await settingsService.getSettings());
           if (requestedQty < minQtyKg) {
-            const err = new Error(minQtyMessage(productForMin.name, minQtyKg));
+            const err = new Error(minQtyMessage(productForMin.name, minQtyKg, productForMin.unit));
             err.statusCode = HTTP_STATUS.BAD_REQUEST;
             throw err;
           }

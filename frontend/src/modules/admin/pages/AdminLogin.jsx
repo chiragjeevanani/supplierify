@@ -18,7 +18,8 @@ export default function AdminLogin() {
   // If already logged in, redirect to dashboard or intended location
   useEffect(() => {
     if (isAdminAuthenticated) {
-      const from = location.state?.from?.pathname || '/admin';
+      const back = location.state?.from;
+      const from = back ? back.pathname + (back.search || '') : '/admin'; // keeps links like ?password=<customer>
       navigate(from, { replace: true });
     }
   }, [isAdminAuthenticated, navigate, location]);
@@ -32,7 +33,8 @@ export default function AdminLogin() {
       const res = await loginAdmin(email, password);
       setLoading(false);
       if (res.success) {
-        const from = location.state?.from?.pathname || '/admin';
+        const back = location.state?.from;
+        const from = back ? back.pathname + (back.search || '') : '/admin'; // keeps links like ?password=<customer>
         navigate(from, { replace: true });
       } else {
         setError(res.message || 'Invalid admin credentials');

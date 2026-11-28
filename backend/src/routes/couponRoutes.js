@@ -1,8 +1,12 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 import couponController from '../controllers/couponController.js';
 import { validateValidateCoupon } from '../validations/couponValidation.js';
 
 const router = Router();
+
+// The store is for signed-in accounts only (customer or admin)
+router.use(authMiddleware);
 
 /**
  * @route   POST /api/v1/coupons/validate

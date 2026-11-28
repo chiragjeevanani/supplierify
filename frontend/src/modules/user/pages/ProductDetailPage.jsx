@@ -18,6 +18,8 @@ import { reviewApi } from '../../../utils/api';
 import { useStoreRules, getMinQty } from '../../../hooks/useStoreRules';
 import { buildProductEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
 import KgStepper from '../components/KgStepper';
+import { unitOf, unitWeightLabel, unitText, perUnit, qtyWithUnit } from '../../../utils/units';
+import { isFoodProduct } from '../../../utils/categoryGroups';
 
 export default function ProductDetailPage() {
   const { id, slug } = useParams();
@@ -56,8 +58,9 @@ export default function ProductDetailPage() {
   }, [product, targetKey, navigate]);
 
   const [selectedImage, setSelectedImage] = useState(product?.image);
-  // Wholesale: always sold per kg, quantity = number of kg
-  const selectedWeight = '1 kg';
+  // Sold per unit (kg by default; piece, pair, set or meter for other products); quantity = number of units
+  const unit = unitOf(product);
+  const selectedWeight = unitWeightLabel(product);
   const [quantity, setQuantity] = useState(() => getMinQty(product, rules));
   const [activeTab, setActiveTab] = useState('description');
   const [isAdded, setIsAdded] = useState(false);
@@ -230,7 +233,9 @@ export default function ProductDetailPage() {
   const productKey = product?._id || product?.id;
   const stockLimit = getStockLimit(productKey);
   const remainingStock = getRemainingStock(productKey);
-  const isOutOfStock = stockLimit !== null && stockLimit <= 0;
+  // Food items show "Coming soon" and cannot be bought while the admin has paused food sales
+  const foodPaused = Boolean(rules.foodSalesPaused) && isFoodProduct(product, ALL_CATEGORIES);
+  const isOutOfStock = (stockLimit !== null && stockLimit <= 0) || foodPaused;
   const maxQty = remainingStock === Infinity ? 100000 : Math.max(minQty, remainingStock);
 
   const waUrl = buildWhatsAppUrl(
@@ -338,15 +343,15 @@ export default function ProductDetailPage() {
                 </span>
                 {isOutOfStock ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full">
-                    Out of Stock
+                    {foodPaused ? 'Coming Soon' : 'Out of Stock'}
                   </span>
                 ) : stockLimit !== null && stockLimit <= 10 ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full">
-                    Only {stockLimit} kg left
+                    Only {qtyWithUnit(stockLimit, unit)} left
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                    <Check className="w-3.5 h-3.5" /> In Stock{stockLimit !== null ? ` (${stockLimit} kg)` : ''}
+                    <Check className="w-3.5 h-3.5" /> In Stock{stockLimit !== null ? ` (${qtyWithUnit(stockLimit, unit)})` : ''}
                   </span>
                 )}
               </div>
@@ -380,13 +385,13 @@ export default function ProductDetailPage() {
                 <span className="text-3xl font-extrabold text-[color:var(--brand-primary)]">
                   ₹{currentPrice}
                 </span>
-                <span className="text-sm font-semibold text-stone-500">/ kg</span>
-                {currentOldPrice && (
+                <span className="text-sm font-semibold text-stone-500">{perUnit(unit)}</span>
+                {Number(currentOldPrice) > Number(currentPrice) && (
                   <span className="text-base text-stone-400 line-through">
                     ₹{currentOldPrice}
                   </span>
                 )}
-                {product.discountPercent && (
+                {Number(product.discountPercent) > 0 && (
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
                     {product.discountPercent}% OFF
                   </span>
@@ -400,16 +405,16 @@ export default function ProductDetailPage() {
 
               {/* Wholesale minimum notice */}
               <div className="rounded-xl bg-[color:var(--brand-accent)]/15 border border-[color:var(--brand-accent)]/40 px-4 py-3 text-sm text-[color:var(--brand-accent-darker)] font-semibold">
-                Wholesale only: minimum order {minQty} kg. Priced per kg.
+                Wholesale only: minimum order {qtyWithUnit(minQty, unit)}. Priced {unit === 'kg' ? 'per kg' : 'per ' + unit}.
               </div>
 
-              {/* Quantity (kg) */}
+              {/* Quantity */}
               <div className="space-y-2 pt-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-stone-700">
-                  Quantity (kg):
+                  Quantity ({unitText(2, unit)}):
                 </label>
                 <div className="flex flex-wrap items-center gap-4">
-                  <KgStepper value={quantity} min={minQty} max={isOutOfStock ? minQty : maxQty} onChange={setQuantity} />
+                  <KgStepper unit={unit} value={quantity} min={minQty} max={isOutOfStock ? minQty : maxQty} onChange={setQuantity} />
                   <div className="text-sm text-stone-600">
                     Estimated total:{' '}
                     <span className="text-lg font-extrabold text-[color:var(--brand-primary)]">
@@ -432,7 +437,7 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   {isOutOfStock ? (
-                    <span>OUT OF STOCK</span>
+                    <span>{foodPaused ? 'COMING SOON' : 'OUT OF STOCK'}</span>
                   ) : isAdded ? (
                     <>
                       <Check className="w-4 h-4 text-[color:var(--brand-accent)]" />
@@ -480,10 +485,12 @@ export default function ProductDetailPage() {
                 <ShieldCheck className="w-4 h-4 text-[color:var(--brand-primary)]" />
                 <span>Secure Payments</span>
               </div>
+              {isFoodProduct(product, ALL_CATEGORIES) && (
               <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
                 <Leaf className="w-4 h-4 text-[color:var(--brand-primary)]" />
                 <span>100% Natural</span>
               </div>
+              )}
             </div>
 
           </div>
@@ -656,7 +663,7 @@ export default function ProductDetailPage() {
                       <p className="text-xs text-stone-700 italic">"{r.content || r.comment}"</p>
                       {r.adminReply && (
                         <div className="mt-2 text-[length:calc(11px*var(--fs))] bg-stone-50 p-2.5 rounded-lg border-l-2 border-[color:var(--brand-primary)] text-stone-600">
-                          <strong className="text-[color:var(--brand-primary)]">Dry Fruit Wholesale Team Response:</strong> {r.adminReply}
+                          <strong className="text-[color:var(--brand-primary)]">Supplierfy Team Response:</strong> {r.adminReply}
                         </div>
                       )}
                     </div>
@@ -714,7 +721,7 @@ export default function ProductDetailPage() {
             disabled={isOutOfStock}
             className="py-2.5 px-3 rounded-xl bg-[color:var(--brand-primary)] text-white text-xs font-bold uppercase tracking-wider min-h-[40px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isOutOfStock ? 'Out of Stock' : isAdded ? 'Added!' : 'Add to Cart'}
+            {isOutOfStock ? (foodPaused ? 'Coming Soon' : 'Out of Stock') : isAdded ? 'Added!' : 'Add to Cart'}
           </button>
           <button
             onClick={handleBuyNow}

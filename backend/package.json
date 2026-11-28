@@ -5,9 +5,9 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "start": "node init && node src/server.js",
-    "dev": "node init && nodemon src/server.js",
-    "build:frontend": "node init && node scripts/sync-frontend.js",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "build:frontend": "node scripts/sync-frontend.js",
     "test:db": "node scripts/test-db.js",
     "test:admin-forgot-password": "node scripts/test_admin_forgot_password.js",
     "test:smtp": "node scripts/test-smtp.js",
@@ -40,5 +40,12 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
+  },
+  "overrides": {
+    "qs": "^6.17.1",
+    "uuid": "^11.1.1",
+    "rimraf": "^6.1.4",
+    "glob": "^14.0.6",
+    "minimatch": "^11.0.8"
   }
 }

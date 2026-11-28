@@ -12,10 +12,15 @@ import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
 import { resolveProductImage } from '../../../utils/productImage';
 import { getThemeHex } from '../../../utils/theme';
-import { paymentApi, shippingApi, addressApi, cartApi } from '../../../utils/api';
+import { paymentApi, shippingApi, addressApi, cartApi, creditApi } from '../../../utils/api';
+import { useStoreRules } from '../../../hooks/useStoreRules';
+import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
+import { useAdmin } from '../../../context/AdminContext';
+import { isFoodProduct } from '../../../utils/categoryGroups';
 import {
   calculateCheckoutTotals,
   checkoutPaymentMethodKey,
+  computePartialCod,
   estimateCartWeightKg,
   resolveDeliveryFee
 } from '../../../utils/checkoutPricing';
@@ -73,7 +78,26 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState(user?.email || '');
 
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
-  const [paymentMethod, setPaymentMethod] = useState('online'); // wholesale checkout is Razorpay (online) only
+  const [paymentMethod, setPaymentMethod] = useState('online'); // 'online' (Razorpay) or 'credit' (pay later)
+  const { creditEnabled, partialCodEnabled, partialCodPercent, foodSalesPaused, storeName } = useStoreRules();
+  const { categories: catalogCategories = [] } = useAdmin();
+  // Terms acceptance (required) and optional business details for the GST invoice
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [buyerGstin, setBuyerGstin] = useState(() => { try { return localStorage.getItem('wholesale_buyer_gstin') || ''; } catch { return ''; } });
+  const [buyerCompany, setBuyerCompany] = useState(() => { try { return localStorage.getItem('wholesale_buyer_company') || ''; } catch { return ''; } });
+  const gstinClean = buyerGstin.trim().toUpperCase();
+  const gstinInvalid = gstinClean !== '' && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstinClean);
+  const [credit, setCredit] = useState(null);
+
+  // Pay-on-credit details for eligible customers
+  useEffect(() => {
+    if (!creditEnabled || !token) { setCredit(null); return; }
+    let alive = true;
+    creditApi.getMyCredit()
+      .then((res) => { if (alive) setCredit(res?.data?.credit || null); })
+      .catch(() => { if (alive) setCredit(null); });
+    return () => { alive = false; };
+  }, [creditEnabled, token]);
   const [couponCodeInput, setCouponCodeInput] = useState('');
   const [couponError, setCouponError] = useState('');
   const [orderError, setOrderError] = useState('');
@@ -103,14 +127,16 @@ export default function CheckoutPage() {
   ).replace(/\D/g, '').slice(0, 6);
 
   const cartWeightKg = useMemo(() => estimateCartWeightKg(cartItems), [cartItems]);
-  const isCodPayment = paymentMethod === 'cod';
+  // A partial COD order ships as cash-on-delivery, so it uses the COD delivery fee
+  const isCodPayment = paymentMethod === 'cod' || paymentMethod === 'partial_cod';
   const pinReady = deliveryPincode.length === 6;
-  // TEMP testing: set VITE_SHIPROCKET_CHECKOUT_ENABLED=false to hide live rates + use store fees
-  const shiprocketCheckoutEnabled =
-    String(import.meta.env.VITE_SHIPROCKET_CHECKOUT_ENABLED ?? 'true').toLowerCase() !== 'false';
+  // Live Bigship delivery quotes at checkout are OFF unless VITE_SHIPPING_CHECKOUT_ENABLED=true is set at build time.
+  // Off = the delivery fee comes from the store settings.
+  const shippingCheckoutEnabled =
+    String(import.meta.env.VITE_SHIPPING_CHECKOUT_ENABLED ?? 'false').toLowerCase() === 'true';
 
   // One API call returns both prepaid + COD — pick fee locally when payment changes
-  const shiprocketDeliveryFee = !shiprocketCheckoutEnabled
+  const liveDeliveryFee = !shippingCheckoutEnabled
     ? undefined
     : !pinReady
     ? 0
@@ -121,7 +147,7 @@ export default function CheckoutPage() {
     : shippingQuote?.prepaid?.fee;
 
   const checkoutPricing = useMemo(() => {
-    if (!shiprocketCheckoutEnabled) {
+    if (!shippingCheckoutEnabled) {
       return calculateCheckoutTotals({
         subtotal,
         discountAmount,
@@ -134,11 +160,31 @@ export default function CheckoutPage() {
       discountAmount,
       paymentMethod: checkoutPaymentMethodKey(paymentMethod),
       settings: shippingSettings || {},
-      deliveryFee: shiprocketDeliveryFee ?? 0
+      deliveryFee: liveDeliveryFee ?? 0
     });
-  }, [subtotal, discountAmount, paymentMethod, shippingSettings, shiprocketDeliveryFee, shiprocketCheckoutEnabled]);
+  }, [subtotal, discountAmount, paymentMethod, shippingSettings, liveDeliveryFee, shippingCheckoutEnabled]);
 
   const { deliveryFee, tax, total } = checkoutPricing;
+
+  // Partial COD: pay a part online now, the rest on delivery (percentage is set by the admin)
+  const partialSplit = partialCodEnabled ? computePartialCod(total, partialCodPercent) : null;
+  const isPartialCod = paymentMethod === 'partial_cod' && Boolean(partialSplit);
+  useEffect(() => {
+    if (paymentMethod === 'partial_cod' && !partialSplit) setPaymentMethod('online');
+  }, [paymentMethod, partialSplit]);
+
+  const inrFmt = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
+  const creditBlockReason = !credit?.eligible
+    ? 'Pay on credit is not available on your account yet.'
+    : credit.overdueCount > 0
+    ? 'Please clear your overdue credit payments first.'
+    : total > credit.available
+    ? `This order is more than your available credit (${inrFmt(credit.available)}).`
+    : '';
+  // Fall back to online payment if credit stops being usable (e.g. cart grew past the limit)
+  useEffect(() => {
+    if (paymentMethod === 'credit' && creditBlockReason) setPaymentMethod('online');
+  }, [paymentMethod, creditBlockReason]);
   const settingsPrepaidFee = resolveDeliveryFee({
     subtotal,
     paymentMethod: 'UPI',
@@ -151,20 +197,20 @@ export default function CheckoutPage() {
   });
   // Allow checkout when quote failed — settings fees still apply (matches backend fallback)
   const shippingReady =
-    !shiprocketCheckoutEnabled ||
+    !shippingCheckoutEnabled ||
     !pinReady ||
     (!shippingQuoteLoading &&
       (shippingQuote == null || !shippingQuote.error || shippingQuote.source === 'settings'));
   const shippingLabel =
-    !shiprocketCheckoutEnabled
+    !shippingCheckoutEnabled
       ? isCodPayment
         ? 'Shipping (COD)'
         : 'Shipping (Prepaid)'
       : deliveryFee === 0 && shippingQuote?.freeDeliveryApplied
       ? 'Shipping / Delivery'
       : isCodPayment
-      ? 'Shiprocket Shipping (COD)'
-      : 'Shiprocket Shipping (Prepaid)';
+      ? 'Shipping (COD)'
+      : 'Shipping (Prepaid)';
 
   // Address Modal State
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -185,9 +231,9 @@ export default function CheckoutPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
-  // Fetch Shiprocket rates only when enabled + pincode / weight / subtotal change (not on payment toggle)
+  // Fetch live shipping rates only when enabled + pincode / weight / subtotal change (not on payment toggle)
   useEffect(() => {
-    if (!shiprocketCheckoutEnabled) {
+    if (!shippingCheckoutEnabled) {
       setShippingQuote(null);
       setShippingQuoteLoading(false);
       lastShippingKeyRef.current = '';
@@ -241,7 +287,7 @@ export default function CheckoutPage() {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- shippingQuote intentionally omitted to avoid loop
-  }, [deliveryPincode, cartWeightKg, subtotal, shiprocketCheckoutEnabled]);
+  }, [deliveryPincode, cartWeightKg, subtotal, shippingCheckoutEnabled]);
 
   // Block background scroll when address modal is open
   useEffect(() => {
@@ -378,6 +424,23 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (foodSalesPaused && cartItems.some((it) => isFoodProduct(it, catalogCategories) || isFoodProduct({ category: it.category }, catalogCategories))) {
+      setOrderError('Food items are coming soon. We are not taking orders for them right now. Please remove them from your cart.');
+      return;
+    }
+    if (gstinInvalid) {
+      setOrderError('The GSTIN you entered is not valid. It has 15 characters, for example 27ABCDE1234F1Z5. Leave it empty if you do not have one.');
+      return;
+    }
+    if (!acceptTerms) {
+      setOrderError('Please accept the Terms & Conditions and Privacy Policy to place your order.');
+      return;
+    }
+    try {
+      localStorage.setItem('wholesale_buyer_gstin', gstinClean);
+      localStorage.setItem('wholesale_buyer_company', buyerCompany.trim());
+    } catch { /* storage not available */ }
+
     const pin = String(
       selectedAddress.pincode || selectedAddress.postalCode || ''
     ).replace(/\D/g, '');
@@ -387,13 +450,13 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (shiprocketCheckoutEnabled && shippingQuoteLoading) {
+    if (shippingCheckoutEnabled && shippingQuoteLoading) {
       setOrderError('Please wait while shipping rates load.');
       return;
     }
 
     if (
-      shiprocketCheckoutEnabled &&
+      shippingCheckoutEnabled &&
       shippingQuote?.error &&
       shippingQuote.source !== 'settings'
     ) {
@@ -405,7 +468,29 @@ export default function CheckoutPage() {
     setIsOrderPlacing(true);
 
     try {
-      const isOnline = ONLINE_PAYMENTS_ENABLED && paymentMethod === 'online';
+      const isOnline = ONLINE_PAYMENTS_ENABLED && (paymentMethod === 'online' || (paymentMethod === 'partial_cod' && Boolean(partialSplit)));
+
+      // Pay on credit: order is created now and paid later (the server re-checks the credit limit)
+      if (paymentMethod === 'credit') {
+        if (creditBlockReason) {
+          setOrderError(creditBlockReason);
+          setIsOrderPlacing(false);
+          return;
+        }
+        const newOrderId = await placeOrder({
+          items: cartItems,
+          couponApplied: appliedCoupon?.code,
+          paymentMethod: 'CREDIT',
+          acceptedTerms: true,
+          buyerGstin: gstinClean,
+          buyerCompany: buyerCompany.trim(),
+          address: selectedAddress
+        });
+        clearCart();
+        setIsOrderPlacing(false);
+        navigate(`/order-tracking/${newOrderId}`);
+        return;
+      }
 
       // COD: create order immediately (unchanged)
       if (!isOnline) {
@@ -418,6 +503,9 @@ export default function CheckoutPage() {
           tax,
           total,
           paymentMethod: 'COD',
+          acceptedTerms: true,
+          buyerGstin: gstinClean,
+          buyerCompany: buyerCompany.trim(),
           deliveryType: 'Standard Express Courier',
           address: selectedAddress
         };
@@ -428,7 +516,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Prepaid: Razorpay first — Dry Fruit Wholesale order only after payment success
+      // Prepaid: Razorpay first — Supplierfy order only after payment success
       let addressId = selectedAddress?._id || selectedAddress?.id;
       if (!addressId || !/^[0-9a-fA-F]{24}$/.test(String(addressId))) {
         const addrPayload = {
@@ -461,7 +549,10 @@ export default function CheckoutPage() {
 
       const session = await paymentApi.createCheckoutSession({
         addressId: String(addressId),
-        paymentMethod: 'UPI',
+        paymentMethod: paymentMethod === 'partial_cod' ? 'PARTIAL_COD' : 'UPI',
+        acceptedTerms: true,
+        buyerGstin: gstinClean || undefined,
+        buyerCompany: buyerCompany.trim() || undefined,
         couponCode: appliedCoupon?.code || undefined,
         guestId: guestId || undefined,
         items: cartItems
@@ -486,8 +577,8 @@ export default function CheckoutPage() {
         key: keyId,
         amount,
         currency,
-        name: 'Dry Fruit Wholesale',
-        description: 'Online payment',
+        name: storeName || 'Supplierfy',
+        description: paymentMethod === 'partial_cod' ? `Advance payment (${partialCodPercent}%) - balance on delivery` : 'Online payment',
         order_id: razorpayOrderId,
         prefill: {
           name: selectedAddress?.name || user?.name || '',
@@ -757,10 +848,6 @@ export default function CheckoutPage() {
                           className="flex-1 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl border border-stone-200 text-xs font-medium focus:outline-none focus:border-[color:var(--brand-primary)] bg-stone-50 focus:bg-white transition-colors"
                           placeholder="10-digit phone number"
                         />
-                        <div className="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-emerald-50 text-emerald-800 rounded-lg sm:rounded-xl text-[length:calc(9.5px*var(--fs))] sm:text-xs font-bold flex items-center gap-1 shrink-0 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>OTP Verified</span>
-                        </div>
                       </div>
                     </div>
 
@@ -923,9 +1010,9 @@ export default function CheckoutPage() {
                             <span className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">Online Payment</span>
                             <p className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">
                               UPI, Cards & Net Banking via Razorpay
-                              {shiprocketCheckoutEnabled && shippingQuote?.prepaid?.fee != null
+                              {shippingCheckoutEnabled && shippingQuote?.prepaid?.fee != null
                                 ? ` · ₹${shippingQuote.prepaid.fee}`
-                                : !shiprocketCheckoutEnabled
+                                : !shippingCheckoutEnabled
                                 ? ` · ₹${settingsPrepaidFee}`
                                 : ''}
                             </p>
@@ -945,7 +1032,147 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {partialSplit && (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setPaymentMethod('partial_cod')}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPaymentMethod('partial_cod'); } }}
+                        className={`p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                          paymentMethod === 'partial_cod'
+                            ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-surface)] shadow-xs'
+                            : 'border-stone-200 hover:border-stone-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 sm:gap-3.5">
+                            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                              <Truck className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                            </div>
+                            <div>
+                              <span className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">
+                                Pay {partialCodPercent}% now, rest on delivery
+                              </span>
+                              <p className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">
+                                Pay {inrFmt(partialSplit.advance)} online now · {inrFmt(partialSplit.balance)} cash/UPI to the courier on delivery
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              paymentMethod === 'partial_cod'
+                                ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]'
+                                : 'border-stone-300'
+                            }`}
+                          >
+                            {paymentMethod === 'partial_cod' && (
+                              <Check className="w-2.5 h-2.5 text-[color:var(--brand-accent)] stroke-[3]" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {creditEnabled && credit && !credit.blocked && (
+                      credit.eligible ? (
+                        <div
+                          role="button"
+                          tabIndex={creditBlockReason ? -1 : 0}
+                          aria-disabled={Boolean(creditBlockReason)}
+                          onClick={() => { if (!creditBlockReason) setPaymentMethod('credit'); }}
+                          onKeyDown={(e) => { if (!creditBlockReason && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setPaymentMethod('credit'); } }}
+                          className={`p-3 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all duration-200 ${
+                            creditBlockReason
+                              ? 'border-stone-200 opacity-60 cursor-not-allowed'
+                              : paymentMethod === 'credit'
+                              ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-surface)] shadow-xs cursor-pointer'
+                              : 'border-stone-200 hover:border-stone-400 cursor-pointer'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 sm:gap-3.5">
+                              <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
+                                <Wallet className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                              </div>
+                              <div>
+                                <span className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">Pay on credit</span>
+                                <p className="text-[length:calc(9.5px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">
+                                  {creditBlockReason || `Pay within ${credit.dueDays} days · ${inrFmt(credit.available)} available`}
+                                </p>
+                              </div>
+                            </div>
+                            <div
+                              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                paymentMethod === 'credit'
+                                  ? 'border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]'
+                                  : 'border-stone-300'
+                              }`}
+                            >
+                              {paymentMethod === 'credit' && (
+                                <Check className="w-2.5 h-2.5 text-[color:var(--brand-accent)] stroke-[3]" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <Link
+                          to="/credit"
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-stone-300 text-[length:calc(11px*var(--fs))] sm:text-xs text-stone-500 hover:border-stone-400"
+                        >
+                          <Lock className="w-3.5 h-3.5 shrink-0" />
+                          Pay on credit unlocks after {inrFmt(credit.eligibilityAmount)} of paid orders · {inrFmt(credit.remainingToUnlock)} to go
+                        </Link>
+                      )
+                    )}
+
                   </div>
+
+                  {/* GST invoice details (optional) */}
+                  <div className="rounded-xl border border-stone-200 bg-white p-3 sm:p-4 space-y-2.5">
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">GST invoice details (optional)</p>
+                      <p className="text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-500">Add your business GSTIN to claim input tax credit. It cannot be added after the order is placed.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <input
+                        type="text"
+                        value={buyerCompany}
+                        onChange={(e) => setBuyerCompany(e.target.value)}
+                        placeholder="Business / company name"
+                        maxLength={150}
+                        className="w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 focus:outline-none focus:border-[color:var(--brand-primary)]"
+                      />
+                      <div>
+                        <input
+                          type="text"
+                          value={buyerGstin}
+                          onChange={(e) => setBuyerGstin(e.target.value.toUpperCase())}
+                          placeholder="GSTIN (15 characters)"
+                          maxLength={15}
+                          className={`w-full px-3 py-2.5 text-xs sm:text-sm rounded-lg border focus:outline-none uppercase ${gstinInvalid ? 'border-rose-400' : 'border-stone-300 focus:border-[color:var(--brand-primary)]'}`}
+                        />
+                        {gstinInvalid && <p className="mt-1 text-[length:calc(10.5px*var(--fs))] text-rose-600">This GSTIN does not look right.</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Accept terms */}
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none text-xs sm:text-sm text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-[color:var(--brand-primary)] shrink-0"
+                    />
+                    <span>
+                      I agree to the{' '}
+                      <Link to="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="font-bold underline text-[color:var(--brand-primary)]">Terms & Conditions</Link>
+                      {' '}and the{' '}
+                      <Link to="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold underline text-[color:var(--brand-primary)]">Privacy Policy</Link>
+                      {' '}(also see the{' '}
+                      <Link to="/shipping-and-return-policy" target="_blank" rel="noopener noreferrer" className="underline">Shipping & Return Policy</Link>).
+                    </span>
+                  </label>
 
                   {/* Order Error Alert */}
                   {orderError && (
@@ -967,7 +1194,7 @@ export default function CheckoutPage() {
 
                     <button
                       type="button"
-                      disabled={isOrderPlacing || !shippingReady}
+                      disabled={isOrderPlacing || !shippingReady || !acceptTerms}
                       onClick={handlePlaceOrder}
                       className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[color:var(--brand-accent)] via-[color:var(--brand-accent-light)] to-[color:var(--brand-accent-dark)] text-[color:var(--brand-primary)] font-extrabold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 min-h-[42px] sm:min-h-[44px]"
                     >
@@ -979,7 +1206,7 @@ export default function CheckoutPage() {
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 fill-[color:var(--brand-primary)]" />
-                          <span className="font-sans">CONFIRM & PAY ₹{total}</span>
+                          <span className="font-sans">{paymentMethod === 'credit' ? `PLACE ORDER ON CREDIT ₹${total}` : isPartialCod ? `PAY ₹${partialSplit.advance} NOW` : `CONFIRM & PAY ₹${total}`}</span>
                         </>
                       )}
                     </button>
@@ -1019,7 +1246,7 @@ export default function CheckoutPage() {
                       />
                       <div className="min-w-0">
                         <p className="font-bold text-[color:var(--brand-primary)] truncate text-xs">{item.name}</p>
-                        <p className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                        <p className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-500">{qtyWithUnit(item.qty, unitOf(item))} × ₹{item.price}{perUnit(unitOf(item)).replace('/ ', '/')}</p>
                       </div>
                     </div>
                     <span className="font-sans font-bold text-[color:var(--brand-primary)] shrink-0 ml-2 text-xs">₹{item.price * item.qty}</span>
@@ -1092,7 +1319,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-stone-600">
                   <span>{shippingLabel}</span>
                   <span className="font-sans">
-                    {shiprocketCheckoutEnabled && shippingQuoteLoading && pinReady ? (
+                    {shippingCheckoutEnabled && shippingQuoteLoading && pinReady ? (
                       'Loading…'
                     ) : deliveryFee === 0 ? (
                       <strong className="text-emerald-700">FREE</strong>
@@ -1101,12 +1328,12 @@ export default function CheckoutPage() {
                     )}
                   </span>
                 </div>
-                {/* TEMP: hide Live Shiprocket rates while VITE_SHIPROCKET_CHECKOUT_ENABLED=false */}
-                {shiprocketCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length === 6 && (
+                {/* TEMP: hide Live shipping rates while VITE_SHIPPING_CHECKOUT_ENABLED=false */}
+                {shippingCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length === 6 && (
                   <div className="rounded-lg border border-stone-100 bg-stone-50/80 px-2.5 py-2 text-[length:calc(10px*var(--fs))] sm:text-[length:calc(11px*var(--fs))] text-stone-600 space-y-1">
                     <div className="flex items-center gap-1.5 font-semibold text-[color:var(--brand-primary)]">
                       <Truck className="w-3.5 h-3.5 text-[color:var(--brand-accent-dark)] shrink-0" />
-                      <span>Live Shiprocket rates</span>
+                      <span>Live shipping rates</span>
                     </div>
                     {shippingQuoteLoading ? (
                       <p className="text-stone-500">Fetching courier rates for your pincode…</p>
@@ -1135,8 +1362,8 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 )}
-                {shiprocketCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length !== 6 && (
-                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500">Add a delivery address to see Shiprocket shipping rates</p>
+                {shippingCheckoutEnabled && deliveryPincode?.replace(/\D/g, '').length !== 6 && (
+                  <p className="text-[length:calc(10px*var(--fs))] text-stone-500">Add a delivery address to see shipping rates</p>
                 )}
 
                 <div className="flex justify-between text-stone-600">
@@ -1148,6 +1375,18 @@ export default function CheckoutPage() {
                   <span className="text-xs sm:text-base font-serif">Total Payable</span>
                   <span className="font-sans text-lg sm:text-2xl font-extrabold text-[color:var(--brand-primary)]">₹{total}</span>
                 </div>
+                {isPartialCod && (
+                  <div className="mt-1 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs space-y-1">
+                    <div className="flex justify-between font-bold text-amber-900">
+                      <span>Pay now ({partialCodPercent}%)</span>
+                      <span className="font-sans">₹{partialSplit.advance}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-800">
+                      <span>Pay on delivery</span>
+                      <span className="font-sans">₹{partialSplit.balance}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Trust Badges */}

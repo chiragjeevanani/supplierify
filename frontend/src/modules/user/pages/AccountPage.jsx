@@ -20,6 +20,9 @@ import { useAuth } from '../../../context/AuthContext';
 import { useWishlist } from '../../../context/WishlistContext';
 import { useAdmin } from '../../../context/AdminContext';
 import { resolveHelpSupport } from '../../../utils/helpSupport';
+import { paymentMethodLabel, isCreditOrder, formatDueDate } from '../../../utils/paymentLabel';
+import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
+import ChangePasswordCard from '../components/ChangePasswordCard';
 
 export default function AccountPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -738,14 +741,14 @@ export default function AccountPage() {
                             <span className="font-bold text-sm text-[color:var(--brand-primary)]">Order #{ord.id}</span>
                             <span className="text-xs text-stone-500">• {ord.date}</span>
                           </div>
-                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">Payment: {ord.paymentMethod} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
+                          <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">Payment: {paymentMethodLabel(ord.paymentMethod)}{isCreditOrder(ord) && ord.paymentStatus !== 'PAID' && ord.status !== 'Cancelled' && ord.creditDueDate ? ` (due ${formatDueDate(ord.creditDueDate)})` : ''}{String(ord.paymentMethod).toUpperCase() === 'PARTIAL_COD' && ord.status !== 'Cancelled' ? (ord.paymentStatus === 'PAID' ? ` (₹${ord.advancePaid} online + balance paid on delivery)` : ` (₹${ord.advancePaid} paid, ₹${ord.balanceDue} to pay on delivery)`) : ''} • Total: <strong className="text-stone-900">₹{ord.total}</strong></p>
                           {ord.expectedDelivery && (
                             <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5">{ord.expectedDelivery.label}: <strong className="text-stone-900">{ord.expectedDelivery.value}</strong></p>
                           )}
-                          {(ord.awbNumber || ord.shiprocket?.awbCode || ord.courierName || ord.shiprocket?.courierName) && (
+                          {(ord.awbNumber || ord.courierName) && (
                             <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5 break-words">
-                              {ord.shiprocket?.courierName || ord.courierName ? `Courier: ${ord.shiprocket?.courierName || ord.courierName}` : ''}
-                              {(ord.awbNumber || ord.shiprocket?.awbCode) ? ` • AWB: ${ord.shiprocket?.awbCode || ord.awbNumber}` : ''}
+                              {ord.courierName ? `Courier: ${ord.courierName}` : ''}
+                              {ord.awbNumber ? ` • AWB: ${ord.awbNumber}` : ''}
                             </p>
                           )}
                         </div>
@@ -804,7 +807,7 @@ export default function AccountPage() {
                             <img src={item.image} alt="" className="w-9 h-9 rounded-lg object-cover" />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-stone-900 truncate">{item.name}</p>
-                              <p className="text-[length:calc(10px*var(--fs))] text-stone-500">{item.qty} kg × ₹{item.price}/kg</p>
+                              <p className="text-[length:calc(10px*var(--fs))] text-stone-500">{qtyWithUnit(item.qty, unitOf(item))} × ₹{item.price}{perUnit(unitOf(item)).replace('/ ', '/')}</p>
                               <RateReviewButton order={ord} item={item} className="mt-1" />
                             </div>
                           </div>
@@ -968,7 +971,7 @@ export default function AccountPage() {
 
                 <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-tr from-[color:var(--brand-primary)] to-[color:var(--brand-primary-light)] text-white max-w-sm border border-[color:var(--brand-accent)]/40 shadow-xl space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[length:calc(10px*var(--fs))] uppercase tracking-widest text-[color:var(--brand-accent)] font-bold">Dry Fruit Wholesale Preferred Card</span>
+                    <span className="text-[length:calc(10px*var(--fs))] uppercase tracking-widest text-[color:var(--brand-accent)] font-bold">Supplierfy Preferred Card</span>
                     <CreditCard className="w-5 h-5 text-[color:var(--brand-accent)]" />
                   </div>
                   <p className="font-mono text-base tracking-widest pt-2">•••• •••• •••• 4289</p>
@@ -1105,7 +1108,7 @@ export default function AccountPage() {
                       />
                     </div>
                     <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">
-                      10-digit number used for OTP login
+                      10-digit number used to log in
                     </span>
                   </div>
 
@@ -1121,6 +1124,14 @@ export default function AccountPage() {
                       : 'Update Profile'}
                   </button>
                 </form>
+
+                {!user?.email && (
+                  <p className="mt-3 text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 max-w-md">
+                    Add your email above so you can reset your password by yourself if you forget it.
+                  </p>
+                )}
+
+                <ChangePasswordCard />
               </div>
             )}
 

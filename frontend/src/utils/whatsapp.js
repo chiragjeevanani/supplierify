@@ -1,3 +1,4 @@
+import { unitOf, perUnit, qtyWithUnit } from './units';
 import { BRAND } from '../config/brand';
 
 /**
@@ -34,16 +35,17 @@ const productUrl = (product) => {
   return id ? `${window.location.origin}/product/${id}` : '';
 };
 
-/** Message for a single product + quantity (kg). */
+/** Message for a single product + quantity (in the product's unit). */
 export function buildProductEnquiry({ product, qty, greeting }) {
   const kg = Number(qty) || 0;
+  const unit = unitOf(product);
   const price = Number(product?.price) || 0;
   const lines = [
     `${hello(greeting)}, I would like to enquire about a wholesale order:`,
     '',
     `Product: ${product?.name || ''}`,
-    `Quantity: ${kg} kg`,
-    `Rate: ${inr(price)} / kg`,
+    `Quantity: ${qtyWithUnit(kg, unit)}`,
+    `Rate: ${inr(price)} ${perUnit(unit)}`,
     `Estimated total: ${inr(price * kg)} (excl. GST & shipping)`
   ];
   const link = productUrl(product);
@@ -57,7 +59,8 @@ export function buildCartEnquiry({ items = [], greeting }) {
   const rows = items.map((it, i) => {
     const kg = Number(it.qty) || 0;
     const price = Number(it.price) || 0;
-    return `${i + 1}. ${it.name} - ${kg} kg x ${inr(price)}/kg = ${inr(kg * price)}`;
+    const u = unitOf(it);
+    return `${i + 1}. ${it.name} - ${qtyWithUnit(kg, u)} x ${inr(price)}${perUnit(u).replace('/ ', '/')} = ${inr(kg * price)}`;
   });
   const total = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
   return [
@@ -72,6 +75,30 @@ export function buildCartEnquiry({ items = [], greeting }) {
 }
 
 /** General enquiry with no product selected. */
+/** Enquiry about a listing that has no product yet (a category with its photo and details). */
+export function buildListingEnquiry({ listing, greeting }) {
+  const details = String(listing?.description || '').trim();
+  return [
+    `${hello(greeting)}, I would like to enquire about:`,
+    '',
+    listing?.name || '',
+    details && details !== listing?.name ? details : ''
+  ].filter((line, i) => line || i === 1).join('\n');
+}
+
 export function buildGeneralEnquiry({ greeting } = {}) {
   return `${hello(greeting)}, I would like to know more about your wholesale dry fruits.`;
+}
+
+/** "I'd like to pay for my credit order(s)" message. */
+export function buildCreditPaymentMessage({ orders = [], greeting } = {}) {
+  const lines = orders.map((o) => `• Order #${o.orderNumber}: ${inr(o.amount)}`);
+  const total = orders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
+  return [
+    `${hello(greeting)},`,
+    `I would like to pay for my credit order${orders.length === 1 ? '' : 's'}:`,
+    ...lines,
+    orders.length > 1 ? `Total: ${inr(total)}` : '',
+    'Please share the payment details.'
+  ].filter(Boolean).join('\n');
 }

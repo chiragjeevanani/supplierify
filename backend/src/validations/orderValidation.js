@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { normalizeGstin } from '../utils/gst.js';
 import { sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
 
@@ -14,12 +15,13 @@ export const validatePlaceOrder = (req, res, next) => {
 
   if (paymentMethod !== undefined) {
     let normalized = String(paymentMethod).toUpperCase().trim();
-    if (normalized.includes('COD') || normalized.includes('CASH') || normalized.includes('DELIVERY')) normalized = 'COD';
+    if (normalized === 'CREDIT' || normalized === 'PAY_ON_CREDIT') normalized = 'CREDIT';
+    else if (normalized.includes('COD') || normalized.includes('CASH') || normalized.includes('DELIVERY')) normalized = 'COD';
     else if (normalized.includes('UPI') || normalized.includes('GPAY') || normalized.includes('PHONEPE') || normalized.includes('PAYTM')) normalized = 'UPI';
     else if (normalized.includes('CARD') || normalized.includes('CREDIT') || normalized.includes('DEBIT')) normalized = 'CARD';
     else if (normalized.includes('NET') || normalized.includes('BANK')) normalized = 'NETBANKING';
 
-    const validMethods = ['COD', 'UPI', 'CARD', 'NETBANKING'];
+    const validMethods = ['COD', 'UPI', 'CARD', 'NETBANKING', 'CREDIT'];
     if (!validMethods.includes(normalized)) {
       errors.push({
         field: 'paymentMethod',
@@ -28,6 +30,13 @@ export const validatePlaceOrder = (req, res, next) => {
     } else {
       req.body.paymentMethod = normalized;
     }
+  }
+
+  if (req.body.acceptedTerms !== true) {
+    errors.push({ field: 'acceptedTerms', message: 'Please accept the Terms & Conditions and Privacy Policy' });
+  }
+  if (req.body.buyerGstin !== undefined && req.body.buyerGstin !== '' && normalizeGstin(req.body.buyerGstin) === null) {
+    errors.push({ field: 'buyerGstin', message: 'The buyer GSTIN is not valid (15 characters, e.g. 27ABCDE1234F1Z5)' });
   }
 
   if (couponCode !== undefined && couponCode !== null && typeof couponCode !== 'string') {

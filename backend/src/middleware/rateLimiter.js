@@ -92,6 +92,77 @@ export const otpVerifyLimiter = createRateLimiter({
 });
 
 /**
+ * Customer password login (Max 10 attempts per 15 minutes per mobile number).
+ * Keyed on the number so guessing one account is limited even behind a shared proxy address.
+ */
+export const passwordLoginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts. Please try again after 15 minutes.',
+  keyGenerator: (req) => `pw-login-${String(req.body?.phone || '').replace(/\D/g, '').slice(-10)}`
+});
+
+/**
+ * Customer sign up (Max 10 attempts per 15 minutes per mobile number)
+ */
+export const registerLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many sign up attempts. Please try again after 15 minutes.',
+  keyGenerator: (req) => `pw-register-${String(req.body?.phone || '').replace(/\D/g, '').slice(-10)}`
+});
+
+/**
+ * Change own password (Max 10 attempts per 15 minutes per account)
+ */
+export const changePasswordLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many attempts. Please try again after 15 minutes.',
+  keyGenerator: (req) => `pw-change-${req.user?._id || req.ip}`
+});
+
+/**
+ * Login screen phone lookup (Max 20 per 15 minutes per mobile number)
+ */
+export const phoneCheckLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many attempts. Please try again after 15 minutes.',
+  keyGenerator: (req) => `pw-check-${String(req.body?.phone || '').replace(/\D/g, '').slice(-10)}`
+});
+
+/**
+ * "Forgot password" requests (Max 5 per 15 minutes per email address)
+ */
+export const userForgotPasswordLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Too many reset requests. Please try again after 15 minutes.',
+  keyGenerator: (req) => `pw-forgot-${String(req.body?.email || '').trim().toLowerCase().slice(0, 254)}`
+});
+
+/**
+ * Opening a reset link / saving the new password (Max 20 per 15 minutes per link)
+ */
+export const userResetPasswordLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many attempts. Please try again after 15 minutes.',
+  keyGenerator: (req) => `pw-reset-${String(req.body?.token || '').slice(0, 64)}`
+});
+
+/**
+ * "Ask the store to reset my password" (Max 5 per hour per mobile number)
+ */
+export const passwordRequestLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'You have already sent this request. Please wait for the store to contact you.',
+  keyGenerator: (req) => `pw-request-${String(req.body?.phone || '').replace(/\D/g, '').slice(-10)}`
+});
+
+/**
  * Admin Login Rate Limiter (Max 10 login attempts per 15 minutes)
  */
 export const adminLoginLimiter = createRateLimiter({

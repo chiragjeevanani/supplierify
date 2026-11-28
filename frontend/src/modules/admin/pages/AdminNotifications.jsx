@@ -133,7 +133,7 @@ export default function AdminNotifications() {
       setIsSendingTestPush(true);
       setPushFeedback(null);
       const res = await fcmApi.sendTestNotification({
-        title: 'Dry Fruit Wholesale Order Dispatch Test 🔔',
+        title: 'Supplierfy Order Dispatch Test 🔔',
         body: 'Dry Fruits Order #ORD-2026 dispatched via Quick Delivery!',
         link: '/admin/orders'
       });
@@ -196,7 +196,7 @@ export default function AdminNotifications() {
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex font-sans">
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className="flex-1 admin-main flex flex-col min-w-0 w-full">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Notifications" />
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-4 w-full font-sans">

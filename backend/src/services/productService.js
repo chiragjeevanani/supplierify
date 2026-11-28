@@ -1,3 +1,4 @@
+import { normalizeUnit } from '../constants/productUnits.js';
 import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import Bestseller from '../models/Bestseller.js';
@@ -60,7 +61,7 @@ class ProductService {
 
     return await Product.find(query)
       .select(
-        'name slug subtitle tagline category flavor price oldPrice discountPercent rating reviewsCount weight weightOptions inStock stockCount badge badgeType isBestseller isNewLaunch isFeatured image gallery description details productDetails status createdAt updatedAt'
+        'name slug subtitle tagline category flavor price oldPrice discountPercent rating reviewsCount weight unit hsnCode minOrderQty weightOptions inStock stockCount badge badgeType isBestseller isNewLaunch isFeatured image gallery description details productDetails status createdAt updatedAt'
       )
       .sort({ createdAt: -1 })
       .lean()
@@ -73,7 +74,7 @@ class ProductService {
                   ? p.gallery.find((g) => typeof g === 'string' && !g.startsWith('data:'))
                   : '') || p.image || '';
           const gallery = Array.isArray(p.gallery)
-            ? p.gallery.filter((g) => typeof g === 'string' && g && !g.startsWith('data:')).slice(0, 4)
+            ? p.gallery.filter((g) => typeof g === 'string' && g && !g.startsWith('data:')).slice(0, 8)
             : [];
           const live = ratingByProduct.get(String(p._id));
           return {
@@ -157,7 +158,8 @@ class ProductService {
 
     // Calculate prices with intelligent fallbacks
     const priceNum = Number(data.price || data.variants?.[0]?.price || 249);
-    const oldPriceNum = Number(data.oldPrice || data.variants?.[0]?.oldPrice || (priceNum > 0 ? Math.round(priceNum * 1.2) : 299));
+    // 0 = no struck-through price. Never invent one.
+    const oldPriceNum = Number(data.oldPrice || data.variants?.[0]?.oldPrice || 0);
 
     assertPriceOrder(priceNum, data.oldPrice ? oldPriceNum : 0);
     (Array.isArray(data.variants) ? data.variants : []).forEach((v) => {
@@ -201,14 +203,16 @@ class ProductService {
       tagline: data.tagline || data.subtitle || '',
       slug,
       category: data.category || 'almonds-nuts',
-      flavor: data.flavor || data.name.split(' ')[0] || '',
+      flavor: data.flavor || '', // shown to customers as "Origin", so never guessed from the name
       diet: data.diet || ['natural', 'vegan', 'gluten-free'],
       price: priceNum,
       oldPrice: oldPriceNum,
       discountPercent,
       rating: Number(data.rating || 5.0),
       reviewsCount: Number(data.reviewsCount || 0),
-      weight: data.weight || '1 kg',
+      weight: data.weight || `1 ${normalizeUnit(data.unit) || 'kg'}`,
+      unit: normalizeUnit(data.unit) || 'kg',
+      hsnCode: String(data.hsnCode || '').trim().slice(0, 10),
       weightOptions,
       minOrderQty: Math.max(0, Number(data.minOrderQty) || 0),
       sku: data.sku || '',
@@ -272,7 +276,7 @@ class ProductService {
     const ALLOWED_FIELDS = [
       'name', 'subtitle', 'tagline', 'category', 'flavor', 'diet',
       'price', 'oldPrice', 'discountPercent', 'rating', 'reviewsCount',
-      'weight', 'weightOptions', 'inStock', 'stockCount', 'badge', 'badgeType',
+      'weight', 'unit', 'hsnCode', 'weightOptions', 'inStock', 'stockCount', 'badge', 'badgeType',
       'isBestseller', 'isNewLaunch', 'isFeatured', 'image', 'gallery',
       'description', 'details', 'productDetails', 'ingredients', 'tags', 'status',
       'sku', 'shippingWeightKg', 'lengthCm', 'breadthCm', 'heightCm', 'minOrderQty'
@@ -283,6 +287,10 @@ class ProductService {
       if (updateData[key] !== undefined) {
         safeUpdate[key] = updateData[key];
       }
+    }
+    if (safeUpdate.unit !== undefined) {
+      const u = normalizeUnit(safeUpdate.unit);
+      if (u) safeUpdate.unit = u; else delete safeUpdate.unit;
     }
 
     // Map UI variants → weightOptions when weightOptions not explicitly sent

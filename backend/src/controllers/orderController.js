@@ -10,8 +10,10 @@ export const placeOrder = async (req, res, next) => {
       req.headers['x-guest-id'] ||
       req.headers['X-Guest-Id'] ||
       null;
+    // Payment status is decided by the server (Razorpay verification / admin), never by the client
+    const { paymentStatus: _ignored, ...body } = req.body || {};
     const order = await orderService.placeOrder(req.user._id, {
-      ...req.body,
+      ...body,
       guestId: guestId || req.body?.guestId || null
     });
     return sendSuccess(
@@ -152,7 +154,23 @@ export const cancelOrderCustomer = async (req, res, next) => {
   }
 };
 
+export const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const updatedBy = req.user?.name ? `${req.user.name} (Admin)` : 'Admin';
+    const order = await orderService.updatePaymentStatusAdmin(req.params.id, {
+      status: req.body?.status,
+      note: req.body?.note,
+      updatedBy
+    });
+    return sendSuccess(res, `Payment marked ${order.payment.status === 'PAID' ? 'received' : 'unpaid'}`, { order }, HTTP_STATUS.OK);
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
 export default {
+  updatePaymentStatus,
   placeOrder,
   getOrderById,
   getOrderDistanceAdmin,

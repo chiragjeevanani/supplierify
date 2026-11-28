@@ -7,11 +7,12 @@ import productService from './services/productService.js';
 import bestsellerService from './services/bestsellerService.js';
 import categoryService from './services/categoryService.js';
 import couponService from './services/couponService.js';
+import { startBigshipTrackingSync } from './services/bigshipTrackingSync.js';
 import User from './models/User.js';
 import Category from './models/Category.js';
 
 /**
- * Start Dry Fruit Wholesale Backend Server
+ * Start Supplierfy Backend Server
  */
 const startServer = async () => {
   try {
@@ -35,12 +36,14 @@ const startServer = async () => {
     // 2. Start Express HTTP Server
     const server = app.listen(env.PORT, () => {
       console.log('====================================================');
-      console.log(`🚀 Dry Fruit Wholesale Backend Server running in [${env.NODE_ENV}] mode`);
+      console.log(`🚀 Supplierfy Backend Server running in [${env.NODE_ENV}] mode`);
       console.log(`🌐 Server URL: http://localhost:${env.PORT}`);
       console.log(`💻 Frontend App: http://localhost:${env.PORT}`);
       console.log(`📡 API Endpoints: http://localhost:${env.PORT}/api/v1`);
       console.log('====================================================');
     });
+
+    startBigshipTrackingSync();
 
     // Handle server listen errors (e.g. port already in use)
     server.on('error', (err) => {

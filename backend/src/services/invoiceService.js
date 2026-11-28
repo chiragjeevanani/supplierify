@@ -2,6 +2,19 @@ import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 import settingsService from './settingsService.js';
+import { resolvePublicPhone } from '../utils/phone.js';
+import { splitGst } from '../utils/gst.js';
+import { hsnFor } from '../utils/hsn.js';
+import { stateCodeOf, SELLER_STATE_CODE } from '../constants/indiaStates.js';
+
+/** Seller (legal entity) details come from Admin > Settings; these are the fallbacks. */
+const sellerFrom = (settings = {}) => ({
+  name: settings.companyName || 'Bhavana Enterprises LLP',
+  gstin: settings.companyGstin || '27ABGFB3485P1ZT',
+  address: settings.companyAddress || 'Navin Sheva, Uran, Navi Mumbai',
+  dispatchAddress: settings.dispatchAddress || '',
+  fssai: String(settings.fssaiNumber || '').trim()
+});
 
 class InvoiceService {
   /**
@@ -40,7 +53,7 @@ class InvoiceService {
       size: 'A4',
       info: {
         Title: `Invoice - ${order.orderNumber}`,
-        Author: settings.storeName || 'Dry Fruit Wholesale',
+        Author: settings.storeName || 'Supplierfy',
         Subject: `Commercial Tax Invoice for Order #${order.orderNumber}`,
         Keywords: 'invoice, wholesale, receipt, tax'
       }
@@ -56,7 +69,11 @@ class InvoiceService {
     const invoiceNumber = `INV-${order.orderNumber}`;
     const orderDate = this._formatDate(order.createdAt);
     const invoiceDate = this._formatDate(order.payment?.paidAt || order.createdAt);
-    const paymentMethod = order.payment?.method || 'COD';
+    const rawMethod = order.payment?.method || 'COD';
+    const isPartialCod = rawMethod === 'PARTIAL_COD';
+    const paymentMethod = isPartialCod ? 'Part online + COD' : rawMethod;
+    const advancePaid = Number(order.payment?.advancePaid) || 0;
+    const balanceDue = Number(order.payment?.balanceDue) || 0;
     const isCancelled = String(order.status || '').toUpperCase() === 'CANCELLED';
     // A cancelled order must read CANCELLED on the invoice, whatever its payment status was
     const paymentStatus = isCancelled ? 'CANCELLED' : (order.payment?.status || 'PENDING').toUpperCase();
@@ -97,26 +114,26 @@ class InvoiceService {
           .fillColor(primaryColor)
           .fontSize(22)
           .font('Helvetica-Bold')
-          .text('DRY FRUIT WHOLESALE', 55, headerY + 14);
+          .text((settings.storeName || 'Supplierfy').toUpperCase(), 55, headerY + 14);
 
         doc
           .fillColor(goldColor)
           .fontSize(8.5)
           .font('Helvetica-Bold')
-          .text('PURE ROASTED SUPERFOODS & SNACKS', 55, headerY + 40, { characterSpacing: 1 });
+          .text(sellerFrom(settings).name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
       }
     } else {
       doc
         .fillColor(primaryColor)
         .fontSize(22)
         .font('Helvetica-Bold')
-        .text('DRY FRUIT WHOLESALE', 55, headerY + 14);
+        .text((settings.storeName || 'Supplierfy').toUpperCase(), 55, headerY + 14);
 
       doc
         .fillColor(goldColor)
         .fontSize(8.5)
         .font('Helvetica-Bold')
-        .text('PURE ROASTED SUPERFOODS & SNACKS', 55, headerY + 40, { characterSpacing: 1 });
+        .text(sellerFrom(settings).name.toUpperCase(), 55, headerY + 40, { characterSpacing: 1 });
     }
 
     // Document Header Right (Tax Invoice, Invoice No, Date on White)
@@ -170,85 +187,71 @@ class InvoiceService {
       .text(`Status: `, { continued: true })
       .font('Helvetica-Bold')
       .fillColor(isCancelled ? '#DC2626' : paymentStatus === 'PAID' ? '#059669' : '#D97706')
-      .text(paymentStatus);
+      .text(paymentStatus.replace(/_/g, ' '));
 
     // =========================================================================
     // 3. SELLER & BUYER DETAILS (TWO COLUMNS)
     // =========================================================================
     const addressY = 152;
     const colWidth = 248;
+    const boxH = 142;
+    const seller = sellerFrom(settings);
 
-    // Seller Box (Left)
-    doc
-      .rect(40, addressY, colWidth, 92)
-      .strokeColor(borderColor)
-      .lineWidth(0.5)
-      .stroke();
+    // ---- Seller box (left)
+    doc.rect(40, addressY, colWidth, boxH).strokeColor(borderColor).lineWidth(0.5).stroke();
+    doc.rect(40, addressY, colWidth, 18).fill(primaryColor);
+    doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold').text('SOLD BY', 48, addressY + 5);
 
-    doc
-      .rect(40, addressY, colWidth, 18)
-      .fill(primaryColor);
+    const storeName = settings.storeName || 'Supplierfy';
+    const storeEmail = settings.storeEmail || settings.supportEmail || '';
+    // Phone: the number the admin saved in Settings; until then the store's WhatsApp number
+    const storePhone = resolvePublicPhone([settings.storePhone, settings.supportPhone], settings.whatsappNumber);
 
-    doc
-      .fillColor('#FFFFFF')
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text('SOLD BY / DISPATCH HUB', 48, addressY + 5);
+    let sy = addressY + 24;
+    const put = (x, width, str, { bold = false, color = textMuted } = {}) => {
+      if (!str) return;
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(8).fillColor(color).text(str, x, sy, { width });
+      sy = doc.y + 2.5;
+    };
+    put(48, colWidth - 16, storeName, { bold: true, color: textDark });
+    put(48, colWidth - 16, seller.name, { bold: true, color: textDark });
+    put(48, colWidth - 16, seller.gstin ? `GSTIN: ${seller.gstin}` : '', { color: textDark });
+    put(48, colWidth - 16, seller.address ? `Registered address: ${seller.address}` : '');
+    put(48, colWidth - 16, seller.dispatchAddress ? `Dispatch from: ${seller.dispatchAddress}` : '');
+    put(48, colWidth - 16, seller.fssai ? `FSSAI Lic. No.: ${seller.fssai}` : '');
+    put(48, colWidth - 16, storeEmail ? `Email: ${storeEmail}` : '');
+    put(48, colWidth - 16, storePhone ? `Phone: ${storePhone}` : '');
 
-    const storeName = settings.storeName || 'Dry Fruit Wholesale';
-    const hubAddr = settings.hubAddress || settings.warehouseAddress || 'Warehouse Address, Mumbai, MP - 452015';
-    const storeEmail = settings.storeEmail || settings.supportEmail || 'support@example.com';
-    const storePhone = settings.storePhone || settings.supportPhone || '+91 00000 00000';
-
-    doc
-      .fillColor(textDark)
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text(storeName, 48, addressY + 24, { width: colWidth - 16 })
-      .font('Helvetica')
-      .fillColor(textMuted)
-      .text(hubAddr, 48, addressY + 36, { width: colWidth - 16, lineGap: 1 })
-      .text(`Email: ${storeEmail}  •  Phone: ${storePhone}`, 48, addressY + 68, { width: colWidth - 16 });
-
-    // Buyer Box (Right)
+    // ---- Buyer box (right)
     const rightColX = 307;
-    doc
-      .rect(rightColX, addressY, colWidth, 92)
-      .strokeColor(borderColor)
-      .lineWidth(0.5)
-      .stroke();
-
-    doc
-      .rect(rightColX, addressY, colWidth, 18)
-      .fill(primaryColor);
-
-    doc
-      .fillColor('#FFFFFF')
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text('BILLED TO & DELIVER TO', rightColX + 8, addressY + 5);
+    doc.rect(rightColX, addressY, colWidth, boxH).strokeColor(borderColor).lineWidth(0.5).stroke();
+    doc.rect(rightColX, addressY, colWidth, 18).fill(primaryColor);
+    doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold').text('BILLED TO & DELIVER TO', rightColX + 8, addressY + 5);
 
     const shipAddr = order.shippingAddress || {};
     const custName = shipAddr.fullName || 'Valued Customer';
     const custPhone = shipAddr.phoneNumber || shipAddr.phone || 'N/A';
     const street = [shipAddr.addressLine1, shipAddr.addressLine2, shipAddr.landmark].filter(Boolean).join(', ') || 'Address not provided';
-    const cityStatePin = `${shipAddr.city || ''}, ${shipAddr.state || 'Madhya Pradesh'} - ${shipAddr.postalCode || shipAddr.pincode || ''}`;
+    const cityStatePin = [shipAddr.city, shipAddr.state].filter(Boolean).join(', ') + ` - ${shipAddr.postalCode || shipAddr.pincode || ''}`;
+    const buyerGstin = order.buyer?.gstin || '';
+    const buyerCompany = order.buyer?.companyName || '';
+    // Place of supply: the buyer's GSTIN state when given, otherwise the delivery state
+    const buyerStateCode = (buyerGstin && buyerGstin.slice(0, 2)) || stateCodeOf(shipAddr.state);
+    const intraState = !buyerStateCode || buyerStateCode === SELLER_STATE_CODE;
 
-    doc
-      .fillColor(textDark)
-      .fontSize(8)
-      .font('Helvetica-Bold')
-      .text(custName, rightColX + 8, addressY + 24, { width: colWidth - 16 })
-      .font('Helvetica')
-      .fillColor(textMuted)
-      .text(street, rightColX + 8, addressY + 36, { width: colWidth - 16, lineGap: 1 })
-      .text(cityStatePin, rightColX + 8, addressY + 62, { width: colWidth - 16 })
-      .text(`Contact: ${custPhone}`, rightColX + 8, addressY + 75, { width: colWidth - 16 });
+    sy = addressY + 24;
+    put(rightColX + 8, colWidth - 16, buyerCompany || custName, { bold: true, color: textDark });
+    put(rightColX + 8, colWidth - 16, buyerCompany ? `Attn: ${custName}` : '');
+    put(rightColX + 8, colWidth - 16, buyerGstin ? `GSTIN: ${buyerGstin}` : '', { color: textDark });
+    put(rightColX + 8, colWidth - 16, street);
+    put(rightColX + 8, colWidth - 16, cityStatePin);
+    put(rightColX + 8, colWidth - 16, `Contact: ${custPhone}`);
+    put(rightColX + 8, colWidth - 16, shipAddr.state ? `Place of supply: ${shipAddr.state}${buyerStateCode ? ` (${buyerStateCode})` : ''}` : '', { color: textDark });
 
     // =========================================================================
     // 4. ITEMS TABLE
     // =========================================================================
-    const tableTop = 258;
+    const tableTop = addressY + boxH + 14;
 
     // Table Header
     doc
@@ -259,12 +262,13 @@ class InvoiceService {
       .fillColor('#FFFFFF')
       .fontSize(7.5)
       .font('Helvetica-Bold')
-      .text('#', 46, tableTop + 6, { width: 20 })
-      .text('ITEM DESCRIPTION', 68, tableTop + 6, { width: 230 })
-      .text('WEIGHT', 300, tableTop + 6, { width: 60, align: 'center' })
-      .text('UNIT PRICE', 365, tableTop + 6, { width: 65, align: 'right' })
-      .text('QTY', 435, tableTop + 6, { width: 35, align: 'center' })
-      .text('TOTAL', 475, tableTop + 6, { width: 72, align: 'right' });
+      .text('#', 46, tableTop + 6, { width: 16 })
+      .text('ITEM DESCRIPTION', 64, tableTop + 6, { width: 176 })
+      .text('HSN', 244, tableTop + 6, { width: 44, align: 'center' })
+      .text('UNIT', 290, tableTop + 6, { width: 50, align: 'center' })
+      .text('RATE', 344, tableTop + 6, { width: 62, align: 'right' })
+      .text('QTY', 410, tableTop + 6, { width: 36, align: 'center' })
+      .text('TOTAL', 470, tableTop + 6, { width: 77, align: 'right' });
 
     let currentY = tableTop + 20;
     const items = order.items || [];
@@ -286,21 +290,23 @@ class InvoiceService {
       const itemQty = item.qty || 1;
       const unitPrice = item.price || 0;
       const itemSubtotal = item.subtotal || unitPrice * itemQty;
-      const weightLabel = item.weight || '150g';
+      const weightLabel = item.weight || '1 kg';
+      const hsn = String(item.hsnCode || '').trim() || hsnFor(item) || '-';
 
       doc
         .fillColor(textDark)
         .fontSize(8)
         .font('Helvetica')
-        .text(String(index + 1), 46, currentY + 6, { width: 20 })
+        .text(String(index + 1), 46, currentY + 6, { width: 16 })
         .font('Helvetica-Bold')
-        .text(item.name || 'Artisanal Dry Fruit', 68, currentY + 6, { width: 230, ellipsis: true })
+        .text(item.name || 'Product', 64, currentY + 6, { width: 176, ellipsis: true })
         .font('Helvetica')
-        .text(weightLabel, 300, currentY + 6, { width: 60, align: 'center' })
-        .text(this._formatCurrency(unitPrice), 365, currentY + 6, { width: 65, align: 'right' })
-        .text(String(itemQty), 435, currentY + 6, { width: 35, align: 'center' })
+        .text(hsn, 244, currentY + 6, { width: 44, align: 'center' })
+        .text(weightLabel, 290, currentY + 6, { width: 50, align: 'center' })
+        .text(this._formatCurrency(unitPrice), 344, currentY + 6, { width: 62, align: 'right' })
+        .text(String(itemQty), 410, currentY + 6, { width: 36, align: 'center' })
         .font('Helvetica-Bold')
-        .text(this._formatCurrency(itemSubtotal), 475, currentY + 6, { width: 72, align: 'right' });
+        .text(this._formatCurrency(itemSubtotal), 470, currentY + 6, { width: 77, align: 'right' });
 
       currentY += rowHeight;
     });
@@ -321,7 +327,7 @@ class InvoiceService {
     // Left info box: Notes & Dispatch
     const leftBoxWidth = 270;
     doc
-      .rect(40, summaryY, leftBoxWidth, 105)
+      .rect(40, summaryY, leftBoxWidth, 120)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -336,7 +342,13 @@ class InvoiceService {
       .fillColor(textMuted)
       .fontSize(7.5)
       .font('Helvetica')
-      .text(`Fulfillment Channel: Standard Express Courier`, 50, summaryY + 22)
+      .text(
+        isPartialCod
+          ? `Paid online: ${this._formatCurrency(advancePaid)}  |  ${balanceDue > 0 ? 'Balance on delivery' : 'Balance paid'}: ${this._formatCurrency(balanceDue > 0 ? balanceDue : Math.max(0, (order.pricing?.total || 0) - advancePaid))}`
+          : `Fulfillment Channel: Standard Express Courier`,
+        50,
+        summaryY + 22
+      )
       .text(`Courier Partner: ${order.courierName || 'Delhivery Express Network'}`, 50, summaryY + 34)
       .text(`AWB Tracking Number: ${order.awbNumber || 'Generating / Local Dispatch'}`, 50, summaryY + 46)
       .text(`Transaction Ref: ${transactionId || 'Internal Order Gateway Ref'}`, 50, summaryY + 58)
@@ -353,7 +365,7 @@ class InvoiceService {
     const sumBoxWidth = 230;
 
     doc
-      .rect(sumBoxX, summaryY, sumBoxWidth, 105)
+      .rect(sumBoxX, summaryY, sumBoxWidth, 120)
       .strokeColor(borderColor)
       .lineWidth(0.5)
       .stroke();
@@ -382,27 +394,35 @@ class InvoiceService {
     calcY += 15;
 
     const gstRate = settings.gstRate || 5;
-    addSummaryRow(`GST / Tax (${gstRate}%):`, this._formatCurrency(tax), calcY);
-    calcY += 15;
+    const gst = splitGst(tax, intraState);
+    if (intraState) {
+      addSummaryRow(`CGST (${gstRate / 2}%):`, this._formatCurrency(gst.cgst), calcY);
+      calcY += 15;
+      addSummaryRow(`SGST (${gstRate / 2}%):`, this._formatCurrency(gst.sgst), calcY);
+      calcY += 15;
+    } else {
+      addSummaryRow(`IGST (${gstRate}%):`, this._formatCurrency(gst.igst), calcY);
+      calcY += 15;
+    }
 
     // Grand Total Row
     doc
-      .rect(sumBoxX, summaryY + 75, sumBoxWidth, 30)
+      .rect(sumBoxX, summaryY + 90, sumBoxWidth, 30)
       .fill(primaryColor);
 
     doc
       .fillColor('#FFFFFF')
       .fontSize(10)
       .font('Helvetica-Bold')
-      .text('FINAL AMOUNT:', sumBoxX + 12, summaryY + 84)
+      .text('FINAL AMOUNT:', sumBoxX + 12, summaryY + 99)
       .fillColor(goldColor)
       .fontSize(11)
-      .text(this._formatCurrency(total), sumBoxX + 120, summaryY + 83, { width: 98, align: 'right' });
+      .text(this._formatCurrency(total), sumBoxX + 120, summaryY + 98, { width: 98, align: 'right' });
 
     // =========================================================================
     // 6. FOOTER & DECLARATIONS
     // =========================================================================
-    const footerY = 560;
+    const footerY = Math.max(560, summaryY + 120 + 24);
 
     doc
       .rect(40, footerY, 515, 0.5)
@@ -414,9 +434,9 @@ class InvoiceService {
       .font('Helvetica')
       .text('DECLARATION & TERMS:', 40, footerY + 8)
       .text(
-        '1. This is a computer-generated invoice and does not require a physical signature.\n' +
-        '2. All disputes are subject to the exclusive jurisdiction of courts in Mumbai, Madhya Pradesh.\n' +
-        '3. For returns, refund status, or corporate gifting inquiries, please write to support@example.com.',
+        '1. This is a computer-generated tax invoice and does not require a physical signature.\n' +
+        '2. All disputes are subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra.\n' +
+        '3. For returns, refund status, or corporate gifting inquiries, please write to ' + (storeEmail || 'our support team') + '.',
         40,
         footerY + 18,
         { width: 360, lineGap: 2 }
@@ -433,7 +453,7 @@ class InvoiceService {
       .fillColor(primaryColor)
       .fontSize(7)
       .font('Helvetica-Bold')
-      .text('FOR DRY FRUIT WHOLESALE FOODS PVT LTD', 425, footerY + 12, { width: 125, align: 'center' });
+      .text(`FOR ${seller.name.toUpperCase()}`, 425, footerY + 12, { width: 125, align: 'center' });
 
     doc
       .fillColor(goldColor)

@@ -18,7 +18,7 @@ export default function Logo({ variant = 'dark', size = 'default', to = '/', cla
   useEffect(() => { setFailedUrl(''); }, [rules.logoUrl]);
 
   if (rules.logoUrl && failedUrl !== rules.logoUrl) {
-    const h = { small: 'h-9', default: 'h-11', large: 'h-14' }[size] || 'h-11';
+    const h = { small: 'h-11', default: 'h-12', large: 'h-16' }[size] || 'h-11';
     return (
       <Link to={to} className={`inline-flex items-center select-none shrink-0 ${className}`} aria-label={name}>
         {/* On dark backgrounds the logo sits on a light plate so any logo colours stay readable */}
@@ -28,7 +28,7 @@ export default function Logo({ variant = 'dark', size = 'default', to = '/', cla
             alt={name}
             data-no-fallback
             onError={() => setFailedUrl(rules.logoUrl)}
-            className={`${h} w-auto max-w-[170px] object-contain`}
+            className={`${h} w-auto max-w-[200px] object-contain`}
           />
         </span>
       </Link>

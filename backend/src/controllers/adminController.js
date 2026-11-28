@@ -1,6 +1,9 @@
 import adminAuthService from '../services/adminAuthService.js';
 import { getDashboardSummary, getAnalyticsSummary } from '../services/dashboardService.js';
 import User from '../models/User.js';
+import Address from '../models/Address.js';
+import userAuthService from '../services/userAuthService.js';
+import { isSmtpConfigured } from '../services/emailService.js';
 import Order from '../models/Order.js';
 
 // Lifetime-spend thresholds (INR) for the CRM customer tiers
@@ -8,6 +11,7 @@ const CUSTOMER_TIER_GOLD = 2000;
 const CUSTOMER_TIER_PLATINUM = 5000;
 import { sendSuccess, sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
+import { getCreditOverviewForUsers, getCreditSummary, updateCustomerCredit } from '../services/creditService.js';
 
 /**
  * Admin Login
@@ -137,9 +141,35 @@ export const getAllUsers = async (req, res, next) => {
         ])
       : [];
     const statsById = new Map(statRows.map((r) => [String(r._id), r]));
+    const creditById = await getCreditOverviewForUsers(users);
+
+    // Saved addresses and whether a password exists (the hash itself is never sent)
+    const [addressRows, withPassword] = ids.length
+      ? await Promise.all([
+          Address.find({ user: { $in: ids } }).sort({ isDefault: -1, createdAt: -1 }).lean(),
+          User.find({ _id: { $in: ids }, passwordHash: { $nin: [null, ''] } }).select('_id').lean()
+        ])
+      : [[], []];
+    const passwordSet = new Set(withPassword.map((u) => String(u._id)));
+    const addressesById = new Map();
+    for (const a of addressRows) {
+      const key = String(a.user);
+      if (!addressesById.has(key)) addressesById.set(key, []);
+      addressesById.get(key).push({
+        fullName: a.fullName,
+        phoneNumber: a.phoneNumber,
+        line: [a.addressLine1, a.addressLine2, a.landmark].filter(Boolean).join(', '),
+        city: a.city,
+        state: a.state,
+        postalCode: a.postalCode,
+        type: a.addressType,
+        isDefault: Boolean(a.isDefault)
+      });
+    }
 
     const enriched = users.map((u) => {
       const st = statsById.get(String(u._id)) || {};
+      const addresses = addressesById.get(String(u._id)) || [];
       const totalSpent = Math.round(st.totalSpent || 0);
       const totalOrders = st.totalOrders || 0;
       // Customer tier is derived from real lifetime spend
@@ -154,7 +184,8 @@ export const getAllUsers = async (req, res, next) => {
       return {
         id: String(u._id),
         _id: String(u._id),
-        name: u.name || '',
+        // Older accounts may have no name, so fall back to the one on a saved address
+        name: u.name || addresses[0]?.fullName || '',
         email: u.email || '',
         phone: u.phone || '',
         avatar: u.avatar || '',
@@ -167,10 +198,14 @@ export const getAllUsers = async (req, res, next) => {
         lastLoginAt: u.lastLoginAt || null,
         totalOrders,
         totalSpent,
-        city: st.city || u.addresses?.[0]?.city || '',
-        state: st.state || u.addresses?.[0]?.state || '',
+        city: st.city || addresses[0]?.city || u.addresses?.[0]?.city || '',
+        state: st.state || addresses[0]?.state || u.addresses?.[0]?.state || '',
+        addresses,
+        hasPassword: passwordSet.has(String(u._id)),
+        passwordRequestedAt: u.passwordRequestedAt || null,
         lastOrderAt: st.lastOrderAt || null,
-        tier
+        tier,
+        credit: creditById.get(String(u._id)) || null
       };
     });
 
@@ -179,6 +214,7 @@ export const getAllUsers = async (req, res, next) => {
       'Users list retrieved successfully',
       {
         users: enriched,
+        emailAvailable: isSmtpConfigured(),
         pagination: {
           total,
           page,
@@ -216,7 +252,66 @@ export const updateUserStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * Set a customer's password (forgotten password / older account without one)
+ * PATCH /api/v1/admin/users/:id/password
+ */
+export const setUserPassword = async (req, res, next) => {
+  try {
+    const result = await userAuthService.setPasswordByAdmin(req.params.id, req.body.password, {
+      emailCustomer: req.body.emailCustomer === true,
+      requestOrigin: req.headers.origin
+    });
+    return sendSuccess(res, 'Password set for this customer', result, HTTP_STATUS.OK);
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
+/**
+ * Remove a customer's password request without changing the password
+ * DELETE /api/v1/admin/users/:id/password-request
+ */
+export const dismissPasswordRequest = async (req, res, next) => {
+  try {
+    if (!/^[a-f\d]{24}$/i.test(String(req.params.id))) {
+      return sendError(res, 'Invalid customer id.', null, HTTP_STATUS.BAD_REQUEST);
+    }
+    await userAuthService.dismissPasswordRequest(req.params.id);
+    return sendSuccess(res, 'Request dismissed', null, HTTP_STATUS.OK);
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
+export const getUserCredit = async (req, res, next) => {
+  try {
+    const credit = await getCreditSummary(req.params.id);
+    return sendSuccess(res, 'Customer credit', { credit });
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
+export const updateUserCredit = async (req, res, next) => {
+  try {
+    const { creditLimitOverride, creditBlocked } = req.body || {};
+    const credit = await updateCustomerCredit(req.params.id, { creditLimitOverride, creditBlocked });
+    return sendSuccess(res, 'Customer credit updated', { credit });
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
 export default {
+  dismissPasswordRequest,
+  setUserPassword,
+  getUserCredit,
+  updateUserCredit,
   login,
   getProfile,
   getDashboard,

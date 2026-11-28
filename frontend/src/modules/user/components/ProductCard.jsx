@@ -5,17 +5,21 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../../../context/CartContext';
 import { useWishlist } from '../../../context/WishlistContext';
 import { useStoreRules, getMinQty } from '../../../hooks/useStoreRules';
+import { useAdmin } from '../../../context/AdminContext';
+import { isFoodProduct } from '../../../utils/categoryGroups';
+import { unitOf, unitWeightLabel, unitText, perUnit, qtyWithUnit } from '../../../utils/units';
 import { resolveOptimizedProductImage } from '../../../utils/productImage';
 import { buildProductEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
 import KgStepper from './KgStepper';
 
-const UNIT = '1 kg';
 const inr = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
 
 export default function ProductCard({ product, priority = false }) {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const rules = useStoreRules();
+  const { categories: allCategories = [] } = useAdmin();
+  const foodPaused = Boolean(rules.foodSalesPaused) && isFoodProduct(product, allCategories);
   const minQty = getMinQty(product, rules);
 
   const [qty, setQty] = useState(minQty);
@@ -35,7 +39,7 @@ export default function ProductCard({ product, priority = false }) {
     e.preventDefault();
     e.stopPropagation();
     if (outOfStock) return;
-    const added = await addToCart(product, UNIT, qty, false);
+    const added = await addToCart(product, unitWeightLabel(product), qty, false);
     if (added === false) return;
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
@@ -48,7 +52,8 @@ export default function ProductCard({ product, priority = false }) {
 
   return (
     <div className="group bg-white rounded-xl border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden text-left">
-      <div className="relative w-full aspect-[4/3] sm:aspect-square overflow-hidden bg-[color:var(--brand-surface)]">
+      <div className="p-2.5 sm:p-3 pb-0">
+      <div className="relative w-full aspect-[4/3] sm:aspect-square overflow-hidden bg-[color:var(--brand-surface)] border border-stone-200/70">
         <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
           {product.badge ? (
             <span className="text-[length:calc(10px*var(--fs))] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider bg-[color:var(--brand-accent-dark)] text-white shadow-sm">
@@ -78,6 +83,7 @@ export default function ProductCard({ product, priority = false }) {
           />
         </Link>
       </div>
+      </div>
 
       <div className="p-3 sm:p-4 flex flex-col flex-1">
         <Link to={`/product/${productId}`} className="block">
@@ -89,23 +95,23 @@ export default function ProductCard({ product, priority = false }) {
 
         <div className="flex items-baseline gap-2 mt-2">
           <span className="text-xl font-extrabold text-[color:var(--brand-primary)]">{inr(price)}</span>
-          <span className="text-xs font-semibold text-stone-500">/ kg</span>
+          <span className="text-xs font-semibold text-stone-500">{perUnit(unitOf(product))}</span>
           {oldPrice > price && <span className="text-xs text-stone-400 line-through">{inr(oldPrice)}</span>}
         </div>
         <p className="text-[length:calc(11px*var(--fs))] font-semibold text-[color:var(--brand-accent-darker)] bg-[color:var(--brand-accent)]/15 rounded px-2 py-1 mt-2 w-fit">
-          Min. order {minQty} kg
+          Min. order {qtyWithUnit(minQty, unitOf(product))}
         </p>
 
-        {outOfStock ? (
+        {outOfStock || foodPaused ? (
           <div className="mt-3 rounded-lg bg-stone-200 text-stone-500 text-xs font-bold text-center py-2.5 uppercase tracking-wider">
-            Out of stock
+            {foodPaused ? 'Coming soon' : 'Out of stock'}
           </div>
         ) : (
           <>
             <div className="flex items-center gap-2 mt-3 flex-wrap">
               <div className="flex items-center gap-1.5">
-                <KgStepper size="sm" value={qty} min={minQty} max={maxQty === Infinity ? 100000 : maxQty} onChange={setQty} />
-                <span className="text-xs text-stone-500">kg</span>
+                <KgStepper size="sm" unit={unitOf(product)} value={qty} min={minQty} max={maxQty === Infinity ? 100000 : maxQty} onChange={setQty} />
+                <span className="text-xs text-stone-500">{unitText(qty, unitOf(product))}</span>
               </div>
               <span className="ml-auto text-base font-extrabold text-[color:var(--brand-primary)] whitespace-nowrap">{inr(price * (Number(qty) || 0))}</span>
             </div>

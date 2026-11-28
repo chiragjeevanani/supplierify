@@ -14,8 +14,16 @@ const EMPTY_FORM = {
   supportEmail: '',
   supportPhone: '',
   minOrderQtyKg: 5,
+  partialCodEnabled: false,
+  partialCodPercent: 30,
+  creditEnabled: false,
+  creditEligibilityAmount: 50000,
+  creditLimit: 25000,
+  creditDueDays: 30,
   whatsappNumber: '',
   whatsappGreeting: '',
+  instagramUrl: '',
+  facebookUrl: '',
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
@@ -43,6 +51,8 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState(EMPTY_FORM);
+  // Becomes true once the admin edits anything; until then the form follows the latest server settings
+  // (the first copy can come from a stale browser cache that lacks newer fields)
   const hydratedRef = useRef(false);
 
   // Hydrate once from context/API settings — do not reset while the admin is typing
@@ -64,17 +74,18 @@ export default function AdminSettings() {
     if (!hs.email) hs.email = settings.supportEmail || settings.storeEmail || DEFAULT_HELP_SUPPORT.email;
 
     setFormData((prev) => ({ ...prev, ...settings, helpSupport: hs }));
-    hydratedRef.current = true;
   }, [settings]);
 
   const setField = (key, value) => {
     setSaved(false);
+    hydratedRef.current = true;
     setError('');
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const setHelpField = (key, value) => {
     setSaved(false);
+    hydratedRef.current = true;
     setError('');
     setFormData((prev) => ({
       ...prev,
@@ -84,6 +95,7 @@ export default function AdminSettings() {
 
   const setFaqField = (index, key, value) => {
     setSaved(false);
+    hydratedRef.current = true;
     setError('');
     setFormData((prev) => {
       const faqs = [...(prev.helpSupport?.faqs || [])];
@@ -94,6 +106,7 @@ export default function AdminSettings() {
 
   const addFaq = () => {
     setSaved(false);
+    hydratedRef.current = true;
     setFormData((prev) => {
       const faqs = [...(prev.helpSupport?.faqs || [])];
       if (faqs.length >= 20) return prev;
@@ -104,6 +117,7 @@ export default function AdminSettings() {
 
   const removeFaq = (index) => {
     setSaved(false);
+    hydratedRef.current = true;
     setFormData((prev) => {
       const faqs = (prev.helpSupport?.faqs || []).filter((_, i) => i !== index);
       return { ...prev, helpSupport: { ...(prev.helpSupport || DEFAULT_HELP_SUPPORT), faqs } };
@@ -143,8 +157,28 @@ export default function AdminSettings() {
         theme: normalizeTheme(formData.theme),
         fontScale: normalizeFontScale(formData.fontScale),
         minOrderQtyKg: Math.max(1, Number(formData.minOrderQtyKg) || 5),
+        companyName: String(formData.companyName || '').trim(),
+        companyGstin: String(formData.companyGstin || '').trim().toUpperCase(),
+        companyAddress: String(formData.companyAddress || '').trim(),
+        dispatchAddress: String(formData.dispatchAddress || '').trim(),
+        fssaiNumber: String(formData.fssaiNumber || '').replace(/\s+/g, ''),
+        showTrademark: formData.showTrademark === true,
+        grievanceName: String(formData.grievanceName || '').trim(),
+        grievanceDesignation: String(formData.grievanceDesignation || '').trim(),
+        grievanceEmail: String(formData.grievanceEmail || '').trim(),
+        grievancePhone: String(formData.grievancePhone || '').trim(),
+        grievanceTimeline: String(formData.grievanceTimeline || '').trim(),
+        foodSalesPaused: formData.foodSalesPaused === true,
+        partialCodEnabled: formData.partialCodEnabled === true,
+        partialCodPercent: Math.min(99, Math.max(1, Math.round(Number(formData.partialCodPercent) || 30))),
+        creditEnabled: formData.creditEnabled === true,
+        creditEligibilityAmount: Math.max(0, Number(formData.creditEligibilityAmount) || 0),
+        creditLimit: Math.max(0, Number(formData.creditLimit) || 0),
+        creditDueDays: Math.min(365, Math.max(1, Math.round(Number(formData.creditDueDays) || 30))),
         whatsappNumber: String(formData.whatsappNumber || '').replace(/\D/g, ''),
         whatsappGreeting: String(formData.whatsappGreeting || '').trim(),
+        instagramUrl: String(formData.instagramUrl || '').trim(),
+        facebookUrl: String(formData.facebookUrl || '').trim(),
         freeDeliveryThreshold: Number(formData.freeDeliveryThreshold) || 0,
         standardDeliveryFee: Number(formData.standardDeliveryFee) || 0,
         codDeliveryFee: Number(formData.codDeliveryFee) || 0,
@@ -194,7 +228,7 @@ export default function AdminSettings() {
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex">
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
+      <div className="flex-1 admin-main flex flex-col min-w-0">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Store Settings & Rules" />
 
         <main className="p-4 sm:p-8 space-y-6 max-w-4xl">
@@ -251,12 +285,30 @@ export default function AdminSettings() {
                     className={inputClass}
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1" htmlFor="storePhone">
+                    Store Phone (shown on invoices &amp; Help page)
+                  </label>
+                  <input
+                    id="storePhone"
+                    name="storePhone"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="e.g. +91 98765 43210"
+                    value={/^0+$/.test(String(formData.helpSupport?.phone || '').replace(/\D/g, '').slice(-10)) ? '' : (formData.helpSupport?.phone || '')}
+                    onChange={(e) => setHelpField('phone', e.target.value)}
+                    className={inputClass}
+                  />
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
+                    Leave empty to show the WhatsApp number on invoices until you add one.
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[color:var(--brand-accent)]/10 border border-[color:var(--brand-accent)]/40">
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="minOrderQtyKg">
-                    Minimum Order Quantity (kg)
+                    Minimum Order Quantity (kg products)
                   </label>
                   <input
                     id="minOrderQtyKg"
@@ -269,7 +321,7 @@ export default function AdminSettings() {
                     className={inputClass}
                   />
                   <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
-                    Applies to every product line. A single product can override this in its own settings.
+                    Applies to every product sold by the kg. Products sold by piece, pair, set or meter start at 1. A single product can override this in its own settings.
                   </span>
                 </div>
                 <div>
@@ -310,6 +362,239 @@ export default function AdminSettings() {
                 </div>
               </div>
 
+              {/* Company & legal details (footer, legal pages, invoices) */}
+              <div className="p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-800">Company &amp; legal details</h3>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 block">Shown in the website footer, on the legal pages and on every GST invoice.</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="companyName">Legal company name</label>
+                  <input id="companyName" name="companyName" type="text" placeholder="Bhavana Enterprises LLP" value={formData.companyName || ''} onChange={(e) => setField('companyName', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="companyGstin">Company GSTIN</label>
+                  <input id="companyGstin" name="companyGstin" type="text" placeholder="27ABGFB3485P1ZT" value={formData.companyGstin || ''} onChange={(e) => setField('companyGstin', e.target.value)} className={inputClass} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="companyAddress">Registered address</label>
+                  <input id="companyAddress" name="companyAddress" type="text" placeholder="Navin Sheva, Uran, Navi Mumbai - 400702" value={formData.companyAddress || ''} onChange={(e) => setField('companyAddress', e.target.value)} className={inputClass} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="dispatchAddress">Warehouse / dispatch address (optional)</label>
+                  <input id="dispatchAddress" name="dispatchAddress" type="text" placeholder="Leave empty if same as registered address" value={formData.dispatchAddress || ''} onChange={(e) => setField('dispatchAddress', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="fssaiNumber">FSSAI licence number (14 digits)</label>
+                  <input id="fssaiNumber" name="fssaiNumber" type="text" placeholder="Leave empty until the licence is issued" value={formData.fssaiNumber || ''} onChange={(e) => setField('fssaiNumber', e.target.value)} className={inputClass} />
+                </div>
+
+                  <div className="flex items-end pb-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-stone-800">
+                      <input type="checkbox" checked={formData.showTrademark === true} onChange={(e) => setField('showTrademark', e.target.checked)} className="w-5 h-5 accent-[color:var(--brand-primary)]" />
+                      Show the ™ mark after the brand name
+                    </label>
+                  </div>
+                </div>
+                <p className="text-[length:calc(10px*var(--fs))] text-stone-500">While the FSSAI number is empty, the footer shows "FSSAI Registration Under Process". Once you enter it, the footer shows the licence number.</p>
+              </div>
+
+              {/* Grievance officer */}
+              <div className="p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)] space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-800">Grievance officer</h3>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 block">Published on the Grievance Redressal page. Until a name is entered, the page tells customers to write to the support email.</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceName">Name</label>
+                  <input id="grievanceName" name="grievanceName" type="text" placeholder="Full name" value={formData.grievanceName || ''} onChange={(e) => setField('grievanceName', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceDesignation">Designation</label>
+                  <input id="grievanceDesignation" name="grievanceDesignation" type="text" placeholder="e.g. Partner / Manager" value={formData.grievanceDesignation || ''} onChange={(e) => setField('grievanceDesignation', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceEmail">Email</label>
+                  <input id="grievanceEmail" name="grievanceEmail" type="text" placeholder="grievance@yourdomain.com" value={formData.grievanceEmail || ''} onChange={(e) => setField('grievanceEmail', e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievancePhone">Phone</label>
+                  <input id="grievancePhone" name="grievancePhone" type="text" placeholder="+91 ..." value={formData.grievancePhone || ''} onChange={(e) => setField('grievancePhone', e.target.value)} className={inputClass} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="grievanceTimeline">Complaint resolution timeline</label>
+                  <input id="grievanceTimeline" name="grievanceTimeline" type="text" placeholder="How fast complaints are answered and resolved" value={formData.grievanceTimeline || ''} onChange={(e) => setField('grievanceTimeline', e.target.value)} className={inputClass} />
+                </div>
+                </div>
+              </div>
+
+              {/* Food items on hold */}
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-2">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-stone-900">Pause sale of food items</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-600 mt-0.5 max-w-xl">
+                      Use this while the FSSAI licence is pending. Dry fruits then show "Coming soon" and cannot be added to a cart or bought. Metals, garments and furniture are not affected. Switch it off when the licence is ready.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={formData.foodSalesPaused === true} onChange={(e) => setField('foodSalesPaused', e.target.checked)} className="w-5 h-5 accent-rose-600" />
+                    <span className="text-xs font-bold text-stone-800">{formData.foodSalesPaused ? 'Food sales paused' : 'Selling normally'}</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Social media links */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)]">
+                <div className="sm:col-span-2">
+                  <h3 className="text-sm font-bold text-stone-800">Social media links</h3>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 block">
+                    Shown as icons in the menu and at the bottom of every page. Leave a box empty to hide that icon.
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="instagramUrl">
+                    Instagram link
+                  </label>
+                  <input
+                    id="instagramUrl"
+                    name="instagramUrl"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://www.instagram.com/yourpage/"
+                    value={formData.instagramUrl || ''}
+                    onChange={(e) => setField('instagramUrl', e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="facebookUrl">
+                    Facebook link
+                  </label>
+                  <input
+                    id="facebookUrl"
+                    name="facebookUrl"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://www.facebook.com/yourpage"
+                    value={formData.facebookUrl || ''}
+                    onChange={(e) => setField('facebookUrl', e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              {/* Partial COD: pay a percentage online now, the rest on delivery */}
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-stone-900">Part payment (pay some now, rest on delivery)</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-600 mt-0.5 max-w-xl">
+                      Customers pay this percentage online at checkout. The courier collects the rest in cash/UPI when the parcel is delivered. The balance is passed to the courier automatically; after delivery the order shows as fully paid.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.partialCodEnabled === true}
+                      onChange={(e) => setField('partialCodEnabled', e.target.checked)}
+                      className="w-5 h-5 accent-[color:var(--brand-primary)]"
+                    />
+                    <span className="text-xs font-bold text-stone-800">{formData.partialCodEnabled ? 'On' : 'Off'}</span>
+                  </label>
+                </div>
+                <div className={`max-w-xs ${formData.partialCodEnabled ? '' : 'opacity-60'}`}>
+                  <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="partialCodPercent">
+                    Pay now (% of the order total)
+                  </label>
+                  <input
+                    id="partialCodPercent"
+                    name="partialCodPercent"
+                    type="number"
+                    min={1}
+                    max={99}
+                    step={1}
+                    value={formData.partialCodPercent ?? 30}
+                    onChange={(e) => setField('partialCodPercent', e.target.value === '' ? '' : Number(e.target.value))}
+                    className={inputClass}
+                  />
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">
+                    Between 1 and 99. Example: with {Number(formData.partialCodPercent) || 30}%, an order of ₹10,000 means ₹{Math.round(10000 * (Number(formData.partialCodPercent) || 30) / 100).toLocaleString('en-IN')} online now and ₹{(10000 - Math.round(10000 * (Number(formData.partialCodPercent) || 30) / 100)).toLocaleString('en-IN')} on delivery.
+                  </span>
+                </div>
+              </div>
+
+              {/* Pay on credit (buy now, pay later) */}
+              <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-stone-900">Pay on credit</p>
+                    <p className="text-[length:calc(11px*var(--fs))] text-stone-600 mt-0.5 max-w-xl">
+                      Regular customers can buy now and pay later. A customer unlocks credit once their paid orders add up to the amount below. Credit orders stay unpaid until you press &quot;Mark paid&quot; on the Orders page.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={formData.creditEnabled === true}
+                      onChange={(e) => setField('creditEnabled', e.target.checked)}
+                      className="w-5 h-5 accent-[color:var(--brand-primary)]"
+                    />
+                    <span className="text-xs font-bold text-stone-800">{formData.creditEnabled ? 'On' : 'Off'}</span>
+                  </label>
+                </div>
+                <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${formData.creditEnabled ? '' : 'opacity-60'}`}>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="creditEligibilityAmount">
+                      Unlock after total orders of (₹)
+                    </label>
+                    <input
+                      id="creditEligibilityAmount"
+                      type="number"
+                      min={0}
+                      step={1000}
+                      value={formData.creditEligibilityAmount ?? 0}
+                      onChange={(e) => setField('creditEligibilityAmount', e.target.value === '' ? '' : Number(e.target.value))}
+                      className={inputClass}
+                    />
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">Only paid, non-cancelled orders count.</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="creditLimit">
+                      Credit limit per customer (₹)
+                    </label>
+                    <input
+                      id="creditLimit"
+                      type="number"
+                      min={0}
+                      step={1000}
+                      value={formData.creditLimit ?? 0}
+                      onChange={(e) => setField('creditLimit', e.target.value === '' ? '' : Number(e.target.value))}
+                      className={inputClass}
+                    />
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">Most a customer can owe at once. You can change it for one customer on the Customers page.</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="creditDueDays">
+                      Pay within (days)
+                    </label>
+                    <input
+                      id="creditDueDays"
+                      type="number"
+                      min={1}
+                      max={365}
+                      step={1}
+                      value={formData.creditDueDays ?? 30}
+                      onChange={(e) => setField('creditDueDays', e.target.value === '' ? '' : Number(e.target.value))}
+                      className={inputClass}
+                    />
+                    <span className="text-[length:calc(10px*var(--fs))] text-stone-500 mt-0.5 block">Customers with an overdue payment cannot place new credit orders.</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-2xl bg-[color:var(--brand-surface)] border border-[color:var(--brand-border)]">
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="freeDeliveryThreshold">
@@ -341,7 +626,7 @@ export default function AdminSettings() {
                     onChange={(e) => setField('standardDeliveryFee', e.target.value === '' ? '' : Number(e.target.value))}
                     className={inputClass}
                   />
-                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Used when live Shiprocket rates are off</span>
+                  <span className="text-[length:calc(10px*var(--fs))] text-stone-400 mt-0.5 block">Used when live shipping rates are off</span>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-800 mb-1" htmlFor="codDeliveryFee">
@@ -381,7 +666,7 @@ export default function AdminSettings() {
               <p className="text-[length:calc(11px*var(--fs))] text-stone-500 flex items-start gap-2 p-3 rounded-xl bg-white border border-stone-200">
                 <Truck className="w-4 h-4 text-[color:var(--brand-accent-dark)] shrink-0 mt-0.5" />
                 <span>
-                  When Shiprocket checkout quotes are enabled, courier rates come from Shiprocket.
+                  When live checkout quotes are enabled, courier rates come from Bigship.
                   Otherwise prepaid / COD fees above are used at checkout.
                 </span>
               </p>

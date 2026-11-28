@@ -1,6 +1,7 @@
 import { sendError } from '../utils/response.js';
 import { HTTP_STATUS } from '../constants/status.js';
-import { HEX_COLOR, cleanImageUrl } from '../utils/safeUrl.js';
+import { HEX_COLOR, cleanImageUrl, cleanSocialUrl, SOCIAL_HOSTS } from '../utils/safeUrl.js';
+import { normalizeGstin } from '../utils/gst.js';
 
 const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
 const pincodeRegex = /^[1-9][0-9]{5}$/;
@@ -10,10 +11,33 @@ export const ALLOWED_SETTINGS_FIELDS = [
   'minOrderQtyKg',
   'whatsappNumber',
   'whatsappGreeting',
+  'instagramUrl',
+  'facebookUrl',
   'logoUrl',
   'faviconUrl',
   'theme',
   'fontScale',
+  'companyName',
+  'companyGstin',
+  'companyAddress',
+  'dispatchAddress',
+  'fssaiNumber',
+  'showTrademark',
+  'grievanceName',
+  'grievanceDesignation',
+  'grievanceEmail',
+  'grievancePhone',
+  'grievanceTimeline',
+  'foodSalesPaused',
+  'termsContent',
+  'privacyContent',
+  'shippingContent',
+  'partialCodEnabled',
+  'partialCodPercent',
+  'creditEnabled',
+  'creditEligibilityAmount',
+  'creditLimit',
+  'creditDueDays',
   'standardDeliveryFee',
   'codDeliveryFee',
   'freeDeliveryThreshold',
@@ -97,6 +121,44 @@ export const validateUpdateSettings = (req, res, next) => {
     }
   }
 
+  for (const key of ['creditEligibilityAmount', 'creditLimit']) {
+    if (body[key] !== undefined) {
+      const n = Number(body[key]);
+      if (!Number.isFinite(n) || n < 0) errors.push({ field: key, message: 'Credit amounts must be 0 or more' });
+    }
+  }
+  if (body.creditDueDays !== undefined) {
+    const d = Number(body.creditDueDays);
+    if (!Number.isFinite(d) || d < 1 || d > 365) errors.push({ field: 'creditDueDays', message: 'Payment due days must be between 1 and 365' });
+  }
+  for (const key of ['termsContent', 'privacyContent', 'shippingContent']) {
+    if (body[key] !== undefined && (typeof body[key] !== 'string' || body[key].length > 60000)) {
+      errors.push({ field: key, message: 'Page text must be text of at most 60,000 characters' });
+    }
+  }
+  for (const key of ['foodSalesPaused', 'showTrademark']) {
+    if (body[key] !== undefined && typeof body[key] !== 'boolean') errors.push({ field: key, message: 'This switch must be true or false' });
+  }
+  if (body.grievanceEmail !== undefined && body.grievanceEmail !== '' && !emailRegex.test(String(body.grievanceEmail).trim())) {
+    errors.push({ field: 'grievanceEmail', message: 'Grievance officer email must be a valid email address' });
+  }
+  if (body.companyGstin !== undefined && body.companyGstin !== '' && !normalizeGstin(body.companyGstin)) {
+    errors.push({ field: 'companyGstin', message: 'Company GSTIN is not valid (15 characters, e.g. 27ABGFB3485P1ZT)' });
+  }
+  if (body.fssaiNumber !== undefined && body.fssaiNumber !== '' && !/^[0-9]{14}$/.test(String(body.fssaiNumber).replace(/\s+/g, ''))) {
+    errors.push({ field: 'fssaiNumber', message: 'FSSAI licence number must be 14 digits' });
+  }
+  if (body.partialCodPercent !== undefined) {
+    const pc = Number(body.partialCodPercent);
+    if (!Number.isFinite(pc) || pc < 1 || pc > 99) errors.push({ field: 'partialCodPercent', message: 'Advance payment must be between 1% and 99%' });
+  }
+  if (body.partialCodEnabled !== undefined && typeof body.partialCodEnabled !== 'boolean') {
+    errors.push({ field: 'partialCodEnabled', message: 'Partial COD on/off must be true or false' });
+  }
+  if (body.creditEnabled !== undefined && typeof body.creditEnabled !== 'boolean') {
+    errors.push({ field: 'creditEnabled', message: 'Credit on/off must be true or false' });
+  }
+
   if (body.fontScale !== undefined) {
     const scale = Number(body.fontScale);
     if (!Number.isFinite(scale) || scale < 85 || scale > 125) {
@@ -107,6 +169,12 @@ export const validateUpdateSettings = (req, res, next) => {
   for (const key of ['logoUrl', 'faviconUrl']) {
     if (body[key] !== undefined && body[key] !== '' && !cleanImageUrl(body[key])) {
       errors.push({ field: key, message: 'Please upload an image or use a valid https:// image address' });
+    }
+  }
+
+  for (const [key, site, label] of [['instagramUrl', 'instagram', 'Instagram'], ['facebookUrl', 'facebook', 'Facebook']]) {
+    if (body[key] !== undefined && body[key] !== '' && cleanSocialUrl(body[key], SOCIAL_HOSTS[site]) === null) {
+      errors.push({ field: key, message: `${label} link must be a valid https:// address on ${SOCIAL_HOSTS[site][0]}` });
     }
   }
 

@@ -1,25 +1,47 @@
 import { Router } from 'express';
 import userAuthController from '../controllers/userAuthController.js';
-import { validateSendOtp, validateVerifyOtp, validateUpdateProfile } from '../validations/userAuthValidation.js';
-import { otpRequestLimiter, otpVerifyLimiter } from '../middleware/rateLimiter.js';
+import {
+  validateSendOtp,
+  validateVerifyOtp,
+  validateUpdateProfile,
+  validateRegister,
+  validatePasswordLogin,
+  validateCheckPhone,
+  validateForgotPassword,
+  validateResetToken,
+  validateResetPassword,
+  validateChangePassword
+} from '../validations/userAuthValidation.js';
+import { otpRequestLimiter, otpVerifyLimiter, passwordLoginLimiter, registerLimiter, changePasswordLimiter, phoneCheckLimiter, userForgotPasswordLimiter, userResetPasswordLimiter, passwordRequestLimiter } from '../middleware/rateLimiter.js';
+import { requireOtpLogin } from '../middleware/otpGate.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { requireUser } from '../middleware/roleMiddleware.js';
 
 const router = Router();
+
+/** Sign up and log in with mobile number + password */
+router.post('/check', phoneCheckLimiter, validateCheckPhone, userAuthController.checkPhone);
+router.post('/password-request', passwordRequestLimiter, validateCheckPhone, userAuthController.passwordRequest);
+router.post('/forgot-password', userForgotPasswordLimiter, validateForgotPassword, userAuthController.forgotPassword);
+router.post('/verify-reset-token', userResetPasswordLimiter, validateResetToken, userAuthController.verifyResetToken);
+router.post('/reset-password', userResetPasswordLimiter, validateResetPassword, userAuthController.resetPassword);
+router.post('/register', registerLimiter, validateRegister, userAuthController.register);
+router.post('/login', passwordLoginLimiter, validatePasswordLogin, userAuthController.login);
+router.patch('/password', authMiddleware, requireUser, changePasswordLimiter, validateChangePassword, userAuthController.changePassword);
 
 /**
  * @route   POST /api/v1/auth/user/send-otp
  * @desc    Send 6-digit OTP to user mobile number
  * @access  Public (Rate-limited)
  */
-router.post('/send-otp', otpRequestLimiter, validateSendOtp, userAuthController.sendOtp);
+router.post('/send-otp', requireOtpLogin, otpRequestLimiter, validateSendOtp, userAuthController.sendOtp);
 
 /**
  * @route   POST /api/v1/auth/user/verify-otp
  * @desc    Verify OTP and log in / register user
  * @access  Public (Rate-limited)
  */
-router.post('/verify-otp', otpVerifyLimiter, validateVerifyOtp, userAuthController.verifyOtp);
+router.post('/verify-otp', requireOtpLogin, otpVerifyLimiter, validateVerifyOtp, userAuthController.verifyOtp);
 
 /**
  * @route   GET /api/v1/auth/user/profile

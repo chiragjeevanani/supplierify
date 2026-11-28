@@ -1,37 +1,33 @@
 import env from '../config/env.js';
 import settingsService from './settingsService.js';
-import shiprocketClient from './shiprocketClient.js';
-import shiprocketFulfillmentService, { parseWeightToKg } from './shiprocketFulfillmentService.js';
+import bigshipClient from './bigshipClient.js';
+import bigshipFulfillmentService, { parseWeightToKg } from './bigshipFulfillmentService.js';
 import { isCodPaymentMethod, resolveDeliveryFee } from '../utils/pricing.js';
 
-function pickCourierRate(courier) {
-  const rate = Number(
-    courier?.rate ?? courier?.freight_charge ?? courier?.total_charges ?? courier?.charge
-  );
-  return Number.isFinite(rate) && rate > 0 ? Math.ceil(rate) : null;
-}
-
-function normalizeCouriers(couriers = []) {
-  return couriers
-    .map((c) => ({
-      id: c.courier_company_id,
-      name: c.courier_name,
-      rate: pickCourierRate(c),
-      etd: c.estimated_delivery_days,
-      recommended: Boolean(c.recommended_by)
-    }))
+function normalizeCouriers(rates = []) {
+  return rates
+    .map((c) => {
+      const rate = Number(c?.totalCharge ?? c?.total);
+      return {
+        id: c.courier_partner_id ?? c.courierId,
+        name: c.courierName,
+        rate: Number.isFinite(rate) && rate > 0 ? Math.ceil(rate) : null,
+        etd: c.tat != null && c.tat !== '' ? c.tat : null,
+        recommended: false
+      };
+    })
     .filter((c) => c.rate != null)
     .sort((a, b) => a.rate - b.rate);
 }
 
-function pickBestRate(couriers = []) {
-  const normalized = normalizeCouriers(couriers);
+function pickBestRate(rates = []) {
+  const normalized = normalizeCouriers(rates);
   if (!normalized.length) return null;
-  const recommended = normalized.find((c) => c.recommended) || normalized[0];
+  const best = normalized[0]; // cheapest
   return {
-    fee: recommended.rate,
-    courier: recommended.name,
-    etd: recommended.etd,
+    fee: best.rate,
+    courier: best.name,
+    etd: best.etd,
     couriers: normalized.slice(0, 8)
   };
 }
@@ -51,7 +47,7 @@ export function estimateWeightKgFromItems(items = [], productMap = null) {
     } else {
       perUnit = parseWeightToKg(item.weight) || parseWeightToKg(product?.weight);
     }
-    total += (perUnit || env.SHIPROCKET.DEFAULT_WEIGHT_KG || 0.2) * qty;
+    total += (perUnit || env.BIGSHIP.DEFAULT_WEIGHT_KG || 0.2) * qty;
   }
   return Math.max(0.2, Number(total.toFixed(3)));
 }
@@ -65,20 +61,25 @@ function applyFreeDelivery(subtotal, fee, settings) {
   return { deliveryFee: Math.max(0, Number(fee) || 0), freeDeliveryApplied: false };
 }
 
-async function fetchShiprocketRate({ pickupPincode, deliveryPostcode, weight, cod }) {
-  const data = await shiprocketClient.checkServiceability({
-    pickupPostcode: pickupPincode,
-    deliveryPostcode,
-    weight,
-    cod: cod ? 1 : 0
+async function fetchBigshipRate({ pickupPincode, deliveryPostcode, weight, cod, subtotal }) {
+  const rates = await bigshipClient.calculateRates({
+    sourcePincode: pickupPincode,
+    destPincode: deliveryPostcode,
+    invoiceValue: subtotal,
+    cod,
+    codAmount: subtotal,
+    weightKg: weight,
+    lengthCm: env.BIGSHIP.DEFAULT_LENGTH_CM || 10,
+    breadthCm: env.BIGSHIP.DEFAULT_BREADTH_CM || 10,
+    heightCm: env.BIGSHIP.DEFAULT_HEIGHT_CM || 10
   });
-  return pickBestRate(data?.data?.available_courier_companies || []);
+  return pickBestRate(rates);
 }
 
 /**
- * Resolve live Shiprocket delivery fee (prepaid + COD) for checkout / place-order.
+ * Resolve live Bigship delivery fee (prepaid + COD) for checkout / place-order.
  */
-export async function resolveShiprocketDeliveryFee({
+export async function resolveShippingDeliveryFee({
   pincode,
   paymentMethod,
   subtotal,
@@ -87,7 +88,7 @@ export async function resolveShiprocketDeliveryFee({
   productMap = null
 } = {}) {
   const settings = await settingsService.getSettings();
-  const pickup = await shiprocketFulfillmentService.getPickupContext();
+  const pickup = await bigshipFulfillmentService.getPickupContext();
   const deliveryPostcode = String(pincode || '').replace(/\D/g, '').slice(0, 6);
   const amount = Math.max(0, Number(subtotal) || 0);
   const weight = Number(weightKg) || estimateWeightKgFromItems(items, productMap);
@@ -99,7 +100,7 @@ export async function resolveShiprocketDeliveryFee({
     weightKg: weight,
     pincode: deliveryPostcode,
     pickupPincode: pickup.pincode || null,
-    source: 'shiprocket',
+    source: 'bigship',
     freeDeliveryApplied: amount >= Number(settings.freeDeliveryThreshold ?? 499),
     error: null
   };
@@ -109,8 +110,8 @@ export async function resolveShiprocketDeliveryFee({
   }
 
   // Testing / missing credentials: fall back to store settings fees (do not block checkout)
-  const quotesEnabled = env.SHIPROCKET.CHECKOUT_QUOTES !== false;
-  if (!quotesEnabled || !shiprocketFulfillmentService.isReady() || !pickup.pincode) {
+  const quotesEnabled = env.BIGSHIP.CHECKOUT_QUOTES !== false;
+  if (!quotesEnabled || !bigshipFulfillmentService.isReady() || !pickup.pincode) {
     const prepaidFee = resolveDeliveryFee({
       subtotal: amount,
       paymentMethod: 'UPI',
@@ -138,17 +139,19 @@ export async function resolveShiprocketDeliveryFee({
 
   try {
     const [prepaidRate, codRate] = await Promise.all([
-      fetchShiprocketRate({
+      fetchBigshipRate({
         pickupPincode: pickup.pincode,
         deliveryPostcode,
         weight,
-        cod: false
+        cod: false,
+        subtotal: amount
       }),
-      fetchShiprocketRate({
+      fetchBigshipRate({
         pickupPincode: pickup.pincode,
         deliveryPostcode,
         weight,
-        cod: true
+        cod: true,
+        subtotal: amount
       })
     ]);
 
@@ -178,7 +181,7 @@ export async function resolveShiprocketDeliveryFee({
       pincode: deliveryPostcode,
       pickupPincode: pickup.pincode,
       paymentMethod: isCod ? 'COD' : 'Prepaid',
-      source: 'shiprocket',
+      source: 'bigship',
       freeDeliveryApplied,
       error:
         !prepaidRate && !codRate
@@ -190,7 +193,7 @@ export async function resolveShiprocketDeliveryFee({
           : null
     };
   } catch {
-    // Live resilience: never block checkout if Shiprocket API is down
+    // Live resilience: never block checkout if the Bigship API is down
     const prepaidFee = resolveDeliveryFee({
       subtotal: amount,
       paymentMethod: 'UPI',
@@ -219,7 +222,7 @@ export async function resolveShiprocketDeliveryFee({
 
 /** Public quote payload for checkout UI */
 export async function getShippingQuote(params = {}) {
-  const quote = await resolveShiprocketDeliveryFee(params);
+  const quote = await resolveShippingDeliveryFee(params);
   const isCod = isCodPaymentMethod(params.paymentMethod);
   const selected = isCod ? quote.cod : quote.prepaid;
 
@@ -231,7 +234,7 @@ export async function getShippingQuote(params = {}) {
     paymentMethod: quote.paymentMethod,
     deliveryFee: quote.deliveryFee,
     freeDeliveryApplied: quote.freeDeliveryApplied,
-    source: quote.source || 'shiprocket',
+    source: quote.source || 'bigship',
     selected: {
       fee: quote.deliveryFee,
       rawFee: selected?.rawFee ?? 0,
@@ -244,4 +247,4 @@ export async function getShippingQuote(params = {}) {
   };
 }
 
-export default { getShippingQuote, resolveShiprocketDeliveryFee, estimateWeightKgFromItems };
+export default { getShippingQuote, resolveShippingDeliveryFee, estimateWeightKgFromItems };

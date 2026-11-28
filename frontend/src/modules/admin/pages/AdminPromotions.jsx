@@ -4,6 +4,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import AdminHeader from '../components/AdminHeader';
 import usePagination from '../../../hooks/usePagination';
 import AdminPagination from '../components/AdminPagination';
+import CategoryOptions from '../components/CategoryOptions';
 import { useAdmin } from '../../../context/AdminContext';
 
 export default function AdminPromotions() {
@@ -68,7 +69,7 @@ export default function AdminPromotions() {
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex font-sans">
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className="flex-1 admin-main flex flex-col min-w-0 w-full">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Promotions & Campaign Engine" />
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-4.5 w-full font-sans">
@@ -267,9 +268,7 @@ export default function AdminPromotions() {
                     className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none cursor-pointer"
                   >
                     <option value="all">All Categories</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.slug}>{c.name}</option>
-                    ))}
+                    <CategoryOptions categories={categories} />
                   </select>
                 </div>
 

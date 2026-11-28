@@ -1,4 +1,6 @@
+import { unitOf, perUnit, qtyWithUnit } from '../../../utils/units';
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import usePagination from '../../../hooks/usePagination';
 import AdminPagination from '../components/AdminPagination';
 import { Plus, Search, Edit2, Trash2, Flame, CheckCircle2, AlertCircle, Eye, RefreshCw, Image as ImageIcon } from 'lucide-react';
@@ -9,6 +11,10 @@ import AddProductModal from '../components/AddProductModal';
 import ViewProductModal from '../components/ViewProductModal';
 import { useAdmin } from '../../../context/AdminContext';
 import { CATEGORIES } from '../../../data/categories';
+import CategoryOptions from '../components/CategoryOptions';
+import ListingsWithoutPrice from '../components/ListingsWithoutPrice';
+import { listingsWithoutProducts, productFromListing } from '../../../utils/listings';
+import { CATEGORY_GROUPS, groupLabel, groupOfProduct, categoryNameOfProduct, productInCategory } from '../../../utils/categoryGroups';
 import { resolveProductImage } from '../../../utils/productImage';
 
 export default function AdminProducts() {
@@ -35,9 +41,30 @@ export default function AdminProducts() {
   const [activeStatusFilter, setActiveStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSection, setSelectedSection] = useState('all');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [newProductCategory, setNewProductCategory] = useState('');
+  const [prefill, setPrefill] = useState(null); // product form values taken from an item without a price
+
+  const startProductFor = (category) => {
+    setNewProductCategory(category.slug || category.id);
+    setPrefill((products || []).some((p) => productInCategory(p, category)) ? null : productFromListing(category));
+    setEditingProduct(null);
+    setIsAddModalOpen(true);
+  };
+  // "Add product" on the Categories page arrives here as ?addTo=<category>
+  const [searchParams, setSearchParams] = useSearchParams();
+  const addTo = searchParams.get('addTo');
+  useEffect(() => {
+    // wait for the products too, to know whether this category is still empty
+    if (!addTo || !categories?.length || productsLoading) return;
+    const category = categories.find((c) => (c.slug || c.id) === addTo);
+    if (category) startProductFor(category);
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addTo, categories, productsLoading, setSearchParams]);
   const [viewingProduct, setViewingProduct] = useState(null);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
@@ -57,6 +84,7 @@ export default function AdminProducts() {
     return (products || []).filter(p => {
       if (activeStatusFilter === 'active' && p.inStock === false) return false;
       if (activeStatusFilter === 'inactive' && p.inStock !== false) return false;
+      if (selectedSection !== 'all' && groupOfProduct(p, categories) !== selectedSection) return false;
       if (selectedCategory !== 'all' && p.category !== selectedCategory) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -64,12 +92,12 @@ export default function AdminProducts() {
       }
       return true;
     });
-  }, [products, activeStatusFilter, selectedCategory, searchQuery]);
+  }, [products, categories, activeStatusFilter, selectedSection, selectedCategory, searchQuery]);
 
   // Pagination — back to page 1 whenever the search or filters change
   const pagination = usePagination(filteredProducts, {
     initialPageSize: 10,
-    resetKey: `${activeStatusFilter}|${selectedCategory}|${searchQuery}`
+    resetKey: `${activeStatusFilter}|${selectedSection}|${selectedCategory}|${searchQuery}`
   });
 
   const handleEdit = (prod) => {
@@ -78,6 +106,7 @@ export default function AdminProducts() {
   };
 
   const handleSaveProduct = async (data) => {
+    setPrefill(null);
     try {
       if (editingProduct) {
         await updateProduct(editingProduct._id || editingProduct.id, data);
@@ -118,11 +147,15 @@ export default function AdminProducts() {
     <div className="min-h-screen bg-[color:var(--brand-surface)] flex font-sans selection:bg-[color:var(--brand-accent)] selection:text-[color:var(--brand-primary)]">
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
+      <div className="flex-1 admin-main flex flex-col min-w-0 w-full">
         <AdminHeader onMenuClick={() => setIsSidebarOpen(true)} title="Products Catalog" />
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-4 w-full font-sans max-w-7xl mx-auto">
           
+          {!productsLoading && !productsError && (
+            <ListingsWithoutPrice listings={listingsWithoutProducts(categories, products)} onAddPrice={startProductFor} />
+          )}
+
           {/* Toast Feedback Alert */}
           {feedback.message && (
             <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 animate-fadeIn ${
@@ -201,6 +234,23 @@ export default function AdminProducts() {
 
           </div>
 
+          {/* Section tabs: Dry Fruits / Metals / Garments / Household Furniture */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {[{ id: 'all', label: 'All Sections' }, ...CATEGORY_GROUPS].map((g) => {
+              const n = g.id === 'all' ? (products || []).length : (products || []).filter((p) => groupOfProduct(p, categories) === g.id).length;
+              const on = selectedSection === g.id;
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => { setSelectedSection(g.id); setSelectedCategory('all'); }}
+                  className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-bold border transition-all cursor-pointer ${on ? 'bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] border-[color:var(--brand-primary)] shadow-xs' : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'}`}
+                >
+                  {g.label} <span className={on ? 'opacity-80' : 'text-stone-400'}>({n})</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Search & Category Filter Bar */}
           <div className="bg-white rounded-lg p-3 border border-[color:var(--brand-border)] shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 bg-[color:var(--brand-surface)] px-3.5 py-2 rounded-md border border-stone-200 text-xs sm:text-sm w-full sm:w-80">
@@ -222,12 +272,7 @@ export default function AdminProducts() {
                 className="px-3 py-1.5 rounded-md border border-stone-300 text-xs sm:text-[length:calc(13px*var(--fs))] font-semibold bg-stone-50 text-stone-800 focus:outline-none cursor-pointer"
               >
                 <option value="all">All Categories</option>
-                {(categories && categories.length > 0 ? categories : CATEGORIES).map(c => {
-                  const catVal = c.slug || c.id || c._id;
-                  return (
-                    <option key={c.id || c.slug || c._id} value={catVal}>{c.name}</option>
-                  );
-                })}
+                <CategoryOptions categories={categories && categories.length > 0 ? categories : CATEGORIES} only={selectedSection} />
               </select>
             </div>
           </div>
@@ -290,7 +335,7 @@ export default function AdminProducts() {
                           <AlertCircle className="w-8 h-8 text-stone-300" />
                           <span className="font-semibold text-sm text-stone-700">No products found</span>
                           <span className="text-xs text-stone-400 max-w-sm">
-                            {searchQuery || selectedCategory !== 'all' || activeStatusFilter !== 'all'
+                            {searchQuery || selectedCategory !== 'all' || selectedSection !== 'all' || activeStatusFilter !== 'all'
                               ? 'No products match your active search or category filters.'
                               : 'No products in database catalog. Click "Add Product" above to create your first item.'}
                           </span>
@@ -332,9 +377,9 @@ export default function AdminProducts() {
                             {/* Phones: the Category / Stock / Status columns are hidden, so show them here */}
                             <div className="lg:hidden mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-[length:calc(11px*var(--fs))] text-stone-500">
                               <span className="md:hidden capitalize">
-                                {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
+                                {groupLabel(groupOfProduct(p, categories))} › {categoryNameOfProduct(p, categories)}
                               </span>
-                              <span className={`font-semibold ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-600'}`}>{p.stockCount ?? 0} kg in stock</span>
+                              <span className={`font-semibold ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-600'}`}>{qtyWithUnit(p.stockCount ?? 0, unitOf(p))} in stock</span>
                             </div>
                             <button
                               onClick={() => handleToggle(p)}
@@ -345,19 +390,20 @@ export default function AdminProducts() {
                               {isActive ? 'Active' : 'Inactive'}
                             </button>
                           </td>
-                          <td className="hidden md:table-cell py-3.5 px-5 capitalize text-stone-700 font-medium text-xs sm:text-[length:calc(13.5px*var(--fs))]">
-                            {(categories || []).find(c => (c.slug === p.category || (c.id || c._id) === p.category))?.name || p.category?.replace(/-/g, ' ')}
+                          <td className="hidden md:table-cell py-3.5 px-5 text-stone-700 font-medium text-xs sm:text-[length:calc(13.5px*var(--fs))]">
+                            <div className="capitalize">{categoryNameOfProduct(p, categories)}</div>
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[length:calc(10px*var(--fs))] font-bold uppercase tracking-wider">{groupLabel(groupOfProduct(p, categories))}</span>
                           </td>
                           <td className="py-3.5 px-2 sm:px-5 whitespace-nowrap">
                             <span className="font-bold text-sm sm:text-base text-stone-900">₹{p.price}</span>
-                            {p.oldPrice && (
+                            {Number(p.oldPrice) > Number(p.price) && (
                               <span className="hidden sm:inline text-xs text-stone-400 line-through ml-1.5">₹{p.oldPrice}</span>
                             )}
-                            <span className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal"> /kg</span>
+                            <span className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal"> {perUnit(unitOf(p)).replace('/ ', '/')}</span>
                           </td>
                           <td className="hidden lg:table-cell py-3.5 px-5">
                             <span className={`font-semibold text-xs sm:text-sm ${p.stockCount < 50 ? 'text-amber-700' : 'text-stone-700'}`}>
-                              {p.stockCount ?? 0} kg
+                              {qtyWithUnit(p.stockCount ?? 0, unitOf(p))}
                             </span>
                           </td>
                           <td className="hidden sm:table-cell py-3.5 px-5">
@@ -419,10 +465,14 @@ export default function AdminProducts() {
         onClose={() => {
           setIsAddModalOpen(false);
           setEditingProduct(null);
+          setNewProductCategory('');
+          setPrefill(null);
         }}
         onSave={handleSaveProduct}
         initialData={editingProduct}
         categories={categories}
+        prefill={prefill}
+        defaultCategory={newProductCategory || (selectedCategory !== 'all' ? selectedCategory : '')}
       />
 
       <ViewProductModal

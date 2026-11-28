@@ -37,6 +37,20 @@ const settingsSchema = new mongoose.Schema(
       default: 'Hello Supplierfy'
     },
 
+    // Social media profile links shown on the storefront (empty = not shown)
+    instagramUrl: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Instagram link is too long'],
+      default: ''
+    },
+    facebookUrl: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Facebook link is too long'],
+      default: ''
+    },
+
     // 1c. Storefront branding (managed by the admin)
     logoUrl: { type: String, trim: true, default: '' },
     faviconUrl: { type: String, trim: true, default: '' },
@@ -53,6 +67,41 @@ const settingsSchema = new mongoose.Schema(
       min: [85, 'Text size cannot be below 85%'],
       max: [125, 'Text size cannot exceed 125%']
     },
+
+    // 1d. Pay on credit (buy now, pay later) for regular customers
+    creditEnabled: { type: Boolean, default: false },
+    // Customers unlock credit once their paid orders add up to this amount (₹)
+    creditEligibilityAmount: { type: Number, default: 50000, min: [0, 'Eligibility amount cannot be negative'] },
+    // Credit limit every eligible customer gets (₹); can be overridden per customer
+    creditLimit: { type: Number, default: 25000, min: [0, 'Credit limit cannot be negative'] },
+    // Days a customer has to pay for a credit order
+    creditDueDays: { type: Number, default: 30, min: [1, 'Due days must be at least 1'], max: [365, 'Due days cannot exceed 365'] },
+
+    // 1d2. Company / legal details shown in the footer, legal pages and invoices
+    companyName: { type: String, trim: true, maxlength: 150, default: 'Bhavana Enterprises LLP' },
+    companyGstin: { type: String, trim: true, uppercase: true, maxlength: 15, default: '27ABGFB3485P1ZT' },
+    companyAddress: { type: String, trim: true, maxlength: 400, default: 'Navin Sheva, Uran, Navi Mumbai' },
+    dispatchAddress: { type: String, trim: true, maxlength: 400, default: '' },
+    fssaiNumber: { type: String, trim: true, maxlength: 20, default: '' },
+    showTrademark: { type: Boolean, default: false },
+    grievanceName: { type: String, trim: true, maxlength: 100, default: '' },
+    grievanceDesignation: { type: String, trim: true, maxlength: 100, default: '' },
+    grievanceEmail: { type: String, trim: true, lowercase: true, maxlength: 120, default: '' },
+    grievancePhone: { type: String, trim: true, maxlength: 30, default: '' },
+    grievanceTimeline: { type: String, trim: true, maxlength: 300, default: 'We acknowledge every complaint within 48 hours and resolve it within 15 days of receiving it.' },
+    // Admin-edited legal pages (empty = the website shows its standard text). Plain text with simple formatting.
+    termsContent: { type: String, maxlength: 60000, default: '' },
+    privacyContent: { type: String, maxlength: 60000, default: '' },
+    shippingContent: { type: String, maxlength: 60000, default: '' },
+    termsUpdatedAt: { type: Date, default: null },
+    privacyUpdatedAt: { type: Date, default: null },
+    shippingUpdatedAt: { type: Date, default: null },
+    // Pause the sale of food items (e.g. while the FSSAI licence is pending): they show "Coming soon" and cannot be bought
+    foodSalesPaused: { type: Boolean, default: false },
+
+    // 1e. Partial COD: pay a percentage online now, the rest in cash on delivery
+    partialCodEnabled: { type: Boolean, default: false },
+    partialCodPercent: { type: Number, default: 30, min: [1, 'Advance must be at least 1%'], max: [99, 'Advance cannot exceed 99%'] },
 
     // 2. Delivery Configuration
     standardDeliveryFee: {
@@ -107,7 +156,7 @@ const settingsSchema = new mongoose.Schema(
     warehousePhone: {
       type: String,
       trim: true,
-      default: '+91 00000 00000'
+      default: ''
     },
     hubAddress: {
       type: String,
@@ -119,34 +168,34 @@ const settingsSchema = new mongoose.Schema(
     storeName: {
       type: String,
       trim: true,
-      default: 'Dry Fruit Wholesale'
+      default: 'Supplierfy'
     },
     storeEmail: {
       type: String,
       trim: true,
       lowercase: true,
-      default: 'support@example.com'
+      default: ''
     },
     supportEmail: {
       type: String,
       trim: true,
       lowercase: true,
-      default: 'support@example.com'
+      default: ''
     },
     storePhone: {
       type: String,
       trim: true,
-      default: '+91 00000 00000'
+      default: ''
     },
     supportPhone: {
       type: String,
       trim: true,
-      default: '+91 00000 00000'
+      default: ''
     },
     storeAddress: {
       type: String,
       trim: true,
-      default: 'Dry Fruit Wholesale, Warehouse Address, Mumbai, Maharashtra - 400001'
+      default: ''
     },
     currency: {
       type: String,
@@ -175,7 +224,7 @@ const settingsSchema = new mongoose.Schema(
       phone: {
         type: String,
         trim: true,
-        default: '+91 00000 00000'
+        default: ''
       },
       phoneHours: {
         type: String,
@@ -186,7 +235,7 @@ const settingsSchema = new mongoose.Schema(
         type: String,
         trim: true,
         lowercase: true,
-        default: 'support@example.com'
+        default: ''
       },
       emailNote: {
         type: String,

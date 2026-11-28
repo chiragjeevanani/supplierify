@@ -53,6 +53,134 @@ class UserAuthController {
   }
 
   /**
+   * What to ask for next on the login screen
+   * POST /api/v1/auth/user/check
+   */
+  async checkPhone(req, res, next) {
+    try {
+      const result = await userAuthService.checkPhone(req.body.phone);
+      return sendSuccess(res, 'OK', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Ask the store to reset the password
+   * POST /api/v1/auth/user/password-request
+   */
+  async passwordRequest(req, res, next) {
+    try {
+      const result = await userAuthService.requestAdminReset(req.body.phone, req.headers.origin);
+      return sendSuccess(res, result.message, null);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Email a "forgot password" link
+   * POST /api/v1/auth/user/forgot-password
+   */
+  async forgotPassword(req, res, next) {
+    try {
+      const result = await userAuthService.requestPasswordReset(req.body.email, req.headers.origin);
+      return sendSuccess(res, result.message, null);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Is a reset link still usable?
+   * POST /api/v1/auth/user/verify-reset-token
+   */
+  async verifyResetToken(req, res, next) {
+    try {
+      const result = await userAuthService.checkResetToken(req.body.token);
+      return sendSuccess(res, 'Reset link is valid', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Set a new password using a reset link
+   * POST /api/v1/auth/user/reset-password
+   */
+  async resetPassword(req, res, next) {
+    try {
+      const result = await userAuthService.resetPassword(req.body);
+      return sendSuccess(res, 'Password updated', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Sign up with phone + password
+   * POST /api/v1/auth/user/register
+   */
+  async register(req, res, next) {
+    try {
+      const result = await userAuthService.register(req.body);
+      return sendSuccess(res, 'Account created successfully', result, HTTP_STATUS.CREATED);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Log in with phone + password
+   * POST /api/v1/auth/user/login
+   */
+  async login(req, res, next) {
+    try {
+      const result = await userAuthService.loginWithPassword(req.body);
+      return sendSuccess(res, 'Authentication successful', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Change own password
+   * PATCH /api/v1/auth/user/password (Protected)
+   */
+  async changePassword(req, res, next) {
+    try {
+      const result = await userAuthService.changePassword(req.user._id, req.body);
+      return sendSuccess(res, 'Password changed successfully', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
    * Fetch authenticated user's profile
    * GET /api/v1/auth/user/profile (Protected)
    */

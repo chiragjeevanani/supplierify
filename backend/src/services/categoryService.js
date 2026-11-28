@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import { INITIAL_PRODUCTS_SEED } from './productService.js';
 import { HTTP_STATUS } from '../constants/status.js';
 import { DRYFRUIT_CATEGORIES_SEED } from '../data/dryfruitSeed.js';
+import { normalizeCategoryGroup, DEFAULT_CATEGORY_GROUP } from '../constants/categoryGroups.js';
 
 export const INITIAL_CATEGORIES_SEED = [...DRYFRUIT_CATEGORIES_SEED];
 
@@ -126,7 +127,7 @@ class CategoryService {
 
     return Category.find(query)
       .sort({ sortOrder: 1, order: 1, createdAt: 1 })
-      .select('name slug subtext description image badge popular sortOrder order subcategories createdAt updatedAt');
+      .select('name slug subtext description image group badge popular sortOrder order subcategories createdAt updatedAt');
   }
 
   /**
@@ -198,6 +199,7 @@ class CategoryService {
         subtext: data.subtext || '',
         description: data.description || '',
         image: data.image || '',
+        group: normalizeCategoryGroup(data.group) || DEFAULT_CATEGORY_GROUP,
         badge: data.badge || 'Popular',
         popular: data.popular !== false,
         status: statusVal,
@@ -224,6 +226,7 @@ class CategoryService {
       subtext: data.subtext || '',
       description: data.description || '',
       image: data.image || '',
+      group: normalizeCategoryGroup(data.group) || DEFAULT_CATEGORY_GROUP,
       badge: data.badge || 'Popular',
       popular: data.popular !== false,
       status: statusVal,
@@ -248,6 +251,7 @@ class CategoryService {
       if (data.description !== undefined) category.description = data.description;
       if (data.image !== undefined) category.image = data.image;
       if (data.badge !== undefined) category.badge = data.badge;
+      if (data.group !== undefined) category.group = normalizeCategoryGroup(data.group) || category.group || DEFAULT_CATEGORY_GROUP;
       if (data.popular !== undefined) category.popular = Boolean(data.popular);
       if (data.status) {
         category.status = String(data.status).toLowerCase() === 'inactive' ? 'Inactive' : 'Active';
@@ -291,6 +295,7 @@ class CategoryService {
     if (data.description !== undefined) category.description = data.description;
     if (data.image !== undefined) category.image = data.image;
     if (data.badge !== undefined) category.badge = data.badge;
+    if (data.group !== undefined) category.group = normalizeCategoryGroup(data.group) || category.group || DEFAULT_CATEGORY_GROUP;
     if (data.popular !== undefined) category.popular = Boolean(data.popular);
     if (data.status !== undefined) {
       category.status = String(data.status).toLowerCase() === 'inactive' ? 'Inactive' : 'Active';

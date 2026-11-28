@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 import { getQuote } from '../controllers/shippingController.js';
 import { createRateLimiter } from '../middleware/rateLimiter.js';
 
@@ -11,6 +12,6 @@ const quoteLimiter = createRateLimiter({
 });
 
 // GET /api/v1/shipping/quote?pincode=452003&paymentMethod=COD&subtotal=301&weightKg=0.2
-router.get('/quote', quoteLimiter, getQuote);
+router.get('/quote', authMiddleware, quoteLimiter, getQuote);
 
 export default router;

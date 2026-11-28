@@ -81,44 +81,35 @@ const env = {
     CONFIG_JSON: process.env.FIREBASE_CONFIG || '',
     PROJECT_ID: process.env.FIREBASE_PROJECT_ID || ''
   },
-  SHIPROCKET: {
-    EMAIL: process.env.SHIPROCKET_EMAIL || '',
-    PASSWORD: process.env.SHIPROCKET_PASSWORD || '',
-    BASE_URL: (process.env.SHIPROCKET_BASE_URL || 'https://apiv2.shiprocket.in/v1/external').replace(/\/$/, ''),
-    // Registered pickup location nickname in Shiprocket dashboard (warehouse, not customer address)
-    PICKUP_LOCATION: process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary',
-    PICKUP_CONTACT_PERSON: process.env.SHIPROCKET_PICKUP_CONTACT_PERSON || '',
-    PICKUP_PHONE: process.env.SHIPROCKET_PICKUP_PHONE || '',
-    PICKUP_ADDRESS: process.env.SHIPROCKET_PICKUP_ADDRESS || '',
-    PICKUP_CITY: process.env.SHIPROCKET_PICKUP_CITY || '',
-    PICKUP_STATE: process.env.SHIPROCKET_PICKUP_STATE || '',
-    PICKUP_PINCODE: process.env.SHIPROCKET_PICKUP_PINCODE || '',
-    PICKUP_COUNTRY: process.env.SHIPROCKET_PICKUP_COUNTRY || 'India',
-    GSTIN: process.env.SHIPROCKET_GSTIN || '',
-    WEBHOOK_TOKEN: process.env.SHIPROCKET_WEBHOOK_TOKEN || '',
-    // When true and credentials exist, create Shiprocket order after prepaid verify / COD place
-    AUTO_CREATE: String(process.env.SHIPROCKET_AUTO_CREATE || 'true').toLowerCase() !== 'false',
+  BIGSHIP: {
+    // Bigship Unified Outbound API (https://api.bigship.direct/). Server-side only — never log these.
+    USER_NAME: process.env.BIGSHIP_USER_NAME || '',
+    PASSWORD: process.env.BIGSHIP_PASSWORD || '',
+    ACCESS_KEY: process.env.BIGSHIP_ACCESS_KEY || '',
+    BASE_URL: (process.env.BIGSHIP_BASE_URL || 'https://api.bigship.direct').replace(/\/$/, ''),
+    // Numeric warehouse (pickup location) id from the Bigship panel. If empty, the first active warehouse is used.
+    PICKUP_WAREHOUSE_ID: process.env.BIGSHIP_PICKUP_WAREHOUSE_ID || '',
+    // Used for rate quotes when Admin Settings has no warehouse pincode
+    PICKUP_PINCODE: process.env.BIGSHIP_PICKUP_PINCODE || '',
+    // When true and credentials exist, push the order to Bigship when admin marks it Packed
+    AUTO_CREATE: String(process.env.BIGSHIP_AUTO_CREATE || 'true').toLowerCase() !== 'false',
     // Checkout live rate quotes (set false to use store settings fees while testing)
-    CHECKOUT_QUOTES: String(process.env.SHIPROCKET_CHECKOUT_QUOTES || 'true').toLowerCase() !== 'false',
-    // Auto pipeline depth after order confirm: create | awb | full
-    // create = SR order only | awb = create + assign AWB | full = create→AWB→pickup→label→invoice
-    AUTO_FULFILL: String(process.env.SHIPROCKET_AUTO_FULFILL || 'create').toLowerCase().trim(),
+    CHECKOUT_QUOTES: String(process.env.BIGSHIP_CHECKOUT_QUOTES || 'true').toLowerCase() !== 'false',
+    // Auto pipeline depth: create | full
+    // create = draft order only (no wallet charge; admin assigns the courier) | full = also place order + AWB (charges wallet)
+    AUTO_FULFILL: String(process.env.BIGSHIP_AUTO_FULFILL || 'create').toLowerCase().trim(),
+    // Background tracking sync (Bigship has no webhooks). Minutes; 0 disables.
+    TRACK_SYNC_MINUTES: Number(process.env.BIGSHIP_TRACK_SYNC_MINUTES ?? 15),
     // Package fallbacks (kg / cm) — used only when product shipping fields are unset
-    DEFAULT_WEIGHT_KG: process.env.SHIPROCKET_DEFAULT_WEIGHT_KG
-      ? Number(process.env.SHIPROCKET_DEFAULT_WEIGHT_KG)
-      : null,
-    DEFAULT_LENGTH_CM: process.env.SHIPROCKET_DEFAULT_LENGTH_CM
-      ? Number(process.env.SHIPROCKET_DEFAULT_LENGTH_CM)
-      : null,
-    DEFAULT_BREADTH_CM: process.env.SHIPROCKET_DEFAULT_BREADTH_CM
-      ? Number(process.env.SHIPROCKET_DEFAULT_BREADTH_CM)
-      : null,
-    DEFAULT_HEIGHT_CM: process.env.SHIPROCKET_DEFAULT_HEIGHT_CM
-      ? Number(process.env.SHIPROCKET_DEFAULT_HEIGHT_CM)
-      : null,
+    DEFAULT_WEIGHT_KG: process.env.BIGSHIP_DEFAULT_WEIGHT_KG ? Number(process.env.BIGSHIP_DEFAULT_WEIGHT_KG) : null,
+    // Standard shipping box for one order (cm). Default 30x25x20 fits roughly 5 kg of dry fruits.
+    DEFAULT_LENGTH_CM: Number(process.env.BIGSHIP_DEFAULT_LENGTH_CM) || 30,
+    DEFAULT_BREADTH_CM: Number(process.env.BIGSHIP_DEFAULT_BREADTH_CM) || 25,
+    DEFAULT_HEIGHT_CM: Number(process.env.BIGSHIP_DEFAULT_HEIGHT_CM) || 20,
     IS_CONFIGURED: Boolean(
-      process.env.SHIPROCKET_EMAIL &&
-      process.env.SHIPROCKET_PASSWORD
+      process.env.BIGSHIP_USER_NAME &&
+      process.env.BIGSHIP_PASSWORD &&
+      process.env.BIGSHIP_ACCESS_KEY
     )
   }
 };

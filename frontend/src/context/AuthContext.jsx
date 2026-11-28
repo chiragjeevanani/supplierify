@@ -155,6 +155,10 @@ export const formatOrder = (o) => {
     total: o.pricing?.total ?? o.total ?? 0,
     paymentMethod: o.payment?.method || o.paymentMethod || 'COD',
     paymentStatus: o.payment?.status || 'PENDING',
+    advancePaid: Number(o.payment?.advancePaid) || 0,
+    balanceDue: Number(o.payment?.balanceDue) || 0,
+    creditDueDate: o.payment?.creditDueDate || null,
+    paidAt: o.payment?.paidAt || null,
     transactionId: o.payment?.transactionId || '',
     deliveryType: o.delivery?.type || o.deliveryType || "Standard Express Courier",
     status: mapStatusToDisplay(o.status),
@@ -163,7 +167,8 @@ export const formatOrder = (o) => {
     awbNumber: o.awbNumber || '',
     deliveryNotes: o.deliveryNotes || '',
     dispatchedAt: o.dispatchedAt || null,
-    shiprocket: o.shiprocket || null,
+    bigship: o.bigship || null,
+    shiprocket: o.shiprocket || null, // legacy orders shipped before Bigship
     estimatedDelivery: o.delivery?.estimatedDelivery || null,
     cancelReason: o.cancelReason || '',
     cancelledBy: o.cancelledBy || null,
@@ -373,30 +378,11 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   /**
-   * Request OTP from backend API
+   * Log in or sign up with mobile number + password, then start the session
    */
-  const requestOtp = async (phoneNumber) => {
+  const authenticate = async (request, phoneNumber) => {
     try {
-      const response = await userAuthApi.sendOtp(phoneNumber);
-      return {
-        success: true,
-        data: response.data,
-        message: response.message
-      };
-    } catch (err) {
-      return {
-        success: false,
-        message: err.message || 'Failed to send OTP'
-      };
-    }
-  };
-
-  /**
-   * Verify OTP and Login / Register User
-   */
-  const verifyOtpAndLogin = async (phoneNumber, otp) => {
-    try {
-      const response = await userAuthApi.verifyOtp(phoneNumber, otp);
+      const response = await request();
       if (response && response.data) {
         const { token: receivedToken, user: receivedUser } = response.data;
 
@@ -458,55 +444,65 @@ export function AuthProvider({ children }) {
       // Never create a fake logged-in session without a JWT
       return {
         success: false,
-        message: err.message || 'Verification failed. Please check your connection and try again.'
+        message: err.message || 'Could not log in. Please check your connection and try again.'
       };
     }
   };
 
-  const loginWithPhone = (phoneNumber) => {
-    const digitsOnly = (phoneNumber || '').replace(/\D/g, '').slice(-10);
-    if (digitsOnly.length < 10) {
-      return { success: false, message: 'Please enter a valid 10-digit mobile number.' };
+  // Login screen, step 1: does this number need a password or a new account?
+  const checkPhone = async (phoneNumber) => {
+    try {
+      const response = await userAuthApi.checkPhone(phoneNumber);
+      return { success: true, step: response?.data?.step, emailReset: Boolean(response?.data?.emailReset) };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not continue. Please try again.' };
     }
-
-    const existing = customers.find(c => {
-      const cDigits = (c.phone || '').replace(/\D/g, '').slice(-10);
-      return cDigits === digitsOnly;
-    });
-
-    if (existing) {
-      setUser(existing);
-      return { success: true, user: existing };
-    }
-
-    const newCustomer = {
-      id: `cust-${Date.now()}`,
-      name: `Member ${digitsOnly.slice(-4)}`,
-      email: `user.${digitsOnly}@example.com`,
-      phone: `+91 ${digitsOnly}`,
-      avatar: "",
-      rewardsPoints: 500,
-      tier: "Gold Wellness Member",
-      memberSince: "Just now",
-      totalOrders: 0,
-      totalSpent: 0,
-      city: "Mumbai",
-      state: "Maharashtra",
-      status: "Active"
-    };
-
-    setCustomers(prev => [newCustomer, ...prev]);
-    setUser(newCustomer);
-    return { success: true, user: newCustomer };
   };
 
-  const loginWithDemo = (customerId) => {
-    const target = customers.find(c => c.id === customerId) || INITIAL_CUSTOMERS.find(c => c.id === customerId);
-    if (target) {
-      setUser(target);
-      return { success: true, user: target };
+  const loginWithPassword = (phoneNumber, password) =>
+    authenticate(() => userAuthApi.login(phoneNumber, password), phoneNumber);
+
+  // data: { name, phone, email, password, confirmPassword }
+  const signUp = (data) => authenticate(() => userAuthApi.register(data), data.phone);
+
+  const forgotPassword = async (email) => {
+    try {
+      const response = await userAuthApi.forgotPassword(email);
+      return { success: true, message: response?.message };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not send the email. Please try again.' };
     }
-    return { success: false, message: 'Demo customer not found.' };
+  };
+
+  const requestPasswordHelp = async (phoneNumber) => {
+    try {
+      const response = await userAuthApi.requestPasswordHelp(phoneNumber);
+      return { success: true, message: response?.message };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not send the request. Please try again.' };
+    }
+  };
+
+  // A reset link signs the customer in with the new password
+  const resetPassword = (data) => authenticate(() => userAuthApi.resetPassword(data), '');
+
+  // The server ends all older sessions, so keep the new token it returns
+  const changePassword = async (data) => {
+    try {
+      const response = await userAuthApi.changePassword(data);
+      const nextToken = response?.data?.token;
+      if (nextToken) {
+        try {
+          localStorage.setItem('wholesale_user_token', nextToken);
+        } catch (e) {
+          console.error(e);
+        }
+        setToken(nextToken);
+      }
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not change the password.' };
+    }
   };
 
   const logout = () => {
@@ -695,7 +691,9 @@ export function AuthProvider({ children }) {
       const rawPayment = String(orderPayload.paymentMethod || '');
       const rawUpper = rawPayment.toUpperCase();
       // Check COD / cash-on-delivery BEFORE UPI so "Cash / UPI on Delivery" stays COD
-      if (rawUpper.includes('COD') || rawUpper.includes('CASH') || rawUpper.includes('ON DELIVERY') || rawUpper.includes('DOORSTEP')) {
+      if (rawUpper === 'CREDIT') {
+        normalizedPayment = 'CREDIT';
+      } else if (rawUpper.includes('COD') || rawUpper.includes('CASH') || rawUpper.includes('ON DELIVERY') || rawUpper.includes('DOORSTEP')) {
         normalizedPayment = 'COD';
       } else if (rawUpper.includes('UPI') || rawUpper.includes('GPAY') || rawUpper.includes('PHONEPE')) {
         normalizedPayment = 'UPI';
@@ -727,6 +725,9 @@ export function AuthProvider({ children }) {
           upiApp: orderPayload.selectedUpiApp || ''
         },
         couponCode: orderPayload.couponApplied || undefined,
+        acceptedTerms: orderPayload.acceptedTerms === true,
+        buyerGstin: orderPayload.buyerGstin || undefined,
+        buyerCompany: orderPayload.buyerCompany || undefined,
         idempotencyKey: `ord_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         guestId: guestId || undefined,
         items: Array.isArray(localCartItems) && localCartItems.length > 0
@@ -906,10 +907,13 @@ export function AuthProvider({ children }) {
       addresses,
       selectedAddressId,
       setSelectedAddressId,
-      requestOtp,
-      verifyOtpAndLogin,
-      loginWithPhone,
-      loginWithDemo,
+      checkPhone,
+      forgotPassword,
+      requestPasswordHelp,
+      resetPassword,
+      loginWithPassword,
+      signUp,
+      changePassword,
       logout,
       addAddress,
       updateAddress,

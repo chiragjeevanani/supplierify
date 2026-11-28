@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
+import { CATEGORY_GROUPS, groupOf, productInCategory } from '../../../utils/categoryGroups';
 
 import ProductCard from '../components/ProductCard';
+import ListingCard from '../components/ListingCard';
 import { useAdmin } from '../../../context/AdminContext';
 import { useStoreRules } from '../../../hooks/useStoreRules';
 import { resolveOptimizedProductImage } from '../../../utils/productImage';
@@ -17,11 +19,12 @@ const SORTS = [
 ];
 
 export default function ShopPage() {
-  const { products = [], categories: rawCategories = [], refreshProducts } = useAdmin();
+  const { products = [], categories: rawCategories = [], refreshProducts, productsLoading, productsError } = useAdmin();
   const rules = useStoreRules();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const activeCategory = searchParams.get('category') || 'all';
+  const activeGroupParam = searchParams.get('group') || '';
   const searchQuery = (searchParams.get('search') || '').trim();
   const showCategories = searchParams.get('tab') === 'categories';
 
@@ -29,7 +32,7 @@ export default function ShopPage() {
   const [visible, setVisible] = useState(PAGE_SIZE);
 
   useEffect(() => {
-    if (refreshProducts) refreshProducts();
+    if (refreshProducts) refreshProducts().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -45,11 +48,25 @@ export default function ShopPage() {
       .sort((a, b) => rank(a) - rank(b) || String(a.name || '').localeCompare(String(b.name || '')));
   }, [rawCategories]);
 
+  // Which section is selected: the ?group= link, or the section of the selected category
+  const activeGroup = useMemo(() => {
+    if (CATEGORY_GROUPS.some((g) => g.id === activeGroupParam)) return activeGroupParam;
+    const cat = categories.find((c) => c.slug === activeCategory);
+    return cat ? groupOf(cat) : '';
+  }, [activeGroupParam, activeCategory, categories]);
+  const visibleCategories = useMemo(
+    () => (activeGroup ? categories.filter((c) => groupOf(c) === activeGroup) : categories),
+    [categories, activeGroup]
+  );
+
   const results = useMemo(() => {
     const q = searchQuery.toLowerCase();
     const cat = categories.find((c) => c.slug === activeCategory || String(c._id || c.id) === activeCategory);
 
     const list = products.filter((p) => {
+      if (activeCategory === 'all' && activeGroup) {
+        if (!categories.some((c) => groupOf(c) === activeGroup && productInCategory(p, c))) return false;
+      }
       if (activeCategory !== 'all') {
         const pc = String(p.category || '').toLowerCase();
         const matches =
@@ -70,47 +87,109 @@ export default function ShopPage() {
     else if (sortBy === 'name') sorted.sort((a, b) => String(a.name).localeCompare(String(b.name)));
     else sorted.sort((a, b) => Number(Boolean(b.isFeatured || b.isBestseller)) - Number(Boolean(a.isFeatured || a.isBestseller)));
     return sorted;
-  }, [products, categories, activeCategory, searchQuery, sortBy]);
+  }, [products, categories, activeCategory, activeGroup, searchQuery, sortBy]);
+
+  const stillLoading = productsLoading && products.length === 0;
+
+  // Categories that have no product yet are shown as listings (photo, details, enquiry),
+  // so nothing the store has put up stays hidden
+  const listings = useMemo(() => {
+    if (stillLoading || (productsError && products.length === 0)) return [];
+    const q = searchQuery.toLowerCase();
+    const pool = activeCategory === 'all'
+      ? visibleCategories
+      : categories.filter((c) => c.slug === activeCategory || String(c._id || c.id) === activeCategory);
+    return pool.filter((c) =>
+      !products.some((p) => productInCategory(p, c)) &&
+      (!q || `${c.name} ${c.description || ''}`.toLowerCase().includes(q)));
+  }, [products, categories, visibleCategories, activeCategory, searchQuery, stillLoading, productsError]);
+
+  const selectGroup = (id) => {
+    const next = {};
+    if (id) next.group = id;
+    if (searchQuery) next.search = searchQuery;
+    setSearchParams(next);
+  };
 
   const selectCategory = (slug) => {
     const next = {};
     if (slug !== 'all') next.category = slug;
+    else if (activeGroup) next.group = activeGroup;
     if (searchQuery) next.search = searchQuery;
     setSearchParams(next);
   };
 
   const clearFilters = () => setSearchParams({});
 
-  const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name;
+  const activeCategoryName = categories.find((c) => c.slug === activeCategory)?.name
+    || (activeCategory === 'all' && activeGroup ? CATEGORY_GROUPS.find((g) => g.id === activeGroup)?.label : '');
 
-  // Categories directory view
+  // Categories directory view: one block per section, so categories never mix
   if (showCategories) {
+    const sections = CATEGORY_GROUPS
+      .filter((g) => !activeGroupParam || g.id === activeGroupParam)
+      .map((g) => ({ ...g, items: categories.filter((c) => groupOf(c) === g.id) }))
+      .filter((g) => g.items.length > 0);
     return (
       <div className="px-4 sm:px-6 py-5 sm:py-6 max-w-7xl mx-auto">
-        <h2 className="font-serif text-2xl font-bold text-[color:var(--brand-primary)] mb-4">All Categories</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {categories.map((c) => (
-            <Link
-              key={c._id || c.id || c.slug}
-              to={`/shop?category=${c.slug}`}
-              className="group rounded-xl overflow-hidden bg-white border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] hover:shadow-md transition-all"
-            >
-              <div className="aspect-[4/3] bg-[color:var(--brand-surface)] overflow-hidden">
-                <img
-                  src={resolveOptimizedProductImage(c.image, { width: 400 })}
-                  alt={c.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+        <h2 className="font-serif text-2xl font-bold text-[color:var(--brand-primary)] mb-3">All Categories</h2>
+
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 mb-4" role="tablist" aria-label="Sections">
+          {[{ id: '', label: 'All' }, ...CATEGORY_GROUPS].map((g) => {
+            const on = activeGroupParam === g.id;
+            return (
+              <button
+                key={g.id || 'all'}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setSearchParams(g.id ? { tab: 'categories', group: g.id } : { tab: 'categories' })}
+                className={`shrink-0 rounded-lg px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                  on
+                    ? 'bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] border-[color:var(--brand-primary)]'
+                    : 'bg-white text-[color:var(--brand-primary)] border-transparent hover:bg-[color:var(--brand-accent)]/30'
+                }`}
+              >
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="space-y-8">
+          {sections.map((g) => (
+            <section key={g.id}>
+              <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b-2 border-[color:var(--brand-primary)]">
+                <h3 className="font-serif text-xl font-bold text-[color:var(--brand-primary)]">{g.label}</h3>
+                <Link to={`/shop?group=${g.id}`} className="text-xs font-bold underline text-[color:var(--brand-primary)] whitespace-nowrap">
+                  View all {g.label}
+                </Link>
               </div>
-              <div className="p-3">
-                <h3 className="font-bold text-[color:var(--brand-primary)]">{c.name}</h3>
-                {c.description && <p className="text-xs text-stone-500 mt-0.5 line-clamp-2">{c.description}</p>}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {g.items.map((c) => (
+                  <Link
+                    key={c._id || c.id || c.slug}
+                    to={`/shop?category=${c.slug}`}
+                    className="group rounded-xl overflow-hidden bg-white border border-[color:var(--brand-border)] hover:border-[color:var(--brand-accent)] hover:shadow-md transition-all"
+                  >
+                    <div className="aspect-[4/3] bg-[color:var(--brand-surface)] overflow-hidden">
+                      <img
+                        src={resolveOptimizedProductImage(c.image, { width: 400 })}
+                        alt={c.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-bold text-[color:var(--brand-primary)]">{c.name}</h3>
+                      {c.description && <p className="text-xs text-stone-500 mt-0.5 line-clamp-2">{c.description}</p>}
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
+            </section>
           ))}
         </div>
-        {categories.length === 0 && <p className="text-stone-500">No categories yet.</p>}
+        {sections.length === 0 && <p className="text-stone-500">No categories yet.</p>}
       </div>
     );
   }
@@ -123,7 +202,7 @@ export default function ShopPage() {
             {activeCategoryName || (searchQuery ? 'Search results' : 'All Products')}
           </h2>
           <p className="text-sm text-stone-600 mt-0.5">
-            Priced per kg. Minimum order {rules.minOrderQtyKg} kg per product.
+            Wholesale prices. The unit and minimum order are shown on each product.
           </p>
         </div>
 
@@ -141,9 +220,31 @@ export default function ShopPage() {
         </label>
       </div>
 
-      {/* Category pills */}
+      {/* Section tabs: Dry Fruits / Metals / Garments / Household Furniture */}
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 mb-2" role="tablist" aria-label="Sections">
+        {[{ id: '', label: 'All' }, ...CATEGORY_GROUPS].map((g) => {
+          const on = (activeGroup || '') === g.id;
+          return (
+            <button
+              key={g.id || 'all'}
+              role="tab"
+              aria-selected={on}
+              onClick={() => selectGroup(g.id)}
+              className={`shrink-0 rounded-lg px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                on
+                  ? 'bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)] border-[color:var(--brand-primary)]'
+                  : 'bg-white text-[color:var(--brand-primary)] border-transparent hover:bg-[color:var(--brand-accent)]/30'
+              }`}
+            >
+              {g.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Category pills (of the selected section) */}
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 mb-3" role="tablist" aria-label="Categories">
-        {[{ slug: 'all', name: 'All' }, ...categories].map((c) => {
+        {[{ slug: 'all', name: 'All' }, ...visibleCategories].map((c) => {
           const on = activeCategory === c.slug;
           return (
             <button
@@ -170,7 +271,9 @@ export default function ShopPage() {
         </div>
       )}
 
-      {results.length === 0 ? (
+      {stillLoading ? (
+        <p className="text-sm text-stone-500 py-10 text-center">Loading products…</p>
+      ) : results.length === 0 && listings.length === 0 ? (
         <div className="rounded-xl bg-white border border-dashed border-[color:var(--brand-accent)] p-10 text-center">
           <p className="font-semibold text-[color:var(--brand-primary)]">No products found</p>
           <p className="text-sm text-stone-500 mt-1">Try a different category or search term.</p>
@@ -180,6 +283,8 @@ export default function ShopPage() {
         </div>
       ) : (
         <>
+          {results.length > 0 && (
+            <>
           <p className="text-xs text-stone-500 mb-3">{results.length} product{results.length === 1 ? '' : 's'}</p>
           <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {results.slice(0, visible).map((p, i) => (
@@ -195,6 +300,22 @@ export default function ShopPage() {
                 Show more
               </button>
             </div>
+          )}
+            </>
+          )}
+
+          {listings.length > 0 && visible >= results.length && (
+            <section className={results.length > 0 ? 'mt-8' : ''} aria-label="Listings">
+              {results.length > 0 && (
+                <h3 className="font-serif text-xl font-bold text-[color:var(--brand-primary)] mb-1">More in our range</h3>
+              )}
+              <p className="text-sm text-stone-600 mb-3">Message us on WhatsApp to order these.</p>
+              <div className="grid grid-cols-1 min-[540px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                {listings.map((c) => (
+                  <ListingCard key={c._id || c.id || c.slug} category={c} />
+                ))}
+              </div>
+            </section>
           )}
         </>
       )}

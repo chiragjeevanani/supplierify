@@ -66,6 +66,13 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    // Store section this category belongs to (Dry Fruits, Metals, Garments, Household Furniture)
+    group: {
+      type: String,
+      enum: ['dry-fruits', 'metals', 'garments', 'household-furniture'],
+      default: 'dry-fruits',
+      index: true
+    },
     badge: {
       type: String,
       trim: true,

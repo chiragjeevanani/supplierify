@@ -12,7 +12,7 @@ const router = Router({ mergeParams: true });
  * @desc    Get all approved reviews for a product
  * @access  Public
  */
-router.get('/', reviewController.getPublicReviews);
+router.get('/', authMiddleware, reviewController.getPublicReviews);
 
 /**
  * @route   GET /api/v1/products/:id/reviews/eligibility

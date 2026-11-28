@@ -39,6 +39,30 @@ const userSchema = new mongoose.Schema(
       ],
       default: undefined
     },
+    // Password login. Never returned by queries or JSON unless explicitly selected.
+    passwordHash: {
+      type: String,
+      select: false
+    },
+    // Set when the customer asks the store to reset their password; cleared once it is dealt with
+    passwordRequestedAt: {
+      type: Date,
+      default: null
+    },
+    // "Forgot password" link: only a SHA-256 hash of the token is stored
+    passwordResetTokenHash: {
+      type: String,
+      select: false
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false
+    },
+    // Sessions issued before this moment are rejected (see authMiddleware)
+    passwordChangedAt: {
+      type: Date,
+      default: null
+    },
     role: {
       type: String,
       enum: Object.values(ROLES),
@@ -75,6 +99,16 @@ const userSchema = new mongoose.Schema(
     lastLoginAt: {
       type: Date,
       default: Date.now
+    },
+    // Pay-on-credit: admin can give this customer their own limit (null = store default) or block credit
+    creditLimitOverride: {
+      type: Number,
+      default: null,
+      min: [0, 'Credit limit cannot be negative']
+    },
+    creditBlocked: {
+      type: Boolean,
+      default: false
     }
   },
   {
@@ -82,6 +116,10 @@ const userSchema = new mongoose.Schema(
     toJSON: {
       transform: (doc, ret) => {
         delete ret.__v;
+        delete ret.passwordHash;
+        delete ret.passwordResetTokenHash;
+        delete ret.passwordResetExpires;
+        delete ret.passwordRequestedAt;
         return ret;
       }
     }

@@ -28,6 +28,18 @@ export function resolveDeliveryFee({ subtotal, paymentMethod, settings = {} }) {
   return isCodPaymentMethod(paymentMethod) ? codFee : onlineFee;
 }
 
+/**
+ * Partial COD: the customer pays `percent`% of the order total online now, the rest in cash on delivery.
+ * Returns { advance, balance } in whole rupees, or null when the split is not possible.
+ */
+export function computePartialCod(total, percent) {
+  const t = Math.round(Number(total) || 0);
+  const pct = Number(percent);
+  if (t < 2 || !Number.isFinite(pct) || pct < 1 || pct > 99) return null;
+  const advance = Math.min(t - 1, Math.max(1, Math.round((t * pct) / 100)));
+  return { advance, balance: t - advance };
+}
+
 export function calculateOrderTotals({
   subtotal,
   discount = 0,
@@ -52,5 +64,6 @@ export function calculateOrderTotals({
 export default {
   isCodPaymentMethod,
   resolveDeliveryFee,
+  computePartialCod,
   calculateOrderTotals
 };

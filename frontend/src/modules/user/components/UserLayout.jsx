@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, ShoppingBag, LayoutGrid, ShoppingCart, Heart, User, LifeBuoy, Shield, X, Search, Package,
-  Info, Phone, Menu, LogIn
+  Info, Phone, Menu, LogIn, Wallet
 } from 'lucide-react';
+import { useStoreRules } from '../../../hooks/useStoreRules';
 import WhatsAppIcon from '../../../components/WhatsAppIcon';
 
 import Logo from './Logo';
+import SocialLinks from './SocialLinks';
 import { BRAND } from '../../../config/brand';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -19,13 +21,18 @@ const NAV_ITEMS = [
   { label: 'Categories', to: '/shop?tab=categories', icon: LayoutGrid, match: (p, s) => p === '/shop' && s.includes('tab=categories') },
   { label: 'My Cart', to: '/cart', icon: ShoppingCart, badge: 'cart' },
   { label: 'My Orders', to: '/account?tab=orders', icon: Package, match: (p, s) => p === '/account' && s.includes('tab=orders') },
+  { label: 'Credit', to: '/credit', icon: Wallet, needsCredit: true },
   { label: 'Favourites', to: '/wishlist', icon: Heart, badge: 'wishlist' },
   { label: 'My Account', to: '/account', icon: User, match: (p, s) => p === '/account' && !s.includes('tab=orders') },
   { label: 'Help & Support', to: '/help-support', icon: LifeBuoy },
   { label: 'About Us', to: '/about', icon: Info },
   { label: 'Contact', to: '/contact', icon: Phone },
-  { label: 'Privacy Policy', to: '/privacy-policy', icon: Shield }
+  { label: 'Privacy Policy', to: '/privacy-policy', icon: Shield },
+  { label: 'Terms & Conditions', to: '/terms-and-conditions', icon: Shield }
 ];
+
+// What a visitor who has not signed in can open
+const GUEST_NAV = ['/contact', '/privacy-policy', '/terms-and-conditions'];
 
 const PAGE_TITLES = [
   ['/shop', 'Wholesale Catalogue'],
@@ -35,25 +42,32 @@ const PAGE_TITLES = [
   ['/wishlist', 'Favourites'],
   ['/order-tracking', 'Track Order'],
   ['/account', 'My Account'],
+  ['/credit', 'Credit'],
   ['/login', 'Login'],
   ['/about', 'About Us'],
   ['/contact', 'Contact'],
   ['/privacy-policy', 'Privacy Policy'],
+  ['/terms-and-conditions', 'Terms & Conditions'],
+  ['/shipping-and-return-policy', 'Shipping & Returns'],
+  ['/grievance-redressal', 'Grievance Redressal'],
   ['/help-support', 'Help & Support']
 ];
 
-const SIDEBAR_KEY = 'wholesale_sidebar_hidden';
+// The desktop sidebar starts closed. If a visitor opens it with the hamburger, that is remembered.
+const SIDEBAR_KEY = 'wholesale_sidebar_open';
 
 export default function UserLayout({ children }) {
   const { lineCount, whatsappNumber, whatsappGreeting, storeName } = useCart();
   const { wishlistCount } = useWishlist();
-  const { user } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
+  const signedIn = Boolean(isAuthenticated && token);
+  const { creditEnabled } = useStoreRules();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopHidden, setDesktopHidden] = useState(() => {
-    try { return localStorage.getItem(SIDEBAR_KEY) === '1'; } catch { return false; }
+    try { return localStorage.getItem(SIDEBAR_KEY) !== '1'; } catch { return true; }
   });
   const [query, setQuery] = useState('');
 
@@ -68,7 +82,7 @@ export default function UserLayout({ children }) {
     if (window.matchMedia('(min-width: 1024px)').matches) {
       setDesktopHidden((v) => {
         const next = !v;
-        try { localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0'); } catch { /* ignore */ }
+        try { localStorage.setItem(SIDEBAR_KEY, next ? '0' : '1'); } catch { /* ignore */ }
         return next;
       });
     } else {
@@ -101,6 +115,26 @@ export default function UserLayout({ children }) {
   const hideFab =
     /^\/(product|checkout)/.test(location.pathname) || (location.pathname.startsWith('/cart') && lineCount > 0);
 
+  // The login and new-password screens stand on their own: no header or menu, card in the middle
+  if (location.pathname === '/login' || location.pathname === '/reset-password') {
+    return (
+      <div className="min-h-screen bg-[color:var(--brand-surface)] text-[color:var(--brand-text)]">
+        <main>{children}</main>
+        {waUrl && (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat on WhatsApp"
+            className="fixed bottom-4 right-4 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#25D366] text-white shadow-lg hidden sm:flex items-center justify-center hover:scale-105 transition-transform"
+          >
+            <WhatsAppIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+          </a>
+        )}
+      </div>
+    );
+  }
+
   const sidebar = (
     <div className="h-full flex flex-col bg-[color:var(--brand-primary)] text-white">
       <div className="h-16 shrink-0 flex items-center justify-between px-4 border-b border-white/10">
@@ -116,7 +150,7 @@ export default function UserLayout({ children }) {
 
       <nav className="flex-1 overflow-y-auto py-3 px-2" aria-label="Main navigation">
         <ul className="space-y-0.5">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => (signedIn || GUEST_NAV.includes(item.to)) && (!item.needsCredit || creditEnabled)).map((item) => {
             const Icon = item.icon;
             const badge = badgeFor(item);
             return (
@@ -159,6 +193,7 @@ export default function UserLayout({ children }) {
             Chat on WhatsApp
           </a>
         )}
+        <SocialLinks variant="light" showLabel className="justify-center mt-3" />
         <p className="text-[length:calc(11px*var(--fs))] text-white/50 text-center mt-2">Wholesale orders only</p>
       </div>
     </div>
@@ -199,6 +234,7 @@ export default function UserLayout({ children }) {
             <h1 className="font-serif text-base lg:text-lg font-bold text-[color:var(--brand-primary)] leading-tight truncate">{pageTitle}</h1>
           </div>
 
+          {signedIn && (
           <form onSubmit={submitSearch} className="flex-1 min-w-0 max-w-xl ml-auto sm:ml-4" role="search">
             <div className="flex items-center rounded-lg border border-[color:var(--brand-border-strong)] bg-[color:var(--brand-surface)] focus-within:border-[color:var(--brand-accent)] overflow-hidden">
               <input
@@ -213,8 +249,10 @@ export default function UserLayout({ children }) {
               </button>
             </div>
           </form>
+          )}
 
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className={`flex items-center gap-1 sm:gap-2 shrink-0 ${signedIn ? '' : 'ml-auto'}`}>
+            {signedIn && (
             <Link
               to="/cart"
               className="relative p-2 rounded-lg text-[color:var(--brand-primary)] hover:bg-stone-100"
@@ -227,8 +265,9 @@ export default function UserLayout({ children }) {
                 </span>
               )}
             </Link>
+            )}
 
-            {user ? (
+            {signedIn && user ? (
               <Link
                 to="/account"
                 className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-stone-100"
@@ -257,10 +296,8 @@ export default function UserLayout({ children }) {
 
         <main className="flex-1 min-w-0">{children}</main>
 
-        <footer className="border-t border-[color:var(--brand-border)] bg-white px-4 sm:px-6 py-4 text-center text-xs text-stone-500">
-          © {new Date().getFullYear()} {storeName || BRAND.name}. Wholesale orders only.{' '}
-          <Link to="/privacy-policy" className="underline hover:text-[color:var(--brand-primary)]">Privacy</Link>
-        </footer>
+        {/* Spacer so the floating WhatsApp button never covers the last content */}
+        <div aria-hidden="true" className={hideFab ? 'h-24 md:h-5' : 'h-20 md:h-5'} />
       </div>
 
       {!hideFab && waUrl && (

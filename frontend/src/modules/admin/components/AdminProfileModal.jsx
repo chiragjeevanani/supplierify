@@ -11,7 +11,7 @@ export default function AdminProfileModal({ isOpen, onClose }) {
     name: 'Admin Manager',
     role: 'Super Administrator',
     email: 'admin@supplierfy.com',
-    phone: '+91 00000 00000',
+    phone: '',
     hub: 'Main Warehouse, Mumbai, MH',
     department: 'Store Operations & Catalog Logistics',
     accessLevel: 'Tier 1 Executive Clearance'

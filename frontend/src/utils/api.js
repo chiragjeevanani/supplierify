@@ -208,14 +208,49 @@ export async function apiRequest(endpoint, options = {}) {
 
 // User Auth API methods
 export const userAuthApi = {
-  sendOtp: (phone) => apiRequest('/auth/user/send-otp', {
+  // -> data.step: 'password' | 'signup' | 'contact'
+  checkPhone: (phone) => apiRequest('/auth/user/check', {
     method: 'POST',
     body: JSON.stringify({ phone })
   }),
 
-  verifyOtp: (phone, otp) => apiRequest('/auth/user/verify-otp', {
+  // asks the store to reset the password for this mobile number
+  requestPasswordHelp: (phone) => apiRequest('/auth/user/password-request', {
     method: 'POST',
-    body: JSON.stringify({ phone, otp })
+    body: JSON.stringify({ phone })
+  }),
+
+  forgotPassword: (email) => apiRequest('/auth/user/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  }),
+
+  verifyResetToken: (token) => apiRequest('/auth/user/verify-reset-token', {
+    method: 'POST',
+    body: JSON.stringify({ token })
+  }),
+
+  // data: { token, newPassword, confirmPassword }
+  resetPassword: (data) => apiRequest('/auth/user/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
+  // data: { name, phone, email, password, confirmPassword }
+  register: (data) => apiRequest('/auth/user/register', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
+  login: (phone, password) => apiRequest('/auth/user/login', {
+    method: 'POST',
+    body: JSON.stringify({ phone, password })
+  }),
+
+  // data: { currentPassword, newPassword, confirmPassword }
+  changePassword: (data) => apiRequest('/auth/user/password', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
   }),
 
   getProfile: () => apiRequest('/auth/user/profile', {
@@ -607,6 +642,11 @@ export const orderApi = {
   }
 };
 
+// Pay on credit (buy now, pay later)
+export const creditApi = {
+  getMyCredit: () => apiRequest('/users/credit', { method: 'GET' })
+};
+
 // Admin Order Management API
 // Admin: registered customers (real accounts + order stats)
 export const adminUserApi = {
@@ -614,7 +654,18 @@ export const adminUserApi = {
     const query = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) query.append('search', search);
     return apiRequest(`/admin/users?${query.toString()}`, { method: 'GET' });
-  }
+  },
+  setPassword: (id, password, emailCustomer = false) => apiRequest(`/admin/users/${id}/password`, {
+    method: 'PATCH',
+    body: JSON.stringify({ password, emailCustomer })
+  }),
+  dismissPasswordRequest: (id) => apiRequest(`/admin/users/${id}/password-request`, { method: 'DELETE' }),
+  getCredit: (id) => apiRequest(`/admin/users/${id}/credit`, { method: 'GET' }),
+  // creditLimitOverride: number, or null to use the store default; creditBlocked: boolean
+  updateCredit: (id, data) => apiRequest(`/admin/users/${id}/credit`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  })
 };
 
 export const adminDashboardApi = {
@@ -654,50 +705,51 @@ export const adminOrderApi = {
     method: 'PATCH',
     body: JSON.stringify(dispatchData)
   }),
+  // Credit / cash orders: record payment received (PAID) or undo it (PENDING)
+  updatePayment: (id, status, note = '') => apiRequest(`/admin/orders/${id}/payment`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, note })
+  }),
   cancelOrder: (id, reason = '') => apiRequest(`/admin/orders/${id}/cancel`, {
     method: 'PATCH',
     body: JSON.stringify({ reason })
   }),
-  // Shiprocket (admin-only; credentials stay on backend)
-  shiprocketCreate: (id, body = {}) => apiRequest(`/admin/orders/${id}/shiprocket/create`, {
+  // Bigship shipping (admin-only; credentials stay on backend)
+  shippingCreate: (id, body = {}) => apiRequest(`/admin/orders/${id}/shipping/create`, {
     method: 'POST',
     body: JSON.stringify(body)
   }),
-  shiprocketFulfill: (id, body = {}) => apiRequest(`/admin/orders/${id}/shiprocket/fulfill`, {
+  shippingFulfill: (id, body = {}) => apiRequest(`/admin/orders/${id}/shipping/fulfill`, {
     method: 'POST',
     body: JSON.stringify(body)
   }),
-  shiprocketServiceability: (id) => apiRequest(`/admin/orders/${id}/shiprocket/serviceability`, {
+  shippingServiceability: (id) => apiRequest(`/admin/orders/${id}/shipping/serviceability`, {
     method: 'GET'
   }),
-  shiprocketAwb: (id, body = {}) => apiRequest(`/admin/orders/${id}/shiprocket/awb`, {
+  shippingAwb: (id, body = {}) => apiRequest(`/admin/orders/${id}/shipping/awb`, {
     method: 'POST',
     body: JSON.stringify(body)
   }),
-  shiprocketPickup: (id) => apiRequest(`/admin/orders/${id}/shiprocket/pickup`, {
+  shippingLabel: (id) => apiRequest(`/admin/orders/${id}/shipping/label`, {
     method: 'POST',
     body: JSON.stringify({})
   }),
-  shiprocketLabel: (id) => apiRequest(`/admin/orders/${id}/shiprocket/label`, {
+  shippingInvoice: (id) => apiRequest(`/admin/orders/${id}/shipping/invoice`, {
     method: 'POST',
     body: JSON.stringify({})
   }),
-  shiprocketInvoice: (id) => apiRequest(`/admin/orders/${id}/shiprocket/invoice`, {
+  shippingManifest: (id) => apiRequest(`/admin/orders/${id}/shipping/manifest`, {
     method: 'POST',
     body: JSON.stringify({})
   }),
-  shiprocketManifest: (id) => apiRequest(`/admin/orders/${id}/shiprocket/manifest`, {
-    method: 'POST',
-    body: JSON.stringify({})
-  }),
-  shiprocketTrack: (id) => apiRequest(`/admin/orders/${id}/shiprocket/track`, {
+  shippingTrack: (id) => apiRequest(`/admin/orders/${id}/shipping/track`, {
     method: 'GET'
   }),
-  shiprocketCancel: (id, cancelOrder = false) => apiRequest(`/admin/orders/${id}/shiprocket/cancel`, {
+  shippingCancel: (id, cancelOrder = false) => apiRequest(`/admin/orders/${id}/shipping/cancel`, {
     method: 'POST',
     body: JSON.stringify({ cancelOrder: Boolean(cancelOrder) })
   }),
-  shiprocketStatus: () => apiRequest('/admin/shiprocket/status', { method: 'GET' }),
+  shippingStatus: () => apiRequest('/admin/shipping/status', { method: 'GET' }),
   getInvoiceBlob: (id) => {
     const url = `${API_BASE}/admin/orders/${id}/invoice`;
     return fetchPdfBlob(url);
@@ -713,7 +765,7 @@ export const checkoutApi = {
   getSummary: () => apiRequest('/checkout/summary', { method: 'GET' })
 };
 
-// Shipping quote (DB fee vs Shiprocket live rates)
+// Shipping quote (store fee vs Bigship live rates)
 export const shippingApi = {
   getQuote: ({ pincode, paymentMethod, subtotal, weightKg }) => {
     const query = new URLSearchParams();
@@ -735,7 +787,8 @@ export const adminSettingsApi = {
 };
 
 export const settingsApi = {
-  getPublicSettings: () => apiRequest('/settings', { method: 'GET' })
+  getPublicSettings: () => apiRequest('/settings', { method: 'GET' }),
+  getLegalPage: (page) => apiRequest('/settings/legal/' + encodeURIComponent(page), { method: 'GET' })
 };
 
 // Customer & Public Reviews API

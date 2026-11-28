@@ -108,7 +108,10 @@ export default function NewOrderAlertModal({
   };
 
   const isCod = String(order.paymentMethod || '').toUpperCase().includes('COD');
-  const payBadge = isCod
+  const isCredit = String(order.paymentMethod || '').toUpperCase() === 'CREDIT';
+  const payBadge = isCredit
+    ? { label: 'Pay on credit (unpaid)', cls: 'bg-sky-100 text-sky-800 border-sky-300' }
+    : isCod
     ? { label: 'Cash on Delivery (COD)', cls: 'bg-amber-100 text-amber-800 border-amber-300' }
     : { label: order.paymentMethod || 'Online Payment', cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
 

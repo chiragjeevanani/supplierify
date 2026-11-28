@@ -33,16 +33,15 @@ import adminBannerRoutes from './routes/adminBannerRoutes.js';
 import recipeRoutes from './routes/recipeRoutes.js';
 import adminRecipeRoutes from './routes/adminRecipeRoutes.js';
 import fcmTokenRoutes from './routes/fcmTokenRoutes.js';
-import adminShiprocketRoutes from './routes/adminShiprocketRoutes.js';
-import webhookRoutes from './routes/webhookRoutes.js';
+import adminShippingRoutes from './routes/adminShippingRoutes.js';
 import shippingRoutes from './routes/shippingRoutes.js';
-import shiprocketController from './controllers/shiprocketController.js';
+import bigshipController from './controllers/bigshipController.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { requireAdmin } from './middleware/roleMiddleware.js';
 import { validateOrderId } from './validations/orderValidation.js';
 import { notFoundHandler, errorMiddleware } from './middleware/errorMiddleware.js';
 import { sendSuccess } from './utils/response.js';
-import { UPLOADS_ROOT } from './services/uploadService.js';
+import { UPLOADS_ROOT, serveStoredUpload, setUploadHeaders } from './services/uploadService.js';
 
 // Initialize Express
 const app = express();
@@ -106,13 +105,10 @@ app.use(
     dotfiles: 'deny',
     maxAge: '30d',
     immutable: true,
-    setHeaders: (res) => {
-      // Uploaded files are images only; never let a browser sniff them into something executable
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'");
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    }
-  })
+    setHeaders: setUploadHeaders
+  }),
+  // Not in the folder (for example after a redeploy): read it from the database
+  serveStoredUpload
 );
 
 // Health Check Endpoints
@@ -155,26 +151,24 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/v1/admin/orders', adminOrderRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
 
-// Convenience Shiprocket actions nested under admin orders (same controller)
-const mountOrderShiprocket = (basePath) => {
-  app.post(`${basePath}/:id/shiprocket/create`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.createShipment);
-  app.post(`${basePath}/:id/shiprocket/fulfill`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.fulfill);
-  app.get(`${basePath}/:id/shiprocket/serviceability`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.serviceability);
-  app.post(`${basePath}/:id/shiprocket/awb`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.assignAwb);
-  app.post(`${basePath}/:id/shiprocket/pickup`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.schedulePickup);
-  app.post(`${basePath}/:id/shiprocket/label`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.generateLabel);
-  app.post(`${basePath}/:id/shiprocket/invoice`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.generateInvoice);
-  app.post(`${basePath}/:id/shiprocket/manifest`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.generateManifest);
-  app.get(`${basePath}/:id/shiprocket/track`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.track);
-  app.post(`${basePath}/:id/shiprocket/cancel`, authMiddleware, requireAdmin, validateOrderId, shiprocketController.cancelShipment);
+// Convenience Bigship shipping actions nested under admin orders (same controller)
+const mountOrderShipping = (basePath) => {
+  const guard = [authMiddleware, requireAdmin, validateOrderId];
+  app.post(`${basePath}/:id/shipping/create`, ...guard, bigshipController.createShipment);
+  app.post(`${basePath}/:id/shipping/fulfill`, ...guard, bigshipController.fulfill);
+  app.get(`${basePath}/:id/shipping/serviceability`, ...guard, bigshipController.serviceability);
+  app.post(`${basePath}/:id/shipping/awb`, ...guard, bigshipController.assignAwb);
+  app.post(`${basePath}/:id/shipping/label`, ...guard, bigshipController.generateLabel);
+  app.post(`${basePath}/:id/shipping/invoice`, ...guard, bigshipController.generateInvoice);
+  app.post(`${basePath}/:id/shipping/manifest`, ...guard, bigshipController.generateManifest);
+  app.get(`${basePath}/:id/shipping/track`, ...guard, bigshipController.track);
+  app.post(`${basePath}/:id/shipping/cancel`, ...guard, bigshipController.cancelShipment);
 };
-mountOrderShiprocket('/api/v1/admin/orders');
-mountOrderShiprocket('/api/admin/orders');
+mountOrderShipping('/api/v1/admin/orders');
+mountOrderShipping('/api/admin/orders');
 
-app.use('/api/v1/admin/shiprocket', adminShiprocketRoutes);
-app.use('/api/admin/shiprocket', adminShiprocketRoutes);
-app.use('/api/v1/webhooks', webhookRoutes);
-app.use('/api/webhooks', webhookRoutes);
+app.use('/api/v1/admin/shipping', adminShippingRoutes);
+app.use('/api/admin/shipping', adminShippingRoutes);
 app.use('/api/v1/checkout', checkoutRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/v1/shipping', shippingRoutes);
@@ -212,7 +206,7 @@ app.use('/api/fcm-tokens', fcmTokenRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // API only: the storefront is hosted separately, so there is no frontend to serve here.
-app.get('/', (req, res) => sendSuccess(res, 'Dry Fruit Wholesale API is running', { health: '/api/v1/health' }));
+app.get('/', (req, res) => sendSuccess(res, 'Supplierfy API is running', { health: '/api/v1/health' }));
 
 // 404 Route Not Found Handler
 app.use(notFoundHandler);

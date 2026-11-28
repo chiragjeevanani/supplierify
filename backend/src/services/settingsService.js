@@ -1,7 +1,8 @@
+import { resolvePublicPhone } from '../utils/phone.js';
 import mongoose from 'mongoose';
 import Settings from '../models/Settings.js';
 import { ALLOWED_SETTINGS_FIELDS } from '../validations/settingsValidation.js';
-import { HEX_COLOR, cleanImageUrl } from '../utils/safeUrl.js';
+import { HEX_COLOR, cleanImageUrl, cleanSocialUrl, SOCIAL_HOSTS } from '../utils/safeUrl.js';
 
 export const DEFAULT_THEME = Object.freeze({
   primary: '#0E2A1B',
@@ -27,16 +28,40 @@ export function sanitizeFontScale(value) {
   return Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, n));
 }
 
+const LEGAL_PAGES = ['terms', 'privacy', 'shipping'];
+
+const LEGAL_DEFAULT_KEYS = ['companyName', 'companyGstin', 'companyAddress', 'dispatchAddress', 'fssaiNumber', 'showTrademark', 'grievanceName', 'grievanceDesignation', 'grievanceEmail', 'grievancePhone', 'grievanceTimeline', 'foodSalesPaused'];
+
 export const DEFAULT_SETTINGS = {
   configKey: 'default_store_settings',
   gstRate: 5,
   minOrderQtyKg: 5,
   whatsappNumber: '',
   whatsappGreeting: 'Hello Supplierfy',
+  instagramUrl: '',
+  facebookUrl: '',
   logoUrl: '',
   faviconUrl: '',
   theme: { ...DEFAULT_THEME },
   fontScale: 100,
+  companyName: 'Bhavana Enterprises LLP',
+  companyGstin: '27ABGFB3485P1ZT',
+  companyAddress: 'Navin Sheva, Uran, Navi Mumbai',
+  dispatchAddress: '',
+  fssaiNumber: '',
+  showTrademark: false,
+  grievanceName: '',
+  grievanceDesignation: '',
+  grievanceEmail: '',
+  grievancePhone: '',
+  grievanceTimeline: 'We acknowledge every complaint within 48 hours and resolve it within 15 days of receiving it.',
+  foodSalesPaused: false,
+  partialCodEnabled: false,
+  partialCodPercent: 30,
+  creditEnabled: false,
+  creditEligibilityAmount: 50000,
+  creditLimit: 25000,
+  creditDueDays: 30,
   standardDeliveryFee: 150,
   codDeliveryFee: 150,
   freeDeliveryThreshold: 10000,
@@ -46,13 +71,13 @@ export const DEFAULT_SETTINGS = {
   warehouseCity: 'Mumbai',
   warehouseState: 'Maharashtra',
   warehousePincode: '400001',
-  warehousePhone: '+91 00000 00000',
+  warehousePhone: '',
   hubAddress: 'Warehouse Address, Mumbai, Maharashtra - 400001',
-  storeName: 'Dry Fruit Wholesale',
-  storeEmail: 'support@example.com',
-  supportEmail: 'support@example.com',
-  storePhone: '+91 00000 00000',
-  supportPhone: '+91 00000 00000',
+  storeName: 'Supplierfy',
+  storeEmail: '',
+  supportEmail: '',
+  storePhone: '',
+  supportPhone: '',
   storeAddress: 'Warehouse Address, Mumbai, Maharashtra - 400001',
   currency: '₹',
   timezone: 'Asia/Kolkata',
@@ -60,9 +85,9 @@ export const DEFAULT_SETTINGS = {
     title: 'Help & Support',
     subtitle:
       'Reach customer care or browse quick answers about orders, shipping, and payments.',
-    phone: '+91 00000 00000',
+    phone: '',
     phoneHours: 'Mon–Sat, 9 AM – 6 PM',
-    email: 'support@example.com',
+    email: '',
     emailNote: 'Reply within 24 hours',
     writeTitle: 'Write to us',
     writeLink: '/contact',
@@ -161,6 +186,11 @@ class SettingsService {
       settings = created.toObject();
     }
 
+    // Settings saved before the legal fields existed: fill those from the defaults
+    for (const key of LEGAL_DEFAULT_KEYS) {
+      if (settings[key] === undefined) settings[key] = DEFAULT_SETTINGS[key];
+    }
+
     this._cachedSettings = settings;
     this._cacheExpiry = now + this._cacheTTL;
 
@@ -178,8 +208,20 @@ class SettingsService {
       storeName: settings.storeName || DEFAULT_SETTINGS.storeName,
       storeEmail: settings.storeEmail || settings.supportEmail || DEFAULT_SETTINGS.storeEmail,
       supportEmail: settings.supportEmail || settings.storeEmail || DEFAULT_SETTINGS.supportEmail,
-      storePhone: settings.storePhone || settings.supportPhone || DEFAULT_SETTINGS.storePhone,
-      supportPhone: settings.supportPhone || settings.storePhone || DEFAULT_SETTINGS.supportPhone,
+      storePhone: resolvePublicPhone([settings.storePhone, settings.supportPhone], settings.whatsappNumber),
+      supportPhone: resolvePublicPhone([settings.supportPhone, settings.storePhone], settings.whatsappNumber),
+      companyName: settings.companyName || DEFAULT_SETTINGS.companyName,
+      companyGstin: settings.companyGstin || DEFAULT_SETTINGS.companyGstin,
+      companyAddress: settings.companyAddress || DEFAULT_SETTINGS.companyAddress,
+      dispatchAddress: settings.dispatchAddress || '',
+      fssaiNumber: String(settings.fssaiNumber || '').trim(),
+      showTrademark: settings.showTrademark === true,
+      grievanceName: settings.grievanceName || '',
+      grievanceDesignation: settings.grievanceDesignation || '',
+      grievanceEmail: settings.grievanceEmail || '',
+      grievancePhone: settings.grievancePhone || '',
+      grievanceTimeline: settings.grievanceTimeline || DEFAULT_SETTINGS.grievanceTimeline,
+      foodSalesPaused: settings.foodSalesPaused === true,
       storeAddress: settings.storeAddress || DEFAULT_SETTINGS.storeAddress,
       currency: settings.currency || DEFAULT_SETTINGS.currency,
       timezone: settings.timezone || DEFAULT_SETTINGS.timezone,
@@ -187,21 +229,47 @@ class SettingsService {
       minOrderQtyKg: Number(settings.minOrderQtyKg) > 0 ? Number(settings.minOrderQtyKg) : DEFAULT_SETTINGS.minOrderQtyKg,
       whatsappNumber: String(settings.whatsappNumber || '').replace(/\D/g, ''),
       whatsappGreeting: String(settings.whatsappGreeting || '').trim() || DEFAULT_SETTINGS.whatsappGreeting,
+      instagramUrl: cleanSocialUrl(settings.instagramUrl, SOCIAL_HOSTS.instagram) || '',
+      facebookUrl: cleanSocialUrl(settings.facebookUrl, SOCIAL_HOSTS.facebook) || '',
       logoUrl: cleanImageUrl(settings.logoUrl) || '',
       faviconUrl: cleanImageUrl(settings.faviconUrl) || '',
       theme: sanitizeTheme(settings.theme),
       fontScale: sanitizeFontScale(settings.fontScale),
+      partialCodEnabled: settings.partialCodEnabled === true,
+      partialCodPercent: Number(settings.partialCodPercent) >= 1 && Number(settings.partialCodPercent) <= 99 ? Math.round(Number(settings.partialCodPercent)) : DEFAULT_SETTINGS.partialCodPercent,
+      creditEnabled: settings.creditEnabled === true,
+      creditEligibilityAmount: Number(settings.creditEligibilityAmount) >= 0 ? Number(settings.creditEligibilityAmount) : DEFAULT_SETTINGS.creditEligibilityAmount,
+      creditLimit: Number(settings.creditLimit) >= 0 ? Number(settings.creditLimit) : DEFAULT_SETTINGS.creditLimit,
+      creditDueDays: Number(settings.creditDueDays) >= 1 ? Math.round(Number(settings.creditDueDays)) : DEFAULT_SETTINGS.creditDueDays,
       standardDeliveryFee: typeof settings.standardDeliveryFee === 'number' ? settings.standardDeliveryFee : DEFAULT_SETTINGS.standardDeliveryFee,
       codDeliveryFee: typeof settings.codDeliveryFee === 'number' ? settings.codDeliveryFee : DEFAULT_SETTINGS.codDeliveryFee,
       freeDeliveryThreshold: typeof settings.freeDeliveryThreshold === 'number' ? settings.freeDeliveryThreshold : DEFAULT_SETTINGS.freeDeliveryThreshold,
       helpSupport: sanitizeHelpSupport(
         {
           ...(settings.helpSupport || {}),
-          phone: settings.helpSupport?.phone || settings.supportPhone || settings.storePhone || '',
+          phone: resolvePublicPhone([settings.helpSupport?.phone, settings.supportPhone, settings.storePhone], settings.whatsappNumber),
           email: settings.helpSupport?.email || settings.supportEmail || settings.storeEmail || ''
         },
         DEFAULT_SETTINGS.helpSupport
       )
+    };
+  }
+
+  /**
+   * One admin-editable legal page. Empty content means "use the website's standard text".
+   * @param {'terms'|'privacy'|'shipping'} page
+   */
+  async getLegalPage(page) {
+    if (!LEGAL_PAGES.includes(page)) {
+      const err = new Error('Unknown legal page.');
+      err.statusCode = 404;
+      throw err;
+    }
+    const settings = await this.getSettings();
+    return {
+      page,
+      content: String(settings[page + 'Content'] || ''),
+      updatedAt: settings[page + 'UpdatedAt'] || null
     };
   }
 
@@ -220,14 +288,28 @@ class SettingsService {
     const sanitized = {};
     for (const key of ALLOWED_SETTINGS_FIELDS) {
       if (updateData[key] !== undefined) {
-        if (['gstRate', 'minOrderQtyKg', 'standardDeliveryFee', 'codDeliveryFee', 'freeDeliveryThreshold', 'lowStockThreshold'].includes(key)) {
+        if (['gstRate', 'minOrderQtyKg', 'standardDeliveryFee', 'codDeliveryFee', 'freeDeliveryThreshold', 'lowStockThreshold', 'creditEligibilityAmount', 'creditLimit'].includes(key)) {
           sanitized[key] = Number(updateData[key]);
         } else if (key === 'theme') {
           sanitized.theme = sanitizeTheme(updateData.theme);
+        } else if (key === 'foodSalesPaused' || key === 'showTrademark') {
+          sanitized[key] = updateData[key] === true || updateData[key] === 'true';
+        } else if (key === 'companyGstin') {
+          sanitized.companyGstin = String(updateData.companyGstin || '').trim().toUpperCase();
+        } else if (key === 'partialCodEnabled') {
+          sanitized.partialCodEnabled = updateData.partialCodEnabled === true || updateData.partialCodEnabled === 'true';
+        } else if (key === 'partialCodPercent') {
+          sanitized.partialCodPercent = Math.round(Number(updateData.partialCodPercent));
+        } else if (key === 'creditEnabled') {
+          sanitized.creditEnabled = updateData.creditEnabled === true || updateData.creditEnabled === 'true';
+        } else if (key === 'creditDueDays') {
+          sanitized.creditDueDays = Math.round(Number(updateData.creditDueDays));
         } else if (key === 'fontScale') {
           sanitized.fontScale = sanitizeFontScale(updateData.fontScale);
         } else if (key === 'logoUrl' || key === 'faviconUrl') {
           sanitized[key] = cleanImageUrl(updateData[key]) || '';
+        } else if (key === 'instagramUrl' || key === 'facebookUrl') {
+          sanitized[key] = cleanSocialUrl(updateData[key], SOCIAL_HOSTS[key === 'instagramUrl' ? 'instagram' : 'facebook']) || '';
         } else if (key === 'whatsappNumber') {
           sanitized[key] = String(updateData[key] || '').replace(/\D/g, '');
         } else if (key === 'helpSupport') {
@@ -271,6 +353,15 @@ class SettingsService {
       const wState = sanitized.warehouseState || current.warehouseState || DEFAULT_SETTINGS.warehouseState;
       const wPin = sanitized.warehousePincode || current.warehousePincode || DEFAULT_SETTINGS.warehousePincode;
       sanitized.hubAddress = `${wName}, ${wAddr}, ${wCity}, ${wState} - ${wPin}`;
+    }
+
+    // Edited legal pages get a fresh "last updated" date (only when the text really changed)
+    const editedPages = LEGAL_PAGES.filter((pg) => sanitized[pg + 'Content'] !== undefined);
+    if (editedPages.length) {
+      const current = await this.getSettings();
+      for (const pg of editedPages) {
+        if (String(current[pg + 'Content'] || '') !== sanitized[pg + 'Content']) sanitized[pg + 'UpdatedAt'] = new Date();
+      }
     }
 
     const updated = await Settings.findOneAndUpdate(

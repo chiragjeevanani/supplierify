@@ -62,6 +62,8 @@ router.patch('/:id/dispatch', validateOrderId, validateDispatchOrder, orderContr
  * @desc    Admin order cancellation with atomic stock restoration
  * @access  Protected (Admin Only)
  */
+router.patch('/:id/payment', validateOrderId, orderController.updatePaymentStatus);
+
 router.patch('/:id/cancel', validateOrderId, validateCancelOrder, orderController.cancelOrderAdmin);
 
 export default router;

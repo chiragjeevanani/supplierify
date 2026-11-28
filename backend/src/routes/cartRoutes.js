@@ -1,39 +1,11 @@
 import { Router } from 'express';
 import cartController from '../controllers/cartController.js';
-import { verifyToken } from '../utils/generateToken.js';
-import User from '../models/User.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+import { requireUser } from '../middleware/roleMiddleware.js';
 
 const router = Router();
 
-/**
- * Optional Authentication Middleware
- * Decodes user if token present, but does not block guests
- */
-const optionalAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      try {
-        const decoded = verifyToken(token);
-        // Only attach real USER accounts — ignore ADMIN JWTs on cart routes
-        if (decoded && decoded.id && decoded.role !== 'ADMIN') {
-          const user = await User.findById(decoded.id);
-          if (user) {
-            req.user = user;
-          }
-        }
-      } catch (tokenErr) {
-        // Token expired or invalid - ignore and proceed as guest session
-      }
-    }
-  } catch (err) {
-    // Proceed
-  }
-  next();
-};
-
-router.use(optionalAuth);
+router.use(authMiddleware, requireUser);
 
 // Cart endpoints
 router.get('/', (req, res, next) => cartController.getCart(req, res, next));

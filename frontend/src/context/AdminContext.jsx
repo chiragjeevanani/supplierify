@@ -6,14 +6,15 @@ import { BANNERS_DATA } from '../data/adminData';
 import { INITIAL_RECIPES } from '../data/recipes';
 import { recipeApi, adminRecipeApi } from '../utils/api';
 import pushNotificationService from '../services/pushNotificationService';
+import { useAuth } from './AuthContext';
 import { resolveProductImage } from '../utils/productImage';
 
 const AdminContext = createContext();
 
 const INITIAL_SETTINGS = {
-  storeName: "Dry Fruit Wholesale Private Limited",
-  supportEmail: "support@example.com",
-  supportPhone: "+91 00000 00000",
+  storeName: "Supplierfy",
+  supportEmail: "",
+  supportPhone: "",
   freeDeliveryThreshold: 499,
   standardDeliveryFee: 40,
   codDeliveryFee: 60,
@@ -24,16 +25,16 @@ const INITIAL_SETTINGS = {
   warehouseCity: "Mumbai",
   warehouseState: "Maharashtra",
   warehousePincode: "400001",
-  warehousePhone: "+91 00000 00000",
+  warehousePhone: "",
   lowStockThreshold: 30,
   currency: "₹",
   helpSupport: {
     title: 'Help & Support',
     subtitle:
       'Reach customer care or browse quick answers about orders, shipping, and payments.',
-    phone: '+91 00000 00000',
+    phone: '',
     phoneHours: 'Mon–Sat, 9 AM – 6 PM',
-    email: 'support@example.com',
+    email: '',
     emailNote: 'Reply within 24 hours',
     writeTitle: 'Write to us',
     writeLink: '/contact',
@@ -90,10 +91,33 @@ const SETTINGS_UPDATE_KEYS = [
   'minOrderQtyKg',
   'whatsappNumber',
   'whatsappGreeting',
+  'instagramUrl',
+  'facebookUrl',
   'logoUrl',
   'faviconUrl',
   'theme',
-  'fontScale'
+  'fontScale',
+  'companyName',
+  'companyGstin',
+  'companyAddress',
+  'dispatchAddress',
+  'fssaiNumber',
+  'showTrademark',
+  'grievanceName',
+  'grievanceDesignation',
+  'grievanceEmail',
+  'grievancePhone',
+  'grievanceTimeline',
+  'foodSalesPaused',
+  'termsContent',
+  'privacyContent',
+  'shippingContent',
+  'partialCodEnabled',
+  'partialCodPercent',
+  'creditEnabled',
+  'creditEligibilityAmount',
+  'creditLimit',
+  'creditDueDays'
 ];
 
 function sanitizeSettingsPayload(raw = {}) {
@@ -177,6 +201,7 @@ export const normalizeCoupon = (c) => ({
 });
 
 export function AdminProvider({ children }) {
+  const { token: customerToken } = useAuth();
   // 0. Admin Authentication State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     try {
@@ -405,6 +430,8 @@ export function AdminProvider({ children }) {
   // Admin sessions load every recipe (incl. drafts); storefront loads only published ones.
   useEffect(() => {
     const isAdminArea = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+    // The catalogue is only served to signed-in accounts
+    if (isAdminArea ? !isAdminAuthenticated : !customerToken) return;
     const request = isAdminArea ? adminRecipeApi.getAll() : recipeApi.getRecipes();
     request
       .then(res => {
@@ -416,7 +443,7 @@ export function AdminProvider({ children }) {
         }
       })
       .catch(err => console.warn('[AdminContext] Recipes backend load note:', err.message));
-  }, []);
+  }, [customerToken, isAdminAuthenticated]);
 
   // Fetch and sync products directly from MongoDB backend API (Single Source of Truth)
   const refreshProducts = async () => {
@@ -482,9 +509,12 @@ export function AdminProvider({ children }) {
         setCategories(prev => {
           const serverIds = new Set(fetched.map(c => String(c.id || c._id)));
           const serverSlugs = new Set(fetched.map(c => c.slug));
-          // Retain any locally created or custom categories that aren't yet on server
+          // Keep only categories created here that the server has not seen yet (temporary 'cat-…' ids).
+          // A copy saved in this browser earlier that the server no longer lists (deleted, or inactive in the
+          // customer list) must be dropped, otherwise it shows up stale and without its section.
           const localOnly = prev.filter(c => {
             const cid = String(c.id || c._id || '');
+            if (/^[0-9a-f]{24}$/i.test(cid)) return false;
             return !serverIds.has(cid) && !serverSlugs.has(c.slug);
           });
           return [...localOnly, ...fetched];
@@ -547,14 +577,16 @@ export function AdminProvider({ children }) {
     }
   };
 
+  // Load (and reload) once someone signs in: the server refuses the catalogue to visitors
   useEffect(() => {
-    refreshProducts();
-    refreshCategories();
     refreshSettings();
+    if (!customerToken && !isAdminAuthenticated) return;
+    refreshProducts().catch(() => {}); // the error is shown through productsError
+    refreshCategories();
     if (isAdminAuthenticated) {
       refreshReviews();
     }
-  }, [isAdminAuthenticated]);
+  }, [isAdminAuthenticated, customerToken]);
 
   // Product Actions - MongoDB API backed
   const addProduct = async (productData) => {
@@ -565,7 +597,7 @@ export function AdminProvider({ children }) {
       .replace(/^-+|-+$/g, '');
 
     const priceNum = Number(productData.price || 249);
-    const oldPriceNum = Number(productData.oldPrice || Math.round(priceNum * 1.2));
+    const oldPriceNum = Number(productData.oldPrice || 0);
     const stockCount = Number(productData.stockCount ?? 150);
     const isBestseller = productData.isBestseller !== undefined ? Boolean(productData.isBestseller) : true;
 

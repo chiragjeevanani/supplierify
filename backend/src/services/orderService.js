@@ -10,8 +10,12 @@ import settingsService from './settingsService.js';
 import couponService from './couponService.js';
 import notificationService from './notificationService.js';
 import { calculateOrderTotals } from '../utils/pricing.js';
+import { assertCanUseCredit } from './creditService.js';
 import { resolveMinQtyKg, minQtyMessage } from '../utils/minQty.js';
-import { resolveShiprocketDeliveryFee } from './shippingQuoteService.js';
+import { assertFoodSalesAllowed } from './foodRules.js';
+import { normalizeGstin } from '../utils/gst.js';
+import { hsnFor } from '../utils/hsn.js';
+import { resolveShippingDeliveryFee } from './shippingQuoteService.js';
 
 /**
  * Generate a customer-facing human-readable order number
@@ -87,7 +91,7 @@ export const getCheckoutSummary = async (userId) => {
 
     const minQtyKg = resolveMinQtyKg(liveProduct, minQtySettings);
     if (item.qty < minQtyKg) {
-      stockWarnings.push(minQtyMessage(liveProduct.name, minQtyKg));
+      stockWarnings.push(minQtyMessage(liveProduct.name, minQtyKg, liveProduct.unit));
     }
 
     if (isOutOfStock) {
@@ -150,7 +154,7 @@ export const getCheckoutSummary = async (userId) => {
 
   let shippingQuote = null;
   if (defaultAddress?.postalCode) {
-    shippingQuote = await resolveShiprocketDeliveryFee({
+    shippingQuote = await resolveShippingDeliveryFee({
       pincode: defaultAddress.postalCode,
       paymentMethod: 'UPI',
       subtotal,
@@ -200,7 +204,11 @@ export const placeOrder = async (userId, payload) => {
     idempotencyKey = null,
     guestId = null,
     items: clientItems = null,
-    paymentStatus = null
+    paymentStatus = null,
+    advanceAmount = 0,
+    acceptedTerms = false,
+    buyerGstin = '',
+    buyerCompany = ''
   } = payload;
 
   // 1. Idempotency Check
@@ -209,6 +217,19 @@ export const placeOrder = async (userId, payload) => {
     if (existingOrder) {
       return existingOrder;
     }
+  }
+
+  // 1b. The buyer must accept the Terms & Conditions and Privacy Policy; GSTIN (optional) must be well formed
+  if (acceptedTerms !== true) {
+    const err = new Error('Please accept the Terms & Conditions and Privacy Policy to place your order.');
+    err.statusCode = 400;
+    throw err;
+  }
+  const cleanBuyerGstin = normalizeGstin(buyerGstin);
+  if (cleanBuyerGstin === null) {
+    const err = new Error('The buyer GSTIN you entered is not valid. It has 15 characters, for example 27ABCDE1234F1Z5.');
+    err.statusCode = 400;
+    throw err;
   }
 
   // 2. Validate Address
@@ -250,6 +271,7 @@ export const placeOrder = async (userId, payload) => {
   // 4. Fetch live products from DB and validate
   const productIds = cart.items.map(item => item.product);
   const products = await Product.find({ _id: { $in: productIds } });
+  await assertFoodSalesAllowed(products);
   const productMap = new Map(products.map(p => [p._id.toString(), p]));
 
   const orderItems = [];
@@ -273,7 +295,7 @@ export const placeOrder = async (userId, payload) => {
 
     const minQtyKg = resolveMinQtyKg(liveProduct, minQtySettings);
     if (item.qty < minQtyKg) {
-      const err = new Error(minQtyMessage(liveProduct.name, minQtyKg));
+      const err = new Error(minQtyMessage(liveProduct.name, minQtyKg, liveProduct.unit));
       err.statusCode = 400;
       throw err;
     }
@@ -306,6 +328,7 @@ export const placeOrder = async (userId, payload) => {
       name: liveProduct.name,
       image: liveProduct.image || item.image,
       weight: item.weight,
+      hsnCode: hsnFor(liveProduct),
       price: unitPrice,
       oldPrice: unitOldPrice,
       qty: item.qty,
@@ -335,13 +358,22 @@ export const placeOrder = async (userId, payload) => {
   }
 
   const settings = await settingsService.getSettings();
-  const normalizedPaymentMethod = ['UPI', 'CARD', 'NETBANKING'].includes(String(paymentMethod).toUpperCase())
+  // PARTIAL_COD is only ever created by the server after a verified Razorpay advance payment
+  const isPartialCod =
+    String(paymentMethod).toUpperCase() === 'PARTIAL_COD' &&
+    String(paymentStatus || '').toUpperCase() === 'PAID' &&
+    Number(advanceAmount) > 0;
+  const normalizedPaymentMethod = isPartialCod
+    ? 'PARTIAL_COD'
+    : ['UPI', 'CARD', 'NETBANKING', 'CREDIT'].includes(String(paymentMethod).toUpperCase())
     ? String(paymentMethod).toUpperCase()
     : 'COD';
+  // Fees, shipping and COD handling treat a partial COD order like a COD order
+  const feeMethod = normalizedPaymentMethod === 'PARTIAL_COD' ? 'COD' : normalizedPaymentMethod;
 
-  const shipQuote = await resolveShiprocketDeliveryFee({
+  const shipQuote = await resolveShippingDeliveryFee({
     pincode: selectedAddress.postalCode,
-    paymentMethod: normalizedPaymentMethod,
+    paymentMethod: feeMethod,
     subtotal,
     items: orderItems,
     productMap
@@ -362,11 +394,21 @@ export const placeOrder = async (userId, payload) => {
   const pricing = calculateOrderTotals({
     subtotal,
     discount,
-    paymentMethod: normalizedPaymentMethod,
+    paymentMethod: feeMethod,
     settings,
     deliveryFee: shipQuote.error ? undefined : shipQuote.deliveryFee
   });
   const { deliveryFee, tax, total } = pricing;
+
+  // Partial COD: what was paid online, and what the courier still has to collect
+  const advancePaid = normalizedPaymentMethod === 'PARTIAL_COD' ? Math.min(Math.round(Number(advanceAmount)), total) : 0;
+  const balanceDue = normalizedPaymentMethod === 'PARTIAL_COD' ? Math.max(0, total - advancePaid) : 0;
+
+  // Pay on credit: only eligible customers, within their available credit, nothing overdue
+  let creditDueDate = null;
+  if (normalizedPaymentMethod === 'CREDIT') {
+    ({ dueDate: creditDueDate } = await assertCanUseCredit(userId, total));
+  }
 
   // 6. Address Snapshot
   const addressSnapshot = {
@@ -452,9 +494,19 @@ export const placeOrder = async (userId, payload) => {
         total,
         couponDetails: couponDetailsSnapshot
       },
+      buyer: { gstin: cleanBuyerGstin || '', companyName: String(buyerCompany || '').trim().slice(0, 150) },
+      termsAcceptedAt: new Date(),
       payment: {
         method: normalizedPaymentMethod,
-        status: initialPaymentStatus,
+        status:
+          normalizedPaymentMethod === 'CREDIT'
+            ? 'PENDING'
+            : normalizedPaymentMethod === 'PARTIAL_COD'
+            ? (balanceDue > 0 ? 'PARTIALLY_PAID' : 'PAID')
+            : initialPaymentStatus,
+        advancePaid,
+        balanceDue,
+        creditDueDate,
         transactionId: paymentDetails.transactionId || '',
         upiApp: paymentDetails.upiApp || ''
       },
@@ -517,7 +569,7 @@ export const placeOrder = async (userId, payload) => {
     }
 
     // Record COD in payment ledger only.
-    // Shiprocket push is deferred until admin sets "Ready for Dispatch" (SHIPPED).
+    // Bigship push is deferred until admin marks the order PACKED.
     if (normalizedPaymentMethod === 'COD') {
       await PaymentService.recordCodPayment(savedOrder, userId).catch(err => {
         console.warn('Could not record COD payment in ledger:', err.message);
@@ -618,7 +670,7 @@ export const normalizeStatus = (statusStr) => {
     'ACCEPTED': 'ACCEPTED',
     'ACCEPTED_BY_ADMIN': 'ACCEPTED',
     'PACKED': 'PACKED',
-    // PROCESSING is an internal legacy/Shiprocket label — keep distinct from PACKED
+    // PROCESSING is an internal legacy/Bigship label — keep distinct from PACKED
     'PROCESSING': 'PROCESSING',
     'READY_FOR_DISPATCH': 'SHIPPED',
     'DISPATCHED': 'SHIPPED',
@@ -830,11 +882,17 @@ export const updateOrderStatusAdmin = async (orderId, newStatusRaw, { updatedBy 
 
   if (newStatus === 'DELIVERED') {
     order.delivery.status = 'Delivered';
-    order.payment.status = 'PAID';
-    await Payment.findOneAndUpdate(
-      { order: order._id },
-      { $set: { status: 'PAID', paidAt: new Date() } }
-    ).catch(() => {});
+    // Credit orders stay unpaid on delivery — the admin records the payment when it arrives
+    if (order.payment.method !== 'CREDIT') {
+      order.payment.status = 'PAID';
+      order.payment.paidAt = order.payment.paidAt || new Date();
+      // Partial COD: the courier collected the balance at the door
+      if (order.payment.method === 'PARTIAL_COD') order.payment.balanceDue = 0;
+      await Payment.findOneAndUpdate(
+        { order: order._id },
+        { $set: { status: 'PAID', paidAt: new Date() } }
+      ).catch(() => {});
+    }
   } else if (newStatus === 'OUT_FOR_DELIVERY') {
     order.delivery.status = 'Out for Delivery';
     applyRiderDetails(order, rider);
@@ -848,19 +906,20 @@ export const updateOrderStatusAdmin = async (orderId, newStatusRaw, { updatedBy 
   updateOrderTimeline(order, newStatus, updatedBy, note);
   let updatedOrder = await order.save();
 
-  // Push to Shiprocket only when admin marks Ready for Dispatch (SHIPPED)
-  if (newStatus === 'SHIPPED') {
+  // Push to Bigship when admin marks the order PACKED: the box is ready, so weight/size are final
+  // and the courier can be booked. SHIPPED later comes from Bigship tracking (picked up) or manually.
+  if (newStatus === 'PACKED') {
     try {
-      const { default: shiprocketFulfillmentService } = await import('./shiprocketFulfillmentService.js');
-      const srResult = await shiprocketFulfillmentService.tryAutoCreate(updatedOrder._id);
-      if (srResult?.error) {
-        console.warn(`[Shiprocket] Ready-for-dispatch push failed for ${updatedOrder.orderNumber}:`, srResult.error);
+      const { default: bigshipFulfillmentService } = await import('./bigshipFulfillmentService.js');
+      const shipResult = await bigshipFulfillmentService.tryAutoCreate(updatedOrder._id);
+      if (shipResult?.error) {
+        console.warn(`[Bigship] Packed push failed for ${updatedOrder.orderNumber}:`, shipResult.error);
       } else {
         const refreshed = await Order.findById(updatedOrder._id);
         if (refreshed) updatedOrder = refreshed;
       }
     } catch (e) {
-      console.warn('[Shiprocket] Ready-for-dispatch push note:', e.message);
+      console.warn('[Bigship] Packed push note:', e.message);
     }
   }
 
@@ -888,7 +947,7 @@ export const updateOrderStatusAdmin = async (orderId, newStatusRaw, { updatedBy 
       notifType = 'ORDER_OUT_FOR_DELIVERY';
     } else if (newStatus === 'DELIVERED') {
       userTitle = 'Order Delivered!';
-      userMessage = `Your order #${order.orderNumber} was delivered successfully. Enjoy your Dry Fruit Wholesale snacks!`;
+      userMessage = `Your order #${order.orderNumber} was delivered successfully. Thank you for ordering with Supplierfy.`;
       notifType = 'ORDER_DELIVERED';
 
       // Notify Admin as well on delivery completion
@@ -1006,27 +1065,13 @@ export const dispatchOrderAdmin = async (orderId, dispatchPayload = {}) => {
   }
 
   const settings = await settingsService.getSettings();
-  const hubName = settings.warehouseName || 'DRY FRUIT WHOLESALE Central Fulfillment Hub';
+  const hubName = settings.warehouseName || 'Supplierfy Dispatch Hub';
   const noteMsg = `Dispatched via ${order.courierName || 'Standard Express'}${order.awbNumber ? ` (AWB: ${order.awbNumber})` : ''}`;
   updateOrderTimeline(order, 'SHIPPED', hubName, noteMsg);
 
-  let savedOrder = await order.save();
-
-  // Push to Shiprocket when dispatch advances to Ready for Dispatch / SHIPPED
-  if (becameShipped || order.status === 'SHIPPED') {
-    try {
-      const { default: shiprocketFulfillmentService } = await import('./shiprocketFulfillmentService.js');
-      const srResult = await shiprocketFulfillmentService.tryAutoCreate(savedOrder._id);
-      if (srResult?.error) {
-        console.warn(`[Shiprocket] Dispatch push failed for ${savedOrder.orderNumber}:`, srResult.error);
-      } else {
-        const refreshed = await Order.findById(savedOrder._id);
-        if (refreshed) savedOrder = refreshed;
-      }
-    } catch (e) {
-      console.warn('[Shiprocket] Dispatch push note:', e.message);
-    }
-  }
+  // Manual dispatch means the admin hands the parcel to their own courier/rider, so Bigship
+  // is NOT called here (it is called when the order is marked PACKED).
+  const savedOrder = await order.save();
 
   try {
     if (savedOrder.user) {
@@ -1056,6 +1101,55 @@ export const dispatchOrderAdmin = async (orderId, dispatchPayload = {}) => {
 /**
  * Cancel Order with Atomic Inventory Stock Restoration & Anti-Duplicate Guards
  */
+/**
+ * Admin records that payment for a credit (or COD) order has been received, or undoes it.
+ * Online (Razorpay) payments are never changed here.
+ */
+export const updatePaymentStatusAdmin = async (orderId, { status, note = '', updatedBy = 'Admin' } = {}) => {
+  const target = String(status || '').toUpperCase();
+  if (!['PAID', 'PENDING'].includes(target)) {
+    const err = new Error('Payment status must be PAID or PENDING');
+    err.statusCode = 400;
+    throw err;
+  }
+  const query = mongoose.Types.ObjectId.isValid(orderId) ? { _id: orderId } : { orderNumber: orderId };
+  const order = await Order.findOne(query);
+  if (!order) {
+    const err = new Error('Order not found');
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!['CREDIT', 'COD', 'PARTIAL_COD'].includes(order.payment.method)) {
+    const err = new Error('Only credit and cash orders can be marked paid by hand. Online payments update automatically.');
+    err.statusCode = 400;
+    throw err;
+  }
+  if (order.status === 'CANCELLED') {
+    const err = new Error('This order is cancelled.');
+    err.statusCode = 400;
+    throw err;
+  }
+  if (order.payment.method === 'PARTIAL_COD') {
+    // "Paid" = the balance was collected; undoing it goes back to "partially paid". The online advance record is not touched.
+    const balance = Math.max(0, Math.round((order.pricing?.total || 0) - (order.payment.advancePaid || 0)));
+    order.payment.status = target === 'PAID' ? 'PAID' : 'PARTIALLY_PAID';
+    order.payment.balanceDue = target === 'PAID' ? 0 : balance;
+    order.payment.paidAt = target === 'PAID' ? new Date() : null;
+    order.payment.paymentNote = String(note || '').trim().slice(0, 300);
+    await order.save();
+    return order;
+  }
+  order.payment.status = target;
+  order.payment.paidAt = target === 'PAID' ? new Date() : null;
+  order.payment.paymentNote = String(note || '').trim().slice(0, 300);
+  await order.save();
+  await Payment.findOneAndUpdate(
+    { order: order._id },
+    { $set: { status: target, paidAt: order.payment.paidAt } }
+  ).catch(() => {});
+  return order;
+};
+
 export const cancelOrder = async (orderId, options = {}) => {
   const {
     cancelledBy = 'CUSTOMER',
@@ -1176,11 +1270,11 @@ export const cancelOrder = async (orderId, options = {}) => {
 
   await lockedOrder.save();
 
-  // Best-effort: cancel matching Shiprocket shipment/AWB so dashboard stays in sync
-  if (lockedOrder.shiprocket?.orderId || lockedOrder.shiprocket?.awbCode) {
-    import('./shiprocketFulfillmentService.js')
+  // Best-effort: cancel matching Bigship shipment/AWB so dashboard stays in sync
+  if (lockedOrder.bigship?.customOrderId) {
+    import('./bigshipFulfillmentService.js')
       .then(({ default: sr }) => sr.tryCancelForOrder(lockedOrder._id))
-      .catch((e) => console.warn('[Shiprocket] Cancel-on-order-cancel note:', e.message));
+      .catch((e) => console.warn('[Bigship] Cancel-on-order-cancel note:', e.message));
   }
 
   // Trigger Notifications for Order Cancellation
@@ -1231,6 +1325,7 @@ export const cancelOrder = async (orderId, options = {}) => {
 };
 
 export default {
+  updatePaymentStatusAdmin,
   getCheckoutSummary,
   placeOrder,
   getOrderById,
