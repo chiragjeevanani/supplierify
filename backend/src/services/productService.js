@@ -74,7 +74,7 @@ class ProductService {
                   ? p.gallery.find((g) => typeof g === 'string' && !g.startsWith('data:'))
                   : '') || p.image || '';
           const gallery = Array.isArray(p.gallery)
-            ? p.gallery.filter((g) => typeof g === 'string' && g && !g.startsWith('data:')).slice(0, 4)
+            ? p.gallery.filter((g) => typeof g === 'string' && g && !g.startsWith('data:')).slice(0, 8)
             : [];
           const live = ratingByProduct.get(String(p._id));
           return {
@@ -158,7 +158,8 @@ class ProductService {
 
     // Calculate prices with intelligent fallbacks
     const priceNum = Number(data.price || data.variants?.[0]?.price || 249);
-    const oldPriceNum = Number(data.oldPrice || data.variants?.[0]?.oldPrice || (priceNum > 0 ? Math.round(priceNum * 1.2) : 299));
+    // 0 = no struck-through price. Never invent one.
+    const oldPriceNum = Number(data.oldPrice || data.variants?.[0]?.oldPrice || 0);
 
     assertPriceOrder(priceNum, data.oldPrice ? oldPriceNum : 0);
     (Array.isArray(data.variants) ? data.variants : []).forEach((v) => {
@@ -202,7 +203,7 @@ class ProductService {
       tagline: data.tagline || data.subtitle || '',
       slug,
       category: data.category || 'almonds-nuts',
-      flavor: data.flavor || data.name.split(' ')[0] || '',
+      flavor: data.flavor || '', // shown to customers as "Origin", so never guessed from the name
       diet: data.diet || ['natural', 'vegan', 'gluten-free'],
       price: priceNum,
       oldPrice: oldPriceNum,

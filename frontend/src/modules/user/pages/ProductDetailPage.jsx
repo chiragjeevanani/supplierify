@@ -386,12 +386,12 @@ export default function ProductDetailPage() {
                   ₹{currentPrice}
                 </span>
                 <span className="text-sm font-semibold text-stone-500">{perUnit(unit)}</span>
-                {currentOldPrice && (
+                {Number(currentOldPrice) > Number(currentPrice) && (
                   <span className="text-base text-stone-400 line-through">
                     ₹{currentOldPrice}
                   </span>
                 )}
-                {product.discountPercent && (
+                {Number(product.discountPercent) > 0 && (
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
                     {product.discountPercent}% OFF
                   </span>
@@ -485,10 +485,12 @@ export default function ProductDetailPage() {
                 <ShieldCheck className="w-4 h-4 text-[color:var(--brand-primary)]" />
                 <span>Secure Payments</span>
               </div>
+              {isFoodProduct(product, ALL_CATEGORIES) && (
               <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
                 <Leaf className="w-4 h-4 text-[color:var(--brand-primary)]" />
                 <span>100% Natural</span>
               </div>
+              )}
             </div>
 
           </div>
