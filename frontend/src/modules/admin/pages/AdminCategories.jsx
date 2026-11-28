@@ -20,6 +20,8 @@ import AdminSidebar from '../components/AdminSidebar';
 import AdminHeader from '../components/AdminHeader';
 import { resolveProductImage } from '../../../utils/productImage';
 import AddCategoryModal from '../components/AddCategoryModal';
+import ListingsWithoutPrice from '../components/ListingsWithoutPrice';
+import { listingsWithoutProducts } from '../../../utils/listings';
 import { useAdmin } from '../../../context/AdminContext';
 
 export default function AdminCategories() {
@@ -196,6 +198,10 @@ export default function AdminCategories() {
               );
             })}
           </div>
+
+          {!categoriesLoading && (
+            <ListingsWithoutPrice listings={listingsWithoutProducts(categories, products)} onAddPrice={addProductTo} />
+          )}
 
           <p className="rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm px-4 py-3">
             A <strong>category</strong> is a folder, for example "Men T-shirts". To sell an item with its price, stock and
@@ -601,7 +607,13 @@ export default function AdminCategories() {
               await updateCategory(editingCategory.id || editingCategory._id, data);
               showFeedback('success', `Category "${data.name || editingCategory.name}" updated successfully!`);
             } else {
-              await addCategory(data);
+              const saved = await addCategory(data);
+              // a new category has nothing to buy yet: offer to add the price straight away
+              if (String(data.status || 'Active') !== 'Inactive' && window.confirm(
+                `Category "${data.name}" is saved.\n\nAdd a price now so customers can buy it?`
+              )) {
+                addProductTo({ slug: saved?.slug || data.slug });
+              }
               showFeedback('success', `Category "${data.name}" created successfully!`);
             }
             setIsCategoryModalOpen(false);

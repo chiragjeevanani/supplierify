@@ -3,6 +3,7 @@ import WhatsAppIcon from '../../../components/WhatsAppIcon';
 import { useStoreRules } from '../../../hooks/useStoreRules';
 import { resolveOptimizedProductImage } from '../../../utils/productImage';
 import { buildListingEnquiry, buildWhatsAppUrl } from '../../../utils/whatsapp';
+import { priceFromText } from '../../../utils/listings';
 
 /**
  * A category that has no product yet, shown with its photo and details so customers can still
@@ -25,6 +26,9 @@ export default function ListingCard({ category }) {
         <h3 className="font-bold text-[color:var(--brand-primary)] leading-snug break-words">{category.name}</h3>
         {category.description && category.description.trim() !== String(category.name).trim() && (
           <p className="text-sm text-stone-700 whitespace-pre-line break-words">{category.description}</p>
+        )}
+        {priceFromText(category.description) === '' && (
+          <p className="text-sm font-bold text-[color:var(--brand-primary)]">Price on request</p>
         )}
         {waUrl && (
           <a

@@ -12,7 +12,9 @@ import ViewProductModal from '../components/ViewProductModal';
 import { useAdmin } from '../../../context/AdminContext';
 import { CATEGORIES } from '../../../data/categories';
 import CategoryOptions from '../components/CategoryOptions';
-import { CATEGORY_GROUPS, groupLabel, groupOfProduct, categoryNameOfProduct } from '../../../utils/categoryGroups';
+import ListingsWithoutPrice from '../components/ListingsWithoutPrice';
+import { listingsWithoutProducts, productFromListing } from '../../../utils/listings';
+import { CATEGORY_GROUPS, groupLabel, groupOfProduct, categoryNameOfProduct, productInCategory } from '../../../utils/categoryGroups';
 import { resolveProductImage } from '../../../utils/productImage';
 
 export default function AdminProducts() {
@@ -44,16 +46,25 @@ export default function AdminProducts() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [newProductCategory, setNewProductCategory] = useState('');
+  const [prefill, setPrefill] = useState(null); // product form values taken from an item without a price
+
+  const startProductFor = (category) => {
+    setNewProductCategory(category.slug || category.id);
+    setPrefill((products || []).some((p) => productInCategory(p, category)) ? null : productFromListing(category));
+    setEditingProduct(null);
+    setIsAddModalOpen(true);
+  };
   // "Add product" on the Categories page arrives here as ?addTo=<category>
   const [searchParams, setSearchParams] = useSearchParams();
   const addTo = searchParams.get('addTo');
   useEffect(() => {
-    if (!addTo || !categories?.length) return;
-    setNewProductCategory(addTo);
-    setEditingProduct(null);
-    setIsAddModalOpen(true);
+    // wait for the products too, to know whether this category is still empty
+    if (!addTo || !categories?.length || productsLoading) return;
+    const category = categories.find((c) => (c.slug || c.id) === addTo);
+    if (category) startProductFor(category);
     setSearchParams({}, { replace: true });
-  }, [addTo, categories, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addTo, categories, productsLoading, setSearchParams]);
   const [viewingProduct, setViewingProduct] = useState(null);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
 
@@ -95,6 +106,7 @@ export default function AdminProducts() {
   };
 
   const handleSaveProduct = async (data) => {
+    setPrefill(null);
     try {
       if (editingProduct) {
         await updateProduct(editingProduct._id || editingProduct.id, data);
@@ -140,6 +152,10 @@ export default function AdminProducts() {
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-4 w-full font-sans max-w-7xl mx-auto">
           
+          {!productsLoading && !productsError && (
+            <ListingsWithoutPrice listings={listingsWithoutProducts(categories, products)} onAddPrice={startProductFor} />
+          )}
+
           {/* Toast Feedback Alert */}
           {feedback.message && (
             <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 animate-fadeIn ${
@@ -380,7 +396,7 @@ export default function AdminProducts() {
                           </td>
                           <td className="py-3.5 px-2 sm:px-5 whitespace-nowrap">
                             <span className="font-bold text-sm sm:text-base text-stone-900">₹{p.price}</span>
-                            {p.oldPrice && (
+                            {Number(p.oldPrice) > Number(p.price) && (
                               <span className="hidden sm:inline text-xs text-stone-400 line-through ml-1.5">₹{p.oldPrice}</span>
                             )}
                             <span className="text-[length:calc(11px*var(--fs))] text-stone-400 font-normal"> {perUnit(unitOf(p)).replace('/ ', '/')}</span>
@@ -450,10 +466,12 @@ export default function AdminProducts() {
           setIsAddModalOpen(false);
           setEditingProduct(null);
           setNewProductCategory('');
+          setPrefill(null);
         }}
         onSave={handleSaveProduct}
         initialData={editingProduct}
         categories={categories}
+        prefill={prefill}
         defaultCategory={newProductCategory || (selectedCategory !== 'all' ? selectedCategory : '')}
       />
 

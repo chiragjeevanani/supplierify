@@ -8,15 +8,16 @@ import { useAdmin } from '../../../context/AdminContext';
 import { uploadApi } from '../../../utils/api';
 import { resolveProductImage } from '../../../utils/productImage';
 import { compressImageFile } from '../../../utils/compressImage';
+import { MAX_PRODUCT_PHOTOS } from '../../../utils/listings';
 
 const EMPTY_PRODUCT = {
   name: '',
   tagline: '',
   category: 'almonds-nuts',
   isBestseller: true,
-  price: 500,
-  oldPrice: 550,
-  discountPercent: 9,
+  price: '',
+  oldPrice: '',
+  discountPercent: 0,
   stockCount: 500,
   minOrderQty: 0,
   unit: 'kg',
@@ -32,14 +33,15 @@ const EMPTY_PRODUCT = {
   details: '',
   productDetails: '',
   variants: [
-    { id: 'v1', name: 'Per kg', weight: '1 kg', price: 500, oldPrice: 550, stock: 500 }
+    { id: 'v1', name: 'Per kg', weight: '1 kg', price: 0, oldPrice: 0, stock: 500 }
   ]
 };
 
-export default function AddProductModal({ isOpen, onClose, onSave, initialData = null, categories: propCategories = null, defaultCategory = '' }) {
+export default function AddProductModal({ isOpen, onClose, onSave, initialData = null, categories: propCategories = null, defaultCategory = '', prefill = null }) {
   const [activeTab, setActiveTab] = useState('basic');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadStatusMsg, setUploadStatusMsg] = useState('');
+  const [photoNote, setPhotoNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const { categories: adminCategories, refreshCategories } = useAdmin();
@@ -130,10 +132,25 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         setFormData({
           ...EMPTY_PRODUCT,
           category: defaultCat,
-          unit: unitFor(defaultCat)
+          unit: unitFor(defaultCat),
+          ...(prefill || {})
         });
+        // a photo that no longer exists on the server must not be copied to the new product
+        if (prefill?.image) {
+          const probe = new Image();
+          probe.onerror = () => {
+            setFormData((prev) => ({
+              ...prev,
+              image: prev.image === prefill.image ? '' : prev.image,
+              gallery: (prev.gallery || []).filter((g) => g !== prefill.image)
+            }));
+            setPhotoNote('The old photo of this item is missing. Please add the photos again.');
+          };
+          probe.src = resolveProductImage(prefill.image);
+        }
       }
       setActiveTab('basic');
+      setPhotoNote('');
       setIsUploadingImage(false);
       setIsSubmitting(false);
       setUploadStatusMsg('');
@@ -157,16 +174,19 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
     if (files.length === 0) return;
 
     const currentGallery = Array.isArray(formData.gallery) ? formData.gallery : [];
-    const maxImages = 4;
+    const maxImages = MAX_PRODUCT_PHOTOS;
     const remainingSlots = maxImages - currentGallery.length;
 
     if (remainingSlots <= 0) {
-      alert('You can select up to 4 gallery photos. Please remove an existing photo first.');
+      alert(`A product can have up to ${MAX_PRODUCT_PHOTOS} photos. Please remove one first.`);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     const filesToProcess = files.slice(0, remainingSlots);
+    setPhotoNote(files.length > remainingSlots
+      ? `Only ${remainingSlots} more photo(s) could be added: the limit is ${MAX_PRODUCT_PHOTOS}.`
+      : '');
 
     // Instant blob previews (no heavy base64 encode before upload)
     const previewUrls = filesToProcess.map((file) => URL.createObjectURL(file));
@@ -337,6 +357,10 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
       alert('Please enter a valid selling price greater than 0.');
       return;
     }
+    if (formData.stockCount === '' || Number(formData.stockCount) < 0) {
+      alert('Please enter the stock you have.');
+      return;
+    }
     // Original price must be >= selling price (blank / 0 = no strike-through price)
     const originalNum = Number(formData.oldPrice);
     if (formData.oldPrice !== '' && formData.oldPrice !== undefined && originalNum > 0 && originalNum < priceNum) {
@@ -381,7 +405,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
         category: formData.category || 'almonds-nuts',
         flavor: formData.flavor || '',
         price: priceNum,
-        oldPrice: Number(formData.oldPrice || Math.round(priceNum * 1.2)),
+        oldPrice: Number(formData.oldPrice || 0),
         stockCount: Number(formData.stockCount || 0),
         minOrderQty: Math.max(0, Number(formData.minOrderQty) || 0),
         unit: formData.unit || 'kg',
@@ -578,7 +602,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         min="1"
                         value={formData.price}
                         onChange={e => setFormData({ ...formData, price: e.target.value })}
-                        placeholder="500"
+                        placeholder="Enter price"
                         className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-[color:var(--brand-primary)]"
                       />
                     </div>
@@ -591,7 +615,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         min="0"
                         value={formData.oldPrice}
                         onChange={e => setFormData({ ...formData, oldPrice: e.target.value })}
-                        placeholder="550"
+                        placeholder="Optional"
                         className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white focus:outline-none ${
                           Number(formData.oldPrice) > 0 && Number(formData.price) > 0 && Number(formData.oldPrice) < Number(formData.price)
                             ? 'border-rose-400 focus:border-rose-500'
@@ -707,7 +731,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                   </label>
                 </div>
 
-                {/* Product Photos & Gallery (3-4 Images Selection Option) */}
+                {/* Product Photos & Gallery */}
                 <div className="p-3.5 sm:p-4 bg-[color:var(--brand-surface)] rounded-xl border border-stone-200 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                     <div>
@@ -716,17 +740,15 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                           Product Photos & Gallery
                         </label>
                         <span className={`text-[length:calc(10px*var(--fs))] font-bold px-2 py-0.5 rounded-full border ${
-                          (formData.gallery?.length || 0) >= 3
+                          (formData.gallery?.length || 0) > 0
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                            : (formData.gallery?.length || 0) > 0
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
                             : 'bg-stone-100 text-stone-600 border-stone-300'
                         }`}>
-                          {(formData.gallery?.length || 0)} of 4 photos selected
+                          {(formData.gallery?.length || 0)} of {MAX_PRODUCT_PHOTOS} photos
                         </span>
                       </div>
                       <p className="text-[length:calc(11px*var(--fs))] text-stone-500 mt-0.5 font-normal">
-                        Select <strong>3 to 4 images</strong> to showcase packaging front, Dry Fruits texture, and nutrition details in the user app gallery slider.
+                        Add up to <strong>{MAX_PRODUCT_PHOTOS} photos</strong>. You can select several at once. The first one is the cover customers see in the shop.
                       </p>
                     </div>
 
@@ -742,7 +764,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                     className="hidden"
                   />
 
-                  {/* Gallery Grid (3-4 Slots) */}
+                  {/* Gallery Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {(formData.gallery || []).map((imgUrl, idx) => {
                       const isPrimary = idx === 0;
@@ -802,7 +824,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
 
                           {/* Hover: Set as Cover */}
                           {!isPrimary && (
-                            <div className="absolute inset-x-0 bottom-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <div className="absolute inset-x-0 bottom-0 p-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10">
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -820,8 +842,8 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       );
                     })}
 
-                    {/* Add More Photos Slot (Visible if fewer than 4 photos) */}
-                    {(formData.gallery?.length || 0) < 4 && (
+                    {/* Add More Photos Slot */}
+                    {(formData.gallery?.length || 0) < MAX_PRODUCT_PHOTOS && (
                       <button
                         type="button"
                         disabled={isUploadingImage}
@@ -842,7 +864,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                               Add Photo
                             </span>
                             <span className="text-[length:calc(9.5px*var(--fs))] text-stone-400 font-medium">
-                              Slot {(formData.gallery?.length || 0) + 1} of 4
+                              Slot {(formData.gallery?.length || 0) + 1} of {MAX_PRODUCT_PHOTOS}
                             </span>
                           </>
                         )}
@@ -859,7 +881,7 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                       <UploadCloud className="w-8 h-8 text-[color:var(--brand-accent)] mx-auto" />
                       <div>
                         <p className="text-xs sm:text-sm font-bold text-[color:var(--brand-primary)]">
-                          Click to select 3–4 gallery photos at once
+                          Click to select photos (several at once)
                         </p>
                         <p className="text-[length:calc(11px*var(--fs))] text-stone-500 font-normal mt-0.5">
                           Hold <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[length:calc(10px*var(--fs))]">Ctrl</kbd> or <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-300 rounded text-[length:calc(10px*var(--fs))]">Shift</kbd> in file explorer to select multiple files. PNG, JPG, WEBP formats.
@@ -870,9 +892,13 @@ export default function AddProductModal({ isOpen, onClose, onSave, initialData =
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[color:var(--brand-primary)] text-[color:var(--brand-accent)] text-xs font-bold uppercase tracking-wider shadow-xs hover:bg-[color:var(--brand-primary-light)] pointer-events-none"
                       >
                         <UploadCloud className="w-3.5 h-3.5" />
-                        <span>Choose 3–4 Photos</span>
+                        <span>Choose Photos</span>
                       </button>
                     </div>
+                  )}
+
+                  {photoNote && (
+                    <p role="note" className="text-xs font-semibold text-amber-900 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">{photoNote}</p>
                   )}
 
                   {/* Upload status message */}

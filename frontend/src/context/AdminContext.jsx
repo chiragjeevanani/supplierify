@@ -597,7 +597,7 @@ export function AdminProvider({ children }) {
       .replace(/^-+|-+$/g, '');
 
     const priceNum = Number(productData.price || 249);
-    const oldPriceNum = Number(productData.oldPrice || Math.round(priceNum * 1.2));
+    const oldPriceNum = Number(productData.oldPrice || 0);
     const stockCount = Number(productData.stockCount ?? 150);
     const isBestseller = productData.isBestseller !== undefined ? Boolean(productData.isBestseller) : true;
 

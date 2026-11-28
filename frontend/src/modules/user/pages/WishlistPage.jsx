@@ -257,7 +257,7 @@ export default function WishlistPage() {
                       {/* Price and Discount */}
                       <div className="flex items-baseline gap-1 pt-0.5">
                         <span className="font-extrabold text-[length:calc(11px*var(--fs))] sm:text-xs text-[color:var(--brand-primary)]">₹{p.price}</span>
-                        {p.oldPrice && (
+                        {Number(p.oldPrice) > Number(p.price) && (
                           <span className="text-[length:calc(9px*var(--fs))] sm:text-[length:calc(10px*var(--fs))] text-stone-400 line-through">₹{p.oldPrice}</span>
                         )}
                         {p.discount && (
