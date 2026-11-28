@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, Award, ShoppingBag, Search, Eye, X, Loader2, AlertCircle, RefreshCw, Download } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Users, Award, ShoppingBag, Search, Eye, X, Loader2, AlertCircle, RefreshCw, Download, KeyRound } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminHeader from '../components/AdminHeader';
 import usePagination from '../../../hooks/usePagination';
@@ -57,6 +58,10 @@ export default function AdminCustomers() {
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [emailAvailable, setEmailAvailable] = useState(false);
+  const [openPassword, setOpenPassword] = useState(false); // open the profile with the password box ready
+  const [searchParams, setSearchParams] = useSearchParams();
+  const passwordFor = searchParams.get('password'); // from a notification: /admin/customers?password=<id>
 
   const loadCustomers = useCallback(async () => {
     setIsLoading(true);
@@ -68,6 +73,7 @@ export default function AdminCustomers() {
       do {
         const res = await adminUserApi.getUsers({ page, limit: 200 });
         all.push(...(res?.data?.users || []));
+        setEmailAvailable(Boolean(res?.data?.emailAvailable));
         totalPages = res?.data?.pagination?.totalPages || 1;
         page += 1;
       } while (page <= totalPages);
@@ -83,16 +89,54 @@ export default function AdminCustomers() {
     loadCustomers();
   }, [loadCustomers]);
 
+  // A new password request should show up without refreshing the page
+  useEffect(() => {
+    if (passwordFor) loadCustomers();
+  }, [passwordFor, loadCustomers]);
+
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('All');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   // Compute CRM Metrics
   const customerList = Array.isArray(customers) ? customers : [];
+  const idOf = (c) => c?._id || c?.id;
+  const waiting = customerList
+    .filter((c) => c.passwordRequestedAt)
+    .sort((a, b) => new Date(a.passwordRequestedAt) - new Date(b.passwordRequestedAt));
+
+  const showPassword = (customer) => {
+    setOpenPassword(true);
+    setSelectedCustomer(customer);
+  };
+
+  const patchCustomer = (id, changes) => {
+    setCustomers((prev) => prev.map((c) => (idOf(c) === id ? { ...c, ...changes } : c)));
+    setSelectedCustomer((c) => (c && idOf(c) === id ? { ...c, ...changes } : c));
+    window.dispatchEvent(new CustomEvent('wholesale:password-request-changed'));
+  };
+
+  const dismissRequest = async (id) => {
+    try {
+      await adminUserApi.dismissPasswordRequest(id);
+      patchCustomer(id, { passwordRequestedAt: null });
+    } catch (err) {
+      setLoadError(err?.message || 'Could not dismiss the request.');
+    }
+  };
   const totalSpendAll = customerList.reduce((acc, c) => acc + (Number(c?.totalSpent) || 0), 0);
   const totalOrdersAll = customerList.reduce((acc, c) => acc + (Number(c?.totalOrders) || 0), 0);
   const repeatCustomerCount = customerList.filter(c => (Number(c?.totalOrders) || 0) > 1).length;
   const repeatRate = Math.round((repeatCustomerCount / (customerList.length || 1)) * 100);
+
+  useEffect(() => {
+    if (!passwordFor || isLoading) return;
+    const match = customers.find((c) => idOf(c) === passwordFor);
+    if (!match) return;
+    showPassword(match);
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passwordFor, isLoading, customers]);
 
   useEffect(() => {
     if (selectedCustomer) {
@@ -203,6 +247,26 @@ export default function AdminCustomers() {
               <p className="text-xs text-stone-500 font-medium">Total customer lifetime revenue</p>
             </div>
           </div>
+
+          {waiting.length > 0 && (
+            <section aria-label="Password requests" className="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-2">
+              <h2 className="text-sm font-bold text-amber-950 flex items-center gap-2">
+                <KeyRound className="w-4 h-4" /> Password reset requests ({waiting.length})
+              </h2>
+              {waiting.map((c) => (
+                <div key={idOf(c)} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white border border-amber-200 px-3 py-2.5 text-xs sm:text-sm">
+                  <span className="min-w-0">
+                    <strong className="text-[color:var(--brand-primary)]">{c.name || 'Customer'}</strong>
+                    <span className="text-stone-600"> • {c.phone} • asked {formatDateTime(c.passwordRequestedAt)}</span>
+                  </span>
+                  <span className="flex gap-2">
+                    <button type="button" onClick={() => showPassword(c)} className="px-3 py-1.5 rounded-lg bg-[color:var(--brand-primary)] text-white font-bold">Set new password</button>
+                    <button type="button" onClick={() => dismissRequest(idOf(c))} className="px-3 py-1.5 rounded-lg border border-stone-300 font-bold text-stone-600">Dismiss</button>
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
 
           {/* Action Bar & Filter Tabs */}
           <div className="bg-white rounded-xl p-3.5 sm:p-4 border border-[color:var(--brand-border)] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -340,9 +404,17 @@ export default function AdminCustomers() {
                           )}
                         </td>
 
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
                           <button
-                            onClick={() => setSelectedCustomer(c)}
+                            onClick={() => showPassword(c)}
+                            className={`mr-2 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold px-3 py-1.5 rounded-lg border shadow-2xs ${c.passwordRequestedAt ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-stone-200 text-[color:var(--brand-primary)] hover:bg-stone-100'}`}
+                            title={`Reset password for ${c.name || c.phone}`}
+                          >
+                            <KeyRound className="w-4 h-4" />
+                            <span>Password</span>
+                          </button>
+                          <button
+                            onClick={() => { setOpenPassword(false); setSelectedCustomer(c); }}
                             className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[color:var(--brand-primary)] hover:text-[color:var(--brand-accent)] px-3.5 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 transition-colors shadow-2xs"
                           >
                             <Eye className="w-4 h-4" />
@@ -445,14 +517,11 @@ export default function AdminCustomers() {
               </div>
 
               <CustomerPasswordPanel
-                key={selectedCustomer._id || selectedCustomer.id}
-                customerId={selectedCustomer._id || selectedCustomer.id}
-                hasPassword={Boolean(selectedCustomer.hasPassword)}
-                onSaved={() => {
-                  const id = selectedCustomer._id || selectedCustomer.id;
-                  setCustomers((prev) => prev.map((c) => ((c._id || c.id) === id ? { ...c, hasPassword: true } : c)));
-                  setSelectedCustomer((c) => (c ? { ...c, hasPassword: true } : c));
-                }}
+                key={`${selectedCustomer._id || selectedCustomer.id}-${openPassword}`}
+                customer={selectedCustomer}
+                emailAvailable={emailAvailable}
+                startOpen={openPassword}
+                onSaved={() => patchCustomer(selectedCustomer._id || selectedCustomer.id, { hasPassword: true, passwordRequestedAt: null })}
               />
 
               <CustomerCreditPanel

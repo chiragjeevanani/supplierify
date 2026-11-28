@@ -13,13 +13,16 @@ import PasswordInput, { PASSWORD_MIN } from '../components/PasswordInput';
 const FIELD =
   'w-full px-3.5 py-2.5 text-sm font-semibold text-stone-900 placeholder:text-stone-400 rounded-2xl border border-stone-300 bg-[color:var(--brand-surface)]/50 focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[color:var(--brand-primary)]/10 transition-all';
 const LABEL = 'block text-xs font-bold text-[color:var(--brand-primary)] mb-1.5';
+const PRIMARY =
+  'w-full py-3 bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-light)] text-[color:var(--brand-accent)] font-bold text-xs sm:text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50 min-h-[46px]';
 
 // [heading, line under it] for each step
 const TITLES = {
   phone: ['Log In or Sign Up', 'Enter your mobile number to see our products.'],
   password: ['Welcome Back', 'Enter your password to log in.'],
   signup: ['Create Account', 'This number is new here. Add your details to continue.'],
-  contact: ['Set Your Password', 'We need to set up this account for you.']
+  contact: ['Set Your Password', 'We need to set up this account for you.'],
+  forgot: ['Forgot Password', 'Choose how to get a new password.']
 };
 // [button text, text while working]
 const BUTTONS = {
@@ -32,7 +35,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, token, isAuthenticated, checkPhone, loginWithPassword, signUp } = useAuth();
+  const { user, token, isAuthenticated, checkPhone, loginWithPassword, signUp, forgotPassword, requestPasswordHelp } = useAuth();
   const rules = useStoreRules();
 
   const redirectTarget = searchParams.get('redirect') || location.state?.from?.pathname || '/';
@@ -46,7 +49,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showHelp, setShowHelp] = useState(false);
+  const [requestSent, setRequestSent] = useState('');
+  const [isAsking, setIsAsking] = useState(false);
+  const [emailReset, setEmailReset] = useState(false); // the server can send reset emails
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState('');
+  const [contactOnly, setContactOnly] = useState(false); // came from the "no password yet" screen
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -64,7 +72,43 @@ export default function LoginPage() {
     setPassword('');
     setConfirmPassword('');
     setErrorMsg('');
-    setShowHelp(false);
+    setResetSent('');
+    setRequestSent('');
+  };
+
+  const openForgot = () => {
+    setContactOnly(step === 'contact');
+    setErrorMsg('');
+    setPassword('');
+    setResetSent('');
+    setRequestSent('');
+    setStep('forgot');
+  };
+
+  const askStore = async () => {
+    if (isAsking) return;
+    setErrorMsg('');
+    setIsAsking(true);
+    const res = await requestPasswordHelp(phone);
+    setIsAsking(false);
+    if (res.success) setRequestSent(res.message);
+    else setErrorMsg(res.message);
+  };
+
+  const sendResetLink = async (e) => {
+    e.preventDefault();
+    if (isLoading) return;
+    setErrorMsg('');
+    const mail = resetEmail.trim();
+    if (!/^\S+@\S+\.\S{2,}$/.test(mail)) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+    setIsLoading(true);
+    const res = await forgotPassword(mail);
+    setIsLoading(false);
+    if (res.success) setResetSent(res.message);
+    else setErrorMsg(res.message);
   };
 
   const validate = () => {
@@ -94,8 +138,10 @@ export default function LoginPage() {
     if (step === 'phone') {
       const res = await checkPhone(phone);
       setIsLoading(false);
-      if (res.success && ['password', 'signup', 'contact'].includes(res.step)) setStep(res.step);
-      else setErrorMsg(res.message || 'Could not continue. Please try again.');
+      if (res.success && ['password', 'signup', 'contact'].includes(res.step)) {
+        setEmailReset(res.emailReset);
+        setStep(res.step);
+      } else setErrorMsg(res.message || 'Could not continue. Please try again.');
       return;
     }
 
@@ -143,7 +189,7 @@ export default function LoginPage() {
                 <div className="w-11 h-11 rounded-2xl bg-[color:var(--brand-primary-light)] border border-[color:var(--brand-accent)]/40 flex items-center justify-center text-[color:var(--brand-accent)] shadow-md mb-2 [@media(max-height:760px)]:hidden">
                   {step === 'phone' && <Phone className="w-6 h-6" />}
                   {isSignup && <UserPlus className="w-6 h-6" />}
-                  {(step === 'password' || step === 'contact') && <Lock className="w-6 h-6" />}
+                  {(step === 'password' || step === 'contact' || step === 'forgot') && <Lock className="w-6 h-6" />}
                 </div>
 
                 <h1 className="font-serif text-2xl font-extrabold text-white tracking-tight">
@@ -182,7 +228,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {step !== 'contact' && (
+              {step !== 'contact' && step !== 'forgot' && (
               <form key={step} onSubmit={handleSubmit} className="space-y-3" noValidate>
                 {/* lets password managers save the number with the password */}
                 {step !== 'phone' && <input type="text" name="username" autoComplete="username" value={phone} readOnly hidden />}
@@ -236,7 +282,7 @@ export default function LoginPage() {
                 {isSignup && (
                   <div>
                     <label className={LABEL} htmlFor="authEmail">
-                      Email <span className="font-medium text-stone-400">(optional)</span>
+                      Email <span className="font-medium text-stone-400">(optional, to reset your password)</span>
                     </label>
                     <input
                       id="authEmail"
@@ -295,26 +341,90 @@ export default function LoginPage() {
               </form>
               )}
 
+              {step === 'forgot' && (
+                <div className="space-y-3">
+                  {emailReset && (resetSent ? (
+                    <p role="status" className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium leading-relaxed">{resetSent}</p>
+                  ) : !requestSent && (
+                    <form onSubmit={sendResetLink} className="space-y-3" noValidate>
+                      <div>
+                        <label className={LABEL} htmlFor="resetEmail">Email on your account</label>
+                        <input
+                          id="resetEmail"
+                          name="email"
+                          type="email"
+                          autoComplete="email"
+                          autoFocus
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className={FIELD}
+                        />
+                      </div>
+                      <button type="submit" disabled={isLoading} className={PRIMARY}>
+                        <span>{isLoading ? 'Sending...' : 'Send Reset Link'}</span>
+                        {!isLoading && <ArrowRight className="w-4 h-4 text-[color:var(--brand-accent)]" />}
+                      </button>
+                    </form>
+                  ))}
+
+                  {requestSent ? (
+                    <p role="status" className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium leading-relaxed">
+                      {requestSent} After you log in, you can change it under My Account &gt; Profile.
+                    </p>
+                  ) : !resetSent && (
+                    <div className={emailReset ? 'pt-3 border-t border-stone-100 space-y-2' : 'space-y-2'}>
+                      <p className="text-xs text-stone-600 text-center leading-relaxed">
+                        {emailReset ? 'No email on your account?' : 'We will set a new password and send it to you.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={askStore}
+                        disabled={isAsking}
+                        className={emailReset
+                          ? 'w-full py-2.5 rounded-2xl border-2 border-[color:var(--brand-primary)] text-[color:var(--brand-primary)] font-bold text-xs uppercase tracking-wider cursor-pointer disabled:opacity-50'
+                          : PRIMARY}
+                      >
+                        {isAsking ? 'Sending...' : 'Ask the Store to Reset It'}
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => { setErrorMsg(''); setStep(contactOnly ? 'contact' : 'password'); }}
+                    className="w-full text-xs font-bold text-[color:var(--brand-primary)] underline cursor-pointer"
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
+
               {step === 'contact' && (
                 <p className="text-sm text-stone-700 leading-relaxed text-center">
                   This number already has an account without a password. Contact us and we will set one for you.
                 </p>
               )}
 
-              {(step === 'password' || step === 'contact') && (
+              {(step === 'password' || step === 'contact' || step === 'forgot') && (
                 <div className="text-center">
+                  {step === 'contact' && (
+                    <button type="button" onClick={openForgot} className="mb-2 text-xs font-bold text-[color:var(--brand-primary)] underline cursor-pointer">
+                      Get a password
+                    </button>
+                  )}
                   {step === 'password' && (
                     <button
                       type="button"
-                      onClick={() => setShowHelp((v) => !v)}
+                      onClick={openForgot}
                       className="text-xs font-bold text-[color:var(--brand-primary)] underline cursor-pointer"
                     >
                       Forgot password?
                     </button>
                   )}
-                  {(showHelp || step === 'contact') && (
+                  {(step === 'contact' || step === 'forgot') && (
                     <p className="mt-2 text-xs text-stone-600 leading-relaxed">
-                      {step === 'password' ? 'Contact us and we will set a new password for you.' : ''}
+                      {step === 'forgot' ? 'You can also reach us directly.' : ''}
                       {supportPhone && (
                         <>
                           {' '}Call{' '}
@@ -347,7 +457,7 @@ export default function LoginPage() {
                 </p>
               )}
 
-              {!isSignup && (
+              {!isSignup && step !== 'forgot' && (
                 <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[length:calc(11px*var(--fs))] text-stone-500 pt-3 border-t border-stone-100" aria-label="Policies and contact">
                   {[
                     ['/terms-and-conditions', 'Terms'],

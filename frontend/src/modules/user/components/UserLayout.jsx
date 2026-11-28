@@ -115,8 +115,8 @@ export default function UserLayout({ children }) {
   const hideFab =
     /^\/(product|checkout)/.test(location.pathname) || (location.pathname.startsWith('/cart') && lineCount > 0);
 
-  // The login screen stands on its own: no header or menu, so the card sits in the middle
-  if (location.pathname === '/login') {
+  // The login and new-password screens stand on their own: no header or menu, card in the middle
+  if (location.pathname === '/login' || location.pathname === '/reset-password') {
     return (
       <div className="min-h-screen bg-[color:var(--brand-surface)] text-[color:var(--brand-text)]">
         <main>{children}</main>

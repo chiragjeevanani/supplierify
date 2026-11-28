@@ -44,6 +44,20 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false
     },
+    // Set when the customer asks the store to reset their password; cleared once it is dealt with
+    passwordRequestedAt: {
+      type: Date,
+      default: null
+    },
+    // "Forgot password" link: only a SHA-256 hash of the token is stored
+    passwordResetTokenHash: {
+      type: String,
+      select: false
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false
+    },
     // Sessions issued before this moment are rejected (see authMiddleware)
     passwordChangedAt: {
       type: Date,
@@ -103,6 +117,9 @@ const userSchema = new mongoose.Schema(
       transform: (doc, ret) => {
         delete ret.__v;
         delete ret.passwordHash;
+        delete ret.passwordResetTokenHash;
+        delete ret.passwordResetExpires;
+        delete ret.passwordRequestedAt;
         return ret;
       }
     }

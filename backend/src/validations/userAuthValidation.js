@@ -123,6 +123,37 @@ export const validateCheckPhone = (req, res, next) => {
   next();
 };
 
+export const validateForgotPassword = (req, res, next) => {
+  const raw = req.body?.email;
+  const mail = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+  if (!mail || mail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) {
+    return bad(res, 'Please enter a valid email address.', 'email');
+  }
+  req.body = { email: mail };
+  next();
+};
+
+const cleanToken = (raw) => (typeof raw === 'string' && /^[a-f\d]{64}$/.test(raw.trim()) ? raw.trim() : '');
+const BAD_LINK = 'This reset link is invalid or has expired. Please ask for a new one.';
+
+export const validateResetToken = (req, res, next) => {
+  const token = cleanToken(req.body?.token);
+  if (!token) return bad(res, BAD_LINK, 'token');
+  req.body = { token };
+  next();
+};
+
+export const validateResetPassword = (req, res, next) => {
+  const { newPassword, confirmPassword } = req.body || {};
+  const token = cleanToken(req.body?.token);
+  if (!token) return bad(res, BAD_LINK, 'token');
+  const problem = passwordProblem(newPassword);
+  if (problem) return bad(res, problem, 'newPassword');
+  if (newPassword !== confirmPassword) return bad(res, 'Passwords do not match.', 'confirmPassword');
+  req.body = { token, newPassword };
+  next();
+};
+
 export const validatePasswordLogin = (req, res, next) => {
   const { phone, password } = req.body || {};
   const normalized = cleanPhone(phone);

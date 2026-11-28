@@ -214,6 +214,28 @@ export const userAuthApi = {
     body: JSON.stringify({ phone })
   }),
 
+  // asks the store to reset the password for this mobile number
+  requestPasswordHelp: (phone) => apiRequest('/auth/user/password-request', {
+    method: 'POST',
+    body: JSON.stringify({ phone })
+  }),
+
+  forgotPassword: (email) => apiRequest('/auth/user/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  }),
+
+  verifyResetToken: (token) => apiRequest('/auth/user/verify-reset-token', {
+    method: 'POST',
+    body: JSON.stringify({ token })
+  }),
+
+  // data: { token, newPassword, confirmPassword }
+  resetPassword: (data) => apiRequest('/auth/user/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
+
   // data: { name, phone, email, password, confirmPassword }
   register: (data) => apiRequest('/auth/user/register', {
     method: 'POST',
@@ -633,10 +655,11 @@ export const adminUserApi = {
     if (search) query.append('search', search);
     return apiRequest(`/admin/users?${query.toString()}`, { method: 'GET' });
   },
-  setPassword: (id, password) => apiRequest(`/admin/users/${id}/password`, {
+  setPassword: (id, password, emailCustomer = false) => apiRequest(`/admin/users/${id}/password`, {
     method: 'PATCH',
-    body: JSON.stringify({ password })
+    body: JSON.stringify({ password, emailCustomer })
   }),
+  dismissPasswordRequest: (id) => apiRequest(`/admin/users/${id}/password-request`, { method: 'DELETE' }),
   getCredit: (id) => apiRequest(`/admin/users/${id}/credit`, { method: 'GET' }),
   // creditLimitOverride: number, or null to use the store default; creditBlocked: boolean
   updateCredit: (id, data) => apiRequest(`/admin/users/${id}/credit`, {

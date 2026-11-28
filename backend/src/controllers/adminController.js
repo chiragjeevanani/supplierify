@@ -3,6 +3,7 @@ import { getDashboardSummary, getAnalyticsSummary } from '../services/dashboardS
 import User from '../models/User.js';
 import Address from '../models/Address.js';
 import userAuthService from '../services/userAuthService.js';
+import { isSmtpConfigured } from '../services/emailService.js';
 import Order from '../models/Order.js';
 
 // Lifetime-spend thresholds (INR) for the CRM customer tiers
@@ -201,6 +202,7 @@ export const getAllUsers = async (req, res, next) => {
         state: st.state || addresses[0]?.state || u.addresses?.[0]?.state || '',
         addresses,
         hasPassword: passwordSet.has(String(u._id)),
+        passwordRequestedAt: u.passwordRequestedAt || null,
         lastOrderAt: st.lastOrderAt || null,
         tier,
         credit: creditById.get(String(u._id)) || null
@@ -212,6 +214,7 @@ export const getAllUsers = async (req, res, next) => {
       'Users list retrieved successfully',
       {
         users: enriched,
+        emailAvailable: isSmtpConfigured(),
         pagination: {
           total,
           page,
@@ -255,8 +258,28 @@ export const updateUserStatus = async (req, res, next) => {
  */
 export const setUserPassword = async (req, res, next) => {
   try {
-    const user = await userAuthService.setPasswordByAdmin(req.params.id, req.body.password);
-    return sendSuccess(res, 'Password set for this customer', { user }, HTTP_STATUS.OK);
+    const result = await userAuthService.setPasswordByAdmin(req.params.id, req.body.password, {
+      emailCustomer: req.body.emailCustomer === true,
+      requestOrigin: req.headers.origin
+    });
+    return sendSuccess(res, 'Password set for this customer', result, HTTP_STATUS.OK);
+  } catch (error) {
+    if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
+    next(error);
+  }
+};
+
+/**
+ * Remove a customer's password request without changing the password
+ * DELETE /api/v1/admin/users/:id/password-request
+ */
+export const dismissPasswordRequest = async (req, res, next) => {
+  try {
+    if (!/^[a-f\d]{24}$/i.test(String(req.params.id))) {
+      return sendError(res, 'Invalid customer id.', null, HTTP_STATUS.BAD_REQUEST);
+    }
+    await userAuthService.dismissPasswordRequest(req.params.id);
+    return sendSuccess(res, 'Request dismissed', null, HTTP_STATUS.OK);
   } catch (error) {
     if (error.statusCode) return sendError(res, error.message, null, error.statusCode);
     next(error);
@@ -285,6 +308,7 @@ export const updateUserCredit = async (req, res, next) => {
 };
 
 export default {
+  dismissPasswordRequest,
   setUserPassword,
   getUserCredit,
   updateUserCredit,

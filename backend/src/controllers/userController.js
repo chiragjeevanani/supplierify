@@ -105,9 +105,10 @@ export const deleteAccount = async (req, res, next) => {
           fcmTokenMobile: [],
           status: 'INACTIVE',
           isVerified: false,
+          passwordRequestedAt: null,
           deletedAt: new Date()
         },
-        $unset: { email: 1, passwordHash: 1 }
+        $unset: { email: 1, passwordHash: 1, passwordResetTokenHash: 1, passwordResetExpires: 1 }
       }
     );
 

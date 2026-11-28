@@ -68,6 +68,7 @@ const notificationSchema = new mongoose.Schema(
         'ORDER_CANCELLED',
         'LOW_STOCK',
         'REVIEW_RECEIVED',
+        'PASSWORD_REQUEST',
         'SYSTEM'
       ],
       default: 'SYSTEM',

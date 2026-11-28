@@ -1,4 +1,15 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import env from '../config/env.js';
+import {
+  isSmtpConfigured,
+  sendCustomerPasswordResetEmail,
+  sendAdminPasswordRequestEmail,
+  sendCustomerNewPasswordEmail
+} from './emailService.js';
+import notificationService from './notificationService.js';
+import settingsService from './settingsService.js';
+import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Address from '../models/Address.js';
@@ -19,6 +30,69 @@ const fail = (message, statusCode, reason) => {
 const DUMMY_HASH = bcrypt.hashSync('no-such-account', 10);
 
 const BLOCKED_MESSAGE = 'Your account is blocked. Please contact customer support.';
+
+const RESET_MINUTES = 30;
+const RESEND_WAIT_MS = 60 * 1000; // one email a minute per account, so an inbox cannot be flooded
+const SITE_URL = 'https://supplierfy.in';
+export const RESET_SENT_MESSAGE =
+  `If an account uses this email address, we have sent it a link to set a new password. The link works for ${RESET_MINUTES} minutes. Please check your spam folder too.`;
+
+const hashResetToken = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
+const CLEAR_RESET = { passwordResetTokenHash: 1, passwordResetExpires: 1 };
+
+/** Website address used in the email. Only configured addresses are used, never one sent by the browser. */
+const resetBaseUrl = (requestOrigin) => {
+  const configured = String(env.FRONTEND_URL || '').replace(/\/$/, '');
+  // A live server still set to a localhost address would email a link that opens nowhere
+  if ((!configured || /\/\/(localhost|127\.0\.0\.1)/.test(configured)) && requestOrigin === SITE_URL) return SITE_URL;
+  return configured || SITE_URL;
+};
+
+const REQUEST_WAIT_MS = 60 * 60 * 1000; // repeat requests within an hour are not announced again
+export const REQUEST_SENT_MESSAGE =
+  'Your request has been sent to the store. We will send a new password to you, usually on this mobile number.';
+
+const customerLabel = (user) => `${user.name || 'A customer'} (${user.phone})`;
+const adminPanelPath = (userId) => `/admin/customers?password=${userId}`;
+
+/** Shows in the admin panel's notifications. Never lets a notification problem break the customer's request. */
+const notifyAdmins = async (user, { title, message, needsAction }) => {
+  try {
+    await notificationService.createNotification({
+      recipientRole: 'ADMIN',
+      type: 'PASSWORD_REQUEST',
+      title,
+      message,
+      relatedId: String(user._id),
+      link: adminPanelPath(user._id),
+      metadata: { needsAction }
+    });
+  } catch (error) {
+    console.error('[Password request] Could not create the admin notification:', error.message);
+  }
+};
+
+/** Where the store receives its own alerts: the configured recovery inbox, else the support email. */
+const storeInbox = async () => {
+  const configured = String(process.env.ADMIN_RECOVERY_EMAIL || '').trim();
+  if (configured) return configured;
+  const settings = await settingsService.getSettings().catch(() => null);
+  return String(settings?.supportEmail || '').trim();
+};
+
+/** The password was dealt with: clear the pending request and its unread alerts. */
+const closePasswordRequests = async (userId) => {
+  await Promise.all([
+    User.updateOne({ _id: userId }, { $set: { passwordRequestedAt: null } }),
+    Notification.updateMany(
+      { recipientRole: 'ADMIN', type: 'PASSWORD_REQUEST', relatedId: String(userId), read: false },
+      { $set: { read: true, readAt: new Date() } }
+    )
+  ]).catch((error) => console.error('[Password request] Could not close the request:', error.message));
+};
+
+const invalidLink = () =>
+  fail('This reset link is invalid or has expired. Please ask for a new one.', HTTP_STATUS.BAD_REQUEST, 'INVALID_TOKEN');
 
 class UserAuthService {
   /** Issue the customer JWT and the safe user object */
@@ -52,6 +126,11 @@ class UserAuthService {
    * must set a password for).
    */
   async checkPhone(phone) {
+    const result = await this.nextLoginStep(phone);
+    return { ...result, emailReset: isSmtpConfigured() };
+  }
+
+  async nextLoginStep(phone) {
     const user = await User.findOne({ phone }).select('+passwordHash');
     if (!user) return { phone, step: 'signup' };
     if (user.status === ACCOUNT_STATUS.BLOCKED) {
@@ -148,18 +227,172 @@ class UserAuthService {
     }
     user.passwordHash = await bcrypt.hash(newPassword, 10);
     user.passwordChangedAt = new Date();
+    user.passwordResetTokenHash = undefined; // any emailed link stops working
+    user.passwordResetExpires = undefined;
     await user.save();
+    await closePasswordRequests(user._id);
     return this.buildSession(user);
   }
 
-  /** Admin sets a password for a customer (forgotten password, or an older account without one) */
-  async setPasswordByAdmin(userId, password) {
+  /**
+   * A customer without email access asks the store to reset their password.
+   * The store sends the new password to the number or email already on the account,
+   * never to an address typed into this request.
+   */
+  async requestAdminReset(phone, requestOrigin) {
+    const user = await User.findOne({ phone, role: ROLES.USER, deletedAt: null });
+    if (!user || user.status === ACCOUNT_STATUS.BLOCKED) return { message: REQUEST_SENT_MESSAGE };
+    if (user.passwordRequestedAt && Date.now() - user.passwordRequestedAt.getTime() < REQUEST_WAIT_MS) {
+      return { message: REQUEST_SENT_MESSAGE };
+    }
+
+    await User.updateOne({ _id: user._id }, { $set: { passwordRequestedAt: new Date() } });
+    await notifyAdmins(user, {
+      title: 'Password reset requested',
+      message: `${customerLabel(user)} asks for a new password. Open the customer to set it and send it to them.`,
+      needsAction: true
+    });
+
+    if (isSmtpConfigured()) {
+      storeInbox()
+        .then((to) => to && sendAdminPasswordRequestEmail({
+          to,
+          name: user.name,
+          phone: user.phone,
+          panelUrl: `${resetBaseUrl(requestOrigin)}${adminPanelPath(user._id)}`
+        }))
+        .catch((error) => console.error('[Password request] Email to the store could not be sent:', error?.message));
+    }
+
+    return { message: REQUEST_SENT_MESSAGE };
+  }
+
+  /** Admin removes a request without changing the password */
+  async dismissPasswordRequest(userId) {
+    const user = await User.findOne({ _id: userId, role: ROLES.USER });
+    if (!user) throw fail('Customer not found.', HTTP_STATUS.NOT_FOUND);
+    await closePasswordRequests(user._id);
+  }
+
+  /**
+   * "Forgot password": email a one-time link to the account using this address.
+   * The answer is the same whether or not such an account exists.
+   */
+  async requestPasswordReset(email, requestOrigin) {
+    if (!isSmtpConfigured()) {
+      throw fail(
+        'Password reset by email is not available yet. Please contact us and we will set a new password for you.',
+        HTTP_STATUS.SERVICE_UNAVAILABLE,
+        'EMAIL_NOT_CONFIGURED'
+      );
+    }
+
+    const user = await User.findOne({ email, role: ROLES.USER, deletedAt: null }).select('+passwordResetExpires');
+    if (!user || user.status !== ACCOUNT_STATUS.ACTIVE) return { message: RESET_SENT_MESSAGE };
+
+    const lastSent = user.passwordResetExpires
+      ? user.passwordResetExpires.getTime() - RESET_MINUTES * 60 * 1000
+      : 0;
+    if (Date.now() - lastSent < RESEND_WAIT_MS) return { message: RESET_SENT_MESSAGE };
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashResetToken(token);
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { passwordResetTokenHash: tokenHash, passwordResetExpires: new Date(Date.now() + RESET_MINUTES * 60 * 1000) } }
+    );
+
+    notifyAdmins(user, {
+      title: 'Password reset link requested',
+      message: `${customerLabel(user)} asked for a password reset link by email. Nothing to do unless they contact you.`,
+      needsAction: false
+    });
+
+    // Sent in the background so the reply takes the same time for any address
+    sendCustomerPasswordResetEmail({
+      to: user.email,
+      name: user.name,
+      phone: user.phone,
+      resetUrl: `${resetBaseUrl(requestOrigin)}/reset-password?token=${token}`,
+      expiresMinutes: RESET_MINUTES
+    }).catch(async (error) => {
+      console.error('[Password reset] Email could not be sent:', error?.message);
+      await User.updateOne({ _id: user._id, passwordResetTokenHash: tokenHash }, { $unset: CLEAR_RESET }).catch(() => {});
+    });
+
+    return { message: RESET_SENT_MESSAGE };
+  }
+
+  /** Is this emailed link still usable? */
+  async checkResetToken(token) {
+    const user = await User.findOne({
+      passwordResetTokenHash: hashResetToken(token),
+      passwordResetExpires: { $gt: new Date() },
+      deletedAt: null,
+      status: ACCOUNT_STATUS.ACTIVE
+    }).select('phone');
+    if (!user) throw invalidLink();
+    return { valid: true, phoneEnding: String(user.phone).slice(-4) };
+  }
+
+  /** Use an emailed link once to set a new password, and sign the customer in */
+  async resetPassword({ token, newPassword }) {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    // One atomic update, so a link cannot be used twice
+    const user = await User.findOneAndUpdate(
+      {
+        passwordResetTokenHash: hashResetToken(token),
+        passwordResetExpires: { $gt: new Date() },
+        deletedAt: null,
+        status: ACCOUNT_STATUS.ACTIVE
+      },
+      {
+        $set: { passwordHash, passwordChangedAt: new Date(), lastLoginAt: new Date() },
+        $unset: CLEAR_RESET
+      },
+      { new: true }
+    );
+    if (!user) throw invalidLink();
+    await closePasswordRequests(user._id);
+    return this.buildSession(user);
+  }
+
+  /**
+   * Admin sets a password for any customer (forgotten password, or an older account without one).
+   * With emailCustomer, it is also sent to the email saved on the account.
+   */
+  async setPasswordByAdmin(userId, password, { emailCustomer = false, requestOrigin } = {}) {
     const user = await User.findOne({ _id: userId, role: ROLES.USER, deletedAt: null });
     if (!user) throw fail('Customer not found.', HTTP_STATUS.NOT_FOUND);
     user.passwordHash = await bcrypt.hash(password, 10);
     user.passwordChangedAt = new Date(); // signs the customer out everywhere
+    user.passwordResetTokenHash = undefined;
+    user.passwordResetExpires = undefined;
     await user.save();
-    return user.toJSON();
+    await closePasswordRequests(user._id);
+
+    let emailed = false;
+    let emailError = '';
+    if (emailCustomer) {
+      if (!user.email) emailError = 'This customer has no email address.';
+      else if (!isSmtpConfigured()) emailError = 'Email is not set up on the server.';
+      else {
+        try {
+          await sendCustomerNewPasswordEmail({
+            to: user.email,
+            name: user.name,
+            phone: user.phone,
+            password,
+            loginUrl: `${resetBaseUrl(requestOrigin)}/login`
+          });
+          emailed = true;
+        } catch (error) {
+          console.error('[Admin password] Email could not be sent:', error?.message);
+          emailError = 'The email could not be sent.';
+        }
+      }
+    }
+    return { user: user.toJSON(), emailed, emailError };
   }
 
   /**
@@ -330,9 +563,15 @@ class UserAuthService {
           err.statusCode = HTTP_STATUS.CONFLICT;
           throw err;
         }
+        if (rawEmail !== user.email) {
+          user.passwordResetTokenHash = undefined;
+          user.passwordResetExpires = undefined;
+        }
         user.email = rawEmail;
       } else {
         user.email = undefined;
+        user.passwordResetTokenHash = undefined;
+        user.passwordResetExpires = undefined;
       }
     }
 

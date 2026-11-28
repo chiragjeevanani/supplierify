@@ -69,6 +69,70 @@ class UserAuthController {
   }
 
   /**
+   * Ask the store to reset the password
+   * POST /api/v1/auth/user/password-request
+   */
+  async passwordRequest(req, res, next) {
+    try {
+      const result = await userAuthService.requestAdminReset(req.body.phone, req.headers.origin);
+      return sendSuccess(res, result.message, null);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Email a "forgot password" link
+   * POST /api/v1/auth/user/forgot-password
+   */
+  async forgotPassword(req, res, next) {
+    try {
+      const result = await userAuthService.requestPasswordReset(req.body.email, req.headers.origin);
+      return sendSuccess(res, result.message, null);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Is a reset link still usable?
+   * POST /api/v1/auth/user/verify-reset-token
+   */
+  async verifyResetToken(req, res, next) {
+    try {
+      const result = await userAuthService.checkResetToken(req.body.token);
+      return sendSuccess(res, 'Reset link is valid', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Set a new password using a reset link
+   * POST /api/v1/auth/user/reset-password
+   */
+  async resetPassword(req, res, next) {
+    try {
+      const result = await userAuthService.resetPassword(req.body);
+      return sendSuccess(res, 'Password updated', result);
+    } catch (error) {
+      if (error.statusCode) {
+        return sendError(res, error.message, { reason: error.reason }, error.statusCode);
+      }
+      next(error);
+    }
+  }
+
+  /**
    * Sign up with phone + password
    * POST /api/v1/auth/user/register
    */

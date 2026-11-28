@@ -453,7 +453,7 @@ export function AuthProvider({ children }) {
   const checkPhone = async (phoneNumber) => {
     try {
       const response = await userAuthApi.checkPhone(phoneNumber);
-      return { success: true, step: response?.data?.step };
+      return { success: true, step: response?.data?.step, emailReset: Boolean(response?.data?.emailReset) };
     } catch (err) {
       return { success: false, message: err.message || 'Could not continue. Please try again.' };
     }
@@ -464,6 +464,27 @@ export function AuthProvider({ children }) {
 
   // data: { name, phone, email, password, confirmPassword }
   const signUp = (data) => authenticate(() => userAuthApi.register(data), data.phone);
+
+  const forgotPassword = async (email) => {
+    try {
+      const response = await userAuthApi.forgotPassword(email);
+      return { success: true, message: response?.message };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not send the email. Please try again.' };
+    }
+  };
+
+  const requestPasswordHelp = async (phoneNumber) => {
+    try {
+      const response = await userAuthApi.requestPasswordHelp(phoneNumber);
+      return { success: true, message: response?.message };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not send the request. Please try again.' };
+    }
+  };
+
+  // A reset link signs the customer in with the new password
+  const resetPassword = (data) => authenticate(() => userAuthApi.resetPassword(data), '');
 
   // The server ends all older sessions, so keep the new token it returns
   const changePassword = async (data) => {
@@ -887,6 +908,9 @@ export function AuthProvider({ children }) {
       selectedAddressId,
       setSelectedAddressId,
       checkPhone,
+      forgotPassword,
+      requestPasswordHelp,
+      resetPassword,
       loginWithPassword,
       signUp,
       changePassword,

@@ -195,7 +195,122 @@ export async function sendAdminPasswordResetEmail({ to, resetUrl, expiresMinutes
   }
 }
 
+const escapeHtml = (value) =>
+  String(value || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/**
+ * Customer "forgot password" email. Never logs the link or SMTP credentials.
+ */
+export async function sendCustomerPasswordResetEmail({ to, name, phone, resetUrl, expiresMinutes }) {
+  const transporter = createTransporter();
+  const from = env.SMTP.FROM || env.SMTP.USER;
+  const hello = name ? `Hello ${name},` : 'Hello,';
+  const account = phone ? `the account with mobile number ending ${String(phone).slice(-4)}` : 'your account';
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="margin:0;padding:24px 16px;background:#F7F7F5;font-family:Arial,sans-serif;color:#1c1c1c;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr><td align="center">
+      <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:12px;border:1px solid #e5e5e5;">
+        <tr><td style="padding:28px;font-size:15px;line-height:1.55;">
+          <h1 style="margin:0 0 18px;font-size:20px;">Reset your Supplierfy password</h1>
+          <p style="margin:0 0 14px;">${escapeHtml(hello)}</p>
+          <p style="margin:0 0 22px;">We received a request to set a new password for ${escapeHtml(account)}. The link works for <strong>${expiresMinutes} minutes</strong> and only once.</p>
+          <p style="margin:0 0 26px;text-align:center;">
+            <a href="${escapeHtml(resetUrl)}" style="display:inline-block;background:#0b3a6b;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:700;">Set a new password</a>
+          </p>
+          <p style="margin:0 0 8px;font-size:12px;color:#666;">If the button does not work, copy this address into your browser:</p>
+          <p style="margin:0;font-size:12px;word-break:break-all;">${escapeHtml(resetUrl)}</p>
+          <p style="margin:22px 0 0;font-size:12px;color:#666;">If you did not ask for this, ignore this email. Your password stays the same.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text = [
+    'Reset your Supplierfy password',
+    '',
+    hello,
+    `We received a request to set a new password for ${account}.`,
+    `The link works for ${expiresMinutes} minutes and only once:`,
+    '',
+    resetUrl,
+    '',
+    'If you did not ask for this, ignore this email. Your password stays the same.'
+  ].join('\n');
+
+  await transporter.sendMail({
+    from: `"Supplierfy" <${from}>`,
+    to,
+    subject: 'Reset your Supplierfy password',
+    text,
+    html
+  });
+}
+
+/** Plain, readable email with a heading, a few lines and an optional button. */
+async function sendSimpleEmail({ to, subject, lines, button }) {
+  const transporter = createTransporter();
+  const from = env.SMTP.FROM || env.SMTP.USER;
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="margin:0;padding:24px 16px;background:#F7F7F5;font-family:Arial,sans-serif;color:#1c1c1c;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr><td align="center">
+      <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:12px;border:1px solid #e5e5e5;">
+        <tr><td style="padding:28px;font-size:15px;line-height:1.55;">
+          <h1 style="margin:0 0 18px;font-size:20px;">${escapeHtml(subject)}</h1>
+          ${lines.map((line) => `<p style="margin:0 0 14px;">${escapeHtml(line)}</p>`).join('\n')}
+          ${button ? `<p style="margin:22px 0 0;text-align:center;"><a href="${escapeHtml(button.url)}" style="display:inline-block;background:#0b3a6b;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:700;">${escapeHtml(button.label)}</a></p>` : ''}
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  const text = [subject, '', ...lines, ...(button ? ['', `${button.label}: ${button.url}`] : [])].join('\n');
+  await transporter.sendMail({ from: `"Supplierfy" <${from}>`, to, subject, text, html });
+}
+
+/** Tells the store that a customer wants a new password. */
+export async function sendAdminPasswordRequestEmail({ to, name, phone, panelUrl }) {
+  await sendSimpleEmail({
+    to,
+    subject: 'A customer asked for a new password',
+    lines: [
+      `Name: ${name || 'Not given'}`,
+      `Mobile: ${phone}`,
+      'Open the admin panel, set a new password for this customer and send it to them on this mobile number.'
+    ],
+    button: { label: 'Open in admin panel', url: panelUrl }
+  });
+}
+
+/** Sends a password the admin has just set to the customer's own email address. */
+export async function sendCustomerNewPasswordEmail({ to, name, phone, password, loginUrl }) {
+  await sendSimpleEmail({
+    to,
+    subject: 'Your new Supplierfy password',
+    lines: [
+      name ? `Hello ${name},` : 'Hello,',
+      `We have set a new password for your account (mobile number ending ${String(phone).slice(-4)}).`,
+      `New password: ${password}`,
+      'After you log in, you can change it under My Account, in the Profile section.',
+      'If you did not ask for this, please contact us.'
+    ],
+    button: { label: 'Log in', url: loginUrl }
+  });
+}
+
 export default {
+  sendAdminPasswordRequestEmail,
+  sendCustomerNewPasswordEmail,
+  sendCustomerPasswordResetEmail,
   isSmtpConfigured,
   getMissingEmailConfigKeys,
   verifySmtpConnection,

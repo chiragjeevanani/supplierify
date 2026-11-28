@@ -16,6 +16,7 @@ import AdminReviews from '../pages/AdminReviews';
 // import AdminPromotions from '../pages/AdminPromotions';
 import AdminAnalytics from '../pages/AdminAnalytics';
 import AdminNotifications from '../pages/AdminNotifications';
+import PasswordRequestAlert from '../components/PasswordRequestAlert';
 import AdminSettings from '../pages/AdminSettings';
 import AdminLegalPages from '../pages/AdminLegalPages';
 import AdminProfile from '../pages/AdminProfile';
@@ -35,7 +36,10 @@ function ProtectedAdminRoute({ children }) {
 }
 
 export default function AdminRoutes() {
+  const { isAdminAuthenticated } = useAdmin();
   return (
+    <>
+    {isAdminAuthenticated && <PasswordRequestAlert />}
     <Routes>
       {/* Public Admin auth routes */}
       <Route path="/login" element={<AdminLogin />} />
@@ -63,5 +67,6 @@ export default function AdminRoutes() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
+    </>
   );
 }

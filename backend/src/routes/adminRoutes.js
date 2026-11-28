@@ -43,5 +43,6 @@ router.get('/users/:id/credit', adminController.getUserCredit);
 router.patch('/users/:id/credit', adminController.updateUserCredit);
 router.patch('/users/:id/status', validateUserStatusUpdate, adminController.updateUserStatus);
 router.patch('/users/:id/password', validateSetUserPassword, adminController.setUserPassword);
+router.delete('/users/:id/password-request', adminController.dismissPasswordRequest);
 
 export default router;

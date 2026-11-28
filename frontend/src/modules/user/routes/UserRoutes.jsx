@@ -9,6 +9,7 @@ import WishlistPage from '../pages/WishlistPage';
 import OrderTrackingPage from '../pages/OrderTrackingPage';
 import AccountPage from '../pages/AccountPage';
 import LoginPage from '../pages/LoginPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
 import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
@@ -26,6 +27,7 @@ export default function UserRoutes() {
       <Routes>
         {/* Open to everyone: signing in, and the pages people must be able to read before they sign up */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
